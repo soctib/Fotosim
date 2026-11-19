@@ -170,7 +170,6 @@ export function mountControls(root: HTMLElement, store: Store): void {
     focal.max = String(opts.length - 1);
     focal.value = String(fi);
     $('o-focal').textContent = formatFocal(opts[fi].realMm, d.sensor, t.kb);
-    hint('focal', opts[fi].native ? '' : t.controls.digitalCropHint);
 
     const fixed = d.sensor.fixedAperture !== undefined;
     // Phones have built-in lenses: no lens choice, just a note.

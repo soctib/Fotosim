@@ -35,8 +35,11 @@ export const SENSOR_ORDER: SensorId[] = [
 /** Common full-frame-equivalent focal lengths offered on the slider. */
 export const EQUIVALENT_FOCAL_STEPS_MM = [14, 18, 24, 28, 35, 50, 70, 85, 105, 135, 200, 300, 400];
 
-/** Phones only have a few fixed lenses (equivalent mm); everything else is digital crop. */
+/**
+ * Phones: one fixed-focal-length camera per entry (equivalent mm). Crop modes like the
+ * 15 Pro's "2×" (48 mm, a crop of the main sensor) are digital zoom and deliberately left out.
+ */
 export const PHONE_LENSES_EQ_MM: Partial<Record<SensorId, number[]>> = {
   phone2019: [13, 26, 52],
-  phoneModern: [13, 24, 48, 77], // 15 Pro; the Pro Max has 120 instead of 77
+  phoneModern: [13, 24, 77], // 15 Pro; the Pro Max has 120 instead of 77
 };

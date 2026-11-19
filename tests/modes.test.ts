@@ -108,9 +108,8 @@ describe('focal options', () => {
     expect(formatFocal(50, ff)).toBe('50 mm');
     expect(formatFocal(50, SENSORS.apsc)).toMatch(/^50 mm \(≙ 7[67] mm KB\)$/);
   });
-  it('phones mark native lenses vs digital crop', () => {
-    const opts = focalOptions(SENSORS.phone2019);
-    expect(opts.find((o) => o.equivalentMm === 26)?.native).toBe(true);
-    expect(opts.find((o) => o.equivalentMm === 35)?.native).toBe(false);
+  it('phones only offer their built-in cameras – no digital zoom steps', () => {
+    expect(focalOptions(SENSORS.phone2019).map((o) => o.equivalentMm)).toEqual([13, 26, 52]);
+    expect(focalOptions(SENSORS.phoneModern).map((o) => o.equivalentMm)).toEqual([13, 24, 77]);
   });
 });
