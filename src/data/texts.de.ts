@@ -237,7 +237,7 @@ export const de = {
   // Infobox: shown for the last clicked/tapped element. {placeholders} get live values.
   info: {
     sensor:
-      'Der Kameratyp steht vor allem für die Größe des Sensors (oder Films). Je größer der Sensor, desto mehr Licht sammelt er insgesamt – weniger Rauschen, und bei gleicher Blende weniger Schärfentiefe. Die Belichtungszeit hängt NICHT von der Sensorgröße ab. Faustregel: Brennweite und Blende mal Cropfaktor ergeben, was es an Kleinbild entspricht – f/1.8 an einem Handy von 2019 wirkt in Schärfentiefe und Rauschen etwa wie f/11 an Vollformat.',
+      'Der Kameratyp steht für die Sensor- oder Filmgröße. Ein größerer Sensor sammelt mehr Licht: weniger Rauschen und bei gleicher Blende weniger Schärfentiefe, aber dieselbe Belichtungszeit. Faustregel: Brennweite und Blende mal Cropfaktor ergeben den Kleinbild-Wert; f/1.8 am Handy (2019) wirkt wie f/11 an Vollformat.',
     lens: 'Das Objektiv legt fest, wie weit die Blende aufgeht. Das Kit-Zoom aus dem Kamera-Set ist günstig, aber lichtschwach – gerade am langen Ende. Lichtstarke Objektive (kleine Blendenzahl) kosten mehr, lassen mehr Licht herein und machen den Hintergrund unschärfer. Gerade: größte Blende {maxAperture}.',
     focalLength:
       'Die Brennweite bestimmt den Bildausschnitt. Angegeben ist die echte Brennweite und in Klammern, was sie an Kleinbild entspricht. Lange Brennweiten verwackeln leichter.',
