@@ -9,6 +9,7 @@ import type { Derived, DerivedElement } from '../../model/derive';
 import { formatAperture, formatShutter } from '../../model/stops';
 import type { ElementId } from '../../model/types';
 import { focusOn, setAutofocus, setInfo } from '../../state/actions';
+import { FACE_DEPTH_M } from '../face';
 import type { Store } from '../../state/store';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -16,6 +17,8 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 // Scene composition (metres). Camera is level, so the horizon sits mid-frame.
 const CAMERA_HEIGHT_M = 1.6;
 const LATERAL_M: Record<ElementId, number> = { person1: -0.35, person2: 0.55, background: 0 };
+/** Closer than this, the photographer aims at the person: the sideways offset shrinks (quadratically). */
+const AIM_DISTANCE_M = 3;
 
 /** CSS blur takes a Gaussian sigma; the blur disc diameter is roughly 2 sigma. */
 const SIGMA_PER_DISC = 0.5;
@@ -84,11 +87,11 @@ export function mountSim(root: HTMLElement, store: Store): void {
     const H = (W * d.sensor.heightMm) / d.sensor.widthMm;
     if (!W) return;
 
-    const filterFor = (el: DerivedElement) => {
-      const blur = Math.min(MAX_BLUR_PX, el.blurFractionOfWidth * W * SIGMA_PER_DISC);
-      const bright = Math.min(8, Math.max(0.03, 2 ** el.exposureOffsetStops));
-      return `blur(${blur.toFixed(2)}px) brightness(${bright.toFixed(3)})`;
-    };
+    const sigmaAt = (m: number) => Math.min(MAX_BLUR_PX, d.blurFractionAt(m) * W * SIGMA_PER_DISC);
+    const brightness = (el: DerivedElement) =>
+      `brightness(${Math.min(8, Math.max(0.03, 2 ** el.exposureOffsetStops)).toFixed(3)})`;
+    const filterFor = (el: DerivedElement) =>
+      `blur(${Math.min(MAX_BLUR_PX, el.blurFractionOfWidth * W * SIGMA_PER_DISC).toFixed(2)}px) ${brightness(el)}`;
 
     // Sky and open ground are always furthest back; they share the background's blur and light.
     const bg = d.elements.find((e) => e.id === 'background')!;
@@ -105,8 +108,14 @@ export function mountSim(root: HTMLElement, store: Store): void {
       svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
       svg.style.display = el.visible ? '' : 'none';
       svg.style.zIndex = String(i + 1);
-      svg.innerHTML = el.id === 'background' ? drawScenery(el, W, H) : drawPerson(el, W, H);
-      svg.style.filter = filterFor(el);
+      if (el.id === 'background') {
+        svg.innerHTML = drawScenery(el, W, H);
+        svg.style.filter = filterFor(el);
+      } else {
+        // Persons blur per part (nose, face, ears sit at different distances), so the layer only gets the light.
+        svg.innerHTML = drawPerson(el, W, H, (dm) => sigmaAt(el.distanceM + dm));
+        svg.style.filter = brightness(el);
+      }
     });
 
     afOverlay.setAttribute('viewBox', `0 0 ${W} ${H}`);
@@ -152,7 +161,8 @@ export function mountSim(root: HTMLElement, store: Store): void {
 /** Pixels per metre at an element's distance, plus the y of its ground contact. */
 function projection(el: DerivedElement, W: number, H: number) {
   const perM = el.heightFractionPerM * H;
-  return { perM, groundY: H / 2 + CAMERA_HEIGHT_M * perM, cx: W / 2 + LATERAL_M[el.id] * perM };
+  const aim = Math.min(1, (el.distanceM / AIM_DISTANCE_M) ** 2);
+  return { perM, groundY: H / 2 + CAMERA_HEIGHT_M * perM, cx: W / 2 + LATERAL_M[el.id] * aim * perM };
 }
 
 function drawSky(bg: DerivedElement, W: number, H: number): string {
@@ -231,18 +241,35 @@ function drawAfFrame(el: DerivedElement, W: number, H: number): string {
     M${r},${b - c} V${b} H${r - c} M${l + c},${b} H${l} V${b - c}"/>`;
 }
 
-function drawPerson(el: DerivedElement, W: number, H: number): string {
+/**
+ * Person facing the camera. Distance = eyes. Nose, face/body and ears each get their own
+ * blur from their own distance – with a shallow enough depth of field the nose tip can be
+ * sharp while the eyes are not. `sigma(dm)` gives the blur for an offset from the eye plane.
+ */
+function drawPerson(el: DerivedElement, W: number, H: number, sigma: (dm: number) => number): string {
   const { perM, groundY, cx } = projection(el, W, H);
-  // Drawn in centimetres with the origin at the feet; 175 cm tall.
-  return `<g class="person person-${el.id}" transform="translate(${cx} ${groundY}) scale(${perM / 100})">
-    <path class="legs" d="M-15,0 L-12,-88 L12,-88 L15,0 L5,0 L0,-60 L-5,0 Z"/>
-    <path class="arm" d="M-21,-140 Q-30,-110 -26,-82" />
-    <path class="arm" d="M21,-140 Q30,-110 26,-82" />
-    <rect class="shirt" x="-22" y="-146" width="44" height="64" rx="12"/>
-    <rect class="skin" x="-4.5" y="-152" width="9" height="8"/>
-    <circle class="skin" cx="0" cy="-163" r="11.5"/>
-    <path class="hair" d="M-11.8,-163 Q-12,-178 0,-177 Q12,-178 11.8,-163 Q8,-171 0,-171 Q-8,-171 -11.8,-163 Z"/>
-    <circle class="eye" cx="-4.2" cy="-164" r="1.4"/><circle class="eye" cx="4.2" cy="-164" r="1.4"/>
-    <path class="mouth" d="M-4,-158 Q0,-155 4,-158"/>
+  const filter = (part: string, dm: number) =>
+    `<filter id="${el.id}-${part}" filterUnits="userSpaceOnUse" x="0" y="0" width="${W}" height="${H}">
+       <feGaussianBlur stdDeviation="${sigma(dm).toFixed(2)}"/></filter>`;
+  // Drawn in centimetres with the origin at the feet; 175 cm tall. The transform sits on an inner
+  // group so each filter works in pixel units.
+  const part = (name: string, body: string) =>
+    `<g filter="url(#${el.id}-${name})"><g transform="translate(${cx} ${groundY}) scale(${perM / 100})">${body}</g></g>`;
+  return `<defs>${filter('ears', FACE_DEPTH_M.ears)}${filter('body', 0)}${filter('nose', FACE_DEPTH_M.noseTip)}</defs>
+  <g class="person person-${el.id}">
+    ${part('ears', `<ellipse class="ear" cx="-11.6" cy="-163" rx="2.8" ry="4.2"/><ellipse class="ear" cx="11.6" cy="-163" rx="2.8" ry="4.2"/>`)}
+    ${part(
+      'body',
+      `<path class="legs" d="M-15,0 L-12,-88 L12,-88 L15,0 L5,0 L0,-60 L-5,0 Z"/>
+       <path class="arm" d="M-21,-140 Q-30,-110 -26,-82" />
+       <path class="arm" d="M21,-140 Q30,-110 26,-82" />
+       <rect class="shirt" x="-22" y="-146" width="44" height="64" rx="12"/>
+       <rect class="skin" x="-4.5" y="-152" width="9" height="8"/>
+       <circle class="skin" cx="0" cy="-163" r="11.5"/>
+       <path class="hair" d="M-11.8,-163 Q-12,-178 0,-177 Q12,-178 11.8,-163 Q8,-171 0,-171 Q-8,-171 -11.8,-163 Z"/>
+       <circle class="eye" cx="-4.2" cy="-165" r="1.4"/><circle class="eye" cx="4.2" cy="-165" r="1.4"/>
+       <path class="mouth" d="M-3.8,-155.8 Q0,-153 3.8,-155.8"/>`,
+    )}
+    ${part('nose', `<path class="nose" d="M0,-165 L-2.4,-158.6 Q0,-157.2 2.4,-158.6 Z"/>`)}
   </g>`;
 }

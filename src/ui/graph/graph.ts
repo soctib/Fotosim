@@ -8,6 +8,7 @@ import type { ElementId } from '../../model/types';
 import { focusOn, setElementDistance, setFocus, setInfo, setLogScale, setShowDetails } from '../../state/actions';
 import type { Store } from '../../state/store';
 import { formatMeterRange, formatMeters, formatNumber } from '../distance';
+import { FACE_DEPTH_M } from '../face';
 import {
   LINEAR_DEFAULT,
   LOG_VIEW,
@@ -247,7 +248,10 @@ function draw(d: Derived, v: XView, L: Layout, details: boolean): string {
   const near = xOf(d.dof.nearM);
   const far = Number.isFinite(d.dof.farM) ? xOf(d.dof.farM) : L.right;
   if (far > near) {
-    parts.push(`<rect class="dof" x="${near}" y="${L.plotTop}" width="${far - near}" height="${L.groundY - L.plotTop}"/>`);
+    // At least 3 px wide, so a few-millimetre depth of field doesn't vanish behind the focus line.
+    const w = Math.max(3, far - near);
+    const x = far - near < 3 ? (near + far) / 2 - 1.5 : near;
+    parts.push(`<rect class="dof" x="${x}" y="${L.plotTop}" width="${w}" height="${L.groundY - L.plotTop}"/>`);
   }
   // Label just under the "sharp" line (or mid-plot without details): right of the band,
   // else left of it, else inside – always within the plot.
@@ -283,7 +287,7 @@ function draw(d: Derived, v: XView, L: Layout, details: boolean): string {
   // Elements: marker on the curve + figure in the scene strip.
   // Draw far to near so nearer figures overlap farther ones.
   const visible = d.elements.filter((el) => el.visible).sort((a, b) => b.distanceM - a.distanceM);
-  for (const el of visible) if (inView(el.distanceM)) parts.push(drawElement(el, sx.toPx(el.distanceM), sy, L, details));
+  for (const el of visible) if (inView(el.distanceM)) parts.push(drawElement(el, sx, sy, L, details, d.blurAt));
   // Off-screen elements: one stacked label per side, nearest to the view on the bottom row.
   const left = visible.filter((el) => el.distanceM < v.min);
   const right = visible.filter((el) => el.distanceM > v.max).reverse();
@@ -370,26 +374,88 @@ function drawFlashZone(z: FlashZone, xOf: (m: number) => number, L: Layout): str
 
 /** Cartoon cue only: figures get fuzzy once they leave the sharp zone. */
 function figureBlurPx(el: DerivedElement): number {
-  const b = el.relativeBlur;
-  if (!(b > 1)) return 0;
-  return Math.min(3, Math.log2(b) * 0.6);
+  return blurCuePx(el.relativeBlur);
 }
 
-function drawElement(el: DerivedElement, x: number, sy: (b: number) => number, L: Layout, details: boolean): string {
+/** Cartoon cue for a relative blur value: nothing while sharp, then growing slowly. */
+function blurCuePx(relativeBlur: number): number {
+  if (!(relativeBlur > 1)) return 0;
+  return Math.min(3, Math.log2(relativeBlur) * 0.6);
+}
+
+/** A person turns into a profile head once the head would be at least this wide on screen. */
+const HEAD_MIN_PX = 36;
+
+function drawElement(
+  el: DerivedElement,
+  sx: XScale,
+  sy: (b: number) => number,
+  L: Layout,
+  details: boolean,
+  blurAt: (m: number) => number,
+): string {
+  const x = sx.toPx(el.distanceM);
   const cy = sy(Math.min(Y_MAX, el.relativeBlur));
-  const figure =
-    el.id === 'background'
-      ? `<polygon points="-26,0 -8,-34 2,-20 10,-30 28,0"/><circle class="sun" cx="16" cy="-40" r="5"/>`
-      : `<circle cx="0" cy="-38" r="6"/><path d="M0,-32 V-14 M0,-14 L-7,0 M0,-14 L7,0 M-9,-20 L0,-27 L9,-20"/>`;
+  const headPx = sx.toPx(el.distanceM + FACE_DEPTH_M.backOfHead) - sx.toPx(el.distanceM + FACE_DEPTH_M.noseTip);
+  const asHead = el.id !== 'background' && headPx >= HEAD_MIN_PX;
+  let figure: string;
+  let big = false;
+  let hit = `<rect class="hit" x="-22" y="-54" width="44" height="74"/>`;
+  if (asHead) {
+    const head = drawHead(el, sx, x, L, blurAt);
+    figure = head.markup;
+    big = head.big;
+    hit = `<rect class="hit" x="${head.left - 6}" y="${head.top - 4}" width="${head.right - head.left + 12}" height="${-head.top + 24}"/>`;
+  } else {
+    figure =
+      el.id === 'background'
+        ? `<g filter="url(#blur-${el.id})"><polygon points="-26,0 -8,-34 2,-20 10,-30 28,0"/><circle class="sun" cx="16" cy="-40" r="5"/></g>`
+        : `<g filter="url(#blur-${el.id})"><circle cx="0" cy="-38" r="6"/><path d="M0,-32 V-14 M0,-14 L-7,0 M0,-14 L7,0 M-9,-20 L0,-27 L9,-20"/></g>`;
+  }
   return `<g class="el el-${el.id}">
     ${details ? `<line class="el-stem" x1="${x}" x2="${x}" y1="${cy}" y2="${L.groundY - 48}"/>
     <circle class="el-dot" cx="${x}" cy="${cy}" r="5"/>` : ''}
     <g data-drag="element" data-id="${el.id}" transform="translate(${x} ${L.groundY})">
-      <rect class="hit" x="-22" y="-54" width="44" height="74"/>
-      <g class="figure" filter="url(#blur-${el.id})">${figure}</g>
+      ${hit}
+      <g class="figure${asHead ? ' head' : ''}${big ? ' big' : ''}">${figure}</g>
       <text class="el-label" y="16" text-anchor="middle">${formatMeters(el.distanceM)}</text>
     </g>
   </g>`;
+}
+
+/**
+ * Profile head looking towards the camera (left), in coordinates relative to the eyes at (0, ground).
+ * Horizontal positions are true distances, so nose, eye and ear line up with the DOF band;
+ * each gets its own blur cue. Vertical scale follows, capped to the scene strip.
+ */
+function drawHead(el: DerivedElement, sx: XScale, x0: number, L: Layout, blurAt: (m: number) => number) {
+  const d = el.distanceM;
+  const X = (dx: number) => sx.toPx(d + dx) - x0;
+  const kx = (X(0.1) - X(-0.1)) / 0.2;
+  // Keep true proportions as long as possible: the head may grow up into the plot (drawn see-through there).
+  const ky = Math.min(kx, (L.groundY - L.plotTop - 8) / 0.3);
+  const neck = 0.07;
+  const Y = (dy: number) => -(neck + dy) * ky; // dy: metres above the chin
+  const pts = (list: [number, number][]) => list.map(([dx, dy]) => `${X(dx).toFixed(1)},${Y(dy).toFixed(1)}`).join(' ');
+  const filter = (part: string, dx: number) =>
+    `<filter id="head-${el.id}-${part}" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="${blurCuePx(blurAt(d + dx)).toFixed(2)}"/></filter>`;
+  const skullL = X(-0.02);
+  const skullR = X(FACE_DEPTH_M.backOfHead);
+  const markup = `
+    <defs>${filter('ears', FACE_DEPTH_M.ears)}${filter('face', 0)}${filter('nose', FACE_DEPTH_M.noseTip)}</defs>
+    <g filter="url(#head-${el.id}-face)">
+      <rect x="${X(0.04)}" y="${Y(0.02)}" width="${X(0.11) - X(0.04)}" height="${-Y(0.02)}"/>
+      <ellipse cx="${(skullL + skullR) / 2}" cy="${Y(0.13)}" rx="${(skullR - skullL) / 2}" ry="${0.105 * ky}"/>
+      <polygon points="${pts([[0.02, 0.21], [-0.006, 0.16], [-0.005, 0.125], [-0.01, 0.07], [-0.014, 0.055], [-0.008, 0.045], [-0.012, 0.032], [-0.003, 0.008], [0.06, 0], [0.06, 0.21]])}"/>
+      <circle class="head-eye" cx="${X(0.008)}" cy="${Y(0.132)}" r="${Math.max(1.5, 0.008 * ky)}"/>
+    </g>
+    <g filter="url(#head-${el.id}-ears)">
+      <ellipse class="head-ear" cx="${X(FACE_DEPTH_M.ears)}" cy="${Y(0.115)}" rx="${Math.max(2, 0.02 * kx)}" ry="${0.032 * ky}"/>
+    </g>
+    <g filter="url(#head-${el.id}-nose)">
+      <polygon class="head-nose" points="${pts([[-0.004, 0.128], [FACE_DEPTH_M.noseTip, 0.085], [-0.008, 0.07]])}"/>
+    </g>`;
+  return { markup, left: X(FACE_DEPTH_M.noseTip), right: skullR, top: Y(0.235), big: L.groundY + Y(0.235) < L.plotBottom };
 }
 
 /** Arrow at the plot edge for an element outside the visible range (linear zoom). */

@@ -16,7 +16,9 @@ Ships as **one self-contained HTML file** (`npm run build` → `dist/index.html`
 - **Details** toggle (default off): off shows only the DOF band, focus line and figures in a short graph; on adds the blur curve, "sharp" threshold line and y axis.
 - Toggle **logarithmic** distance scale. Both toggles sit in the hint line under the graph. In linear mode: scroll/pan + zoom (pinch / wheel); in log mode no zoom.
 - **Three draggable elements**: Person 1, Person 2, Background.
-  - Persons: stick figures; once zoomed in far enough (rendered size above a threshold) they become simple faces looking at the camera.
+  - Persons: stick figures; once a head would be ≥ 36 px wide they become a profile head facing the camera, with nose,
+    eye and ear at their true distances (nose tip −3 cm, ears +9 cm from the eyes; a person's distance is the eyes),
+    each blurred by its own distance. Very large heads grow into the plot, drawn see-through.
 - **Focus line**: vertical, draggable. Tapping an element focuses on it (simulated autofocus).
 - **Depth-of-field band** (near/far limit) shaded.
 - **Flash zone** shaded when the flash is on: too close / range / falling off / no effect.
@@ -30,9 +32,11 @@ Light situation, plus one compact row per element: visible toggle, distance as n
 
 ### 4. Camera image simulation ("killer feature")
 Shown together with the bars as one foldable group.
-Layers: background, person 2, person 1 – each with its own CSS `filter: blur()` from `blurFractionOfWidth × imageWidthPx`.
+Layers: sky/ground, background scenery, persons – stacked by distance. Background blur from `blurFractionOfWidth × imageWidthPx`;
+persons blur per part (nose, face/body, ears at their own distances, SVG filters), so with a shallow depth of field the
+nose can be sharp and the eyes not. Close persons drift to the image centre (the photographer aims at them).
 On top: `brightness()` per layer from its exposure offset (flash lights only near layers),
-SVG `feTurbulence` overlay for noise (opacity from `noise.amount`), `transform: scale()` for framing (angle of view, `frameHeightFraction`).
+SVG `feTurbulence` overlay for noise (opacity from `noise.amount`); sizes and positions from a real perspective projection (`heightFractionPerM`).
 Optional: directional blur for camera shake when `shake.blurFactor > 1`.
 
 ### 5. Infobox
@@ -109,7 +113,7 @@ Unidirectional: input → `store.update()` → `resolveMode()` → `derive()` �
 ## Milestones
 
 1. ✅ Scaffold, model, tests
-2. ✅ Graph: scales (lin/log), drag elements, focus line, DOF band, flash zone (faces when zoomed in: open)
+2. ✅ Graph: scales (lin/log), drag elements, focus line, DOF band, flash zone, profile heads when zoomed in
 3. ✅ Controls, modes, element panels, bars, lens choice, focus tracking
 4. ✅ Camera image simulation
 5. Infobox ✅, lens/phone list ✅, mobile polish (control tabs on phones: open)
@@ -118,4 +122,3 @@ Unidirectional: input → `store.update()` → `resolveMode()` → `derive()` �
 ## Open questions
 
 - Subject motion (people moving) as an extra warning separate from camera shake?
-- Exact threshold for stick figure → face.

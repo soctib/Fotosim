@@ -324,6 +324,19 @@ header p {
 .graph .figure path {
   fill: none;
 }
+.graph .figure.head {
+  stroke: none;
+}
+.graph .figure.head.big {
+  opacity: 0.5;
+}
+.graph .figure.head .head-eye {
+  fill: var(--panel);
+}
+.graph .figure.head .head-ear {
+  stroke: var(--panel);
+  stroke-width: 1.2;
+}
 .graph .el-background .figure {
   stroke-width: 1;
 }
@@ -585,6 +598,8 @@ header p {
 .sim .skin { fill: #f1c27d; }
 .sim .hair { fill: #4a3222; }
 .sim .eye { fill: #222; }
+.sim .nose { fill: #dfa463; }
+.sim .ear { fill: #eab676; stroke: #c98d4f; stroke-width: 0.6; }
 .sim .mouth,
 .sim .arm {
   fill: none;

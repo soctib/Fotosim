@@ -49,3 +49,18 @@ describe('derive() layout and gear', () => {
     expect(d.gear.lensIds).toEqual([]);
   });
 });
+
+describe('derive().blurFractionAt', () => {
+  it('agrees with the elements and is zero at the focus', () => {
+    const d = derive(initialState.camera, initialState.scene);
+    for (const el of d.elements) expect(d.blurFractionAt(el.distanceM)).toBeCloseTo(el.blurFractionOfWidth, 12);
+    expect(d.blurFractionAt(d.settings.focusDistanceM)).toBeCloseTo(0, 12);
+  });
+
+  it('85 mm f/1.4 at 0.8 m: nose sharp, eyes 3 cm behind clearly blurred', () => {
+    const cam = { ...initialState.camera, sensorId: 'fullFrame' as const, lensId: 'prime' as const, focalLengthMm: 85, aperture: 1.4, focusDistanceM: 0.77 };
+    const d = derive(cam, initialState.scene);
+    expect(d.blurAt(0.77)).toBeCloseTo(0, 10);
+    expect(d.blurAt(0.8)).toBeGreaterThan(3); // eyes: several times the "sharp" limit
+  });
+});
