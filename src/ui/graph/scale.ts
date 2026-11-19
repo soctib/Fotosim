@@ -12,9 +12,10 @@ export const LINEAR_DEFAULT: XView = { log: false, min: 0, max: 15 };
 const LINEAR_MAX = 1000;
 const LINEAR_MIN_SPAN = 0.5;
 
-/** Relative blur shown on the (logarithmic) y axis. */
-export const Y_MIN = 0.1;
+/** Largest relative blur on the y axis. */
 export const Y_MAX = 100;
+/** Share of the plot height for the "sharp" range 0…1 (linear); 1…Y_MAX above it is logarithmic. */
+const SHARP_FRACTION = 0.25;
 
 export interface XScale {
   toPx(m: number): number;
@@ -38,13 +39,19 @@ export function xScale(view: XView, px0: number, px1: number): XScale {
   };
 }
 
+/**
+ * Piecewise y axis: 0…1 linear (so the curve really reaches 0 at the focus),
+ * 1…Y_MAX logarithmic (so strong blur still fits).
+ */
 export function yScale(top: number, bottom: number): (blur: number) => number {
-  const l0 = Math.log10(Y_MIN);
-  const l1 = Math.log10(Y_MAX);
+  const h = bottom - top;
+  const sharpH = h * SHARP_FRACTION;
   return (b) => {
-    // Allow a bit beyond the range so the clip path cuts the curve cleanly.
-    const v = Math.log10(Math.min(Y_MAX * 2, Math.max(Y_MIN / 2, b)));
-    return bottom - ((v - l0) / (l1 - l0)) * (bottom - top);
+    if (!(b > 0)) return bottom;
+    if (b <= 1) return bottom - b * sharpH;
+    // Allow a bit beyond the top so the clip path cuts the curve cleanly.
+    const v = Math.log10(Math.min(Y_MAX * 2, b)) / Math.log10(Y_MAX);
+    return bottom - sharpH - v * (h - sharpH);
   };
 }
 

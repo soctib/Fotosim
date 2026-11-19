@@ -11,7 +11,6 @@ import {
   LINEAR_DEFAULT,
   LOG_VIEW,
   Y_MAX,
-  Y_MIN,
   clampLinear,
   xScale,
   xTicks,
@@ -23,7 +22,9 @@ import {
 const SVG_NS = 'http://www.w3.org/2000/svg';
 /** Pointer travel (px) below which a press counts as a tap. */
 const TAP_SLOP = 5;
-const Y_TICKS = [0.1, 1, 10, 100];
+const Y_TICKS = [0, 1, 10, 100];
+/** Rough text width per character at the 11–12 px label size. */
+const CHAR_W = 6.2;
 
 interface Layout {
   w: number;
@@ -229,40 +230,53 @@ function draw(d: Derived, v: XView, L: Layout): string {
   if (far > near) {
     parts.push(`<rect class="dof" x="${near}" y="${L.plotTop}" width="${far - near}" height="${L.groundY - L.plotTop}"/>`);
   }
-  // Label beside the band, just under the "sharp" line, on whichever side has room.
+  // Label just under the "sharp" line: right of the band, else left of it, else inside – always within the plot.
   const dofLabel = fill(t.graph.dofRange, { near: formatMeters(d.dof.nearM), far: formatMeters(d.dof.farM) });
-  const labelRight = far + 6 + dofLabel.length * 6 < L.right;
-  parts.push(
-    `<text class="dof-label" x="${labelRight ? far + 6 : near - 6}" y="${sy(1) + 16}" text-anchor="${labelRight ? 'start' : 'end'}">${dofLabel}</text>`,
-  );
+  const lw = dofLabel.length * CHAR_W;
+  let lx: number;
+  if (far + 6 + lw <= L.right) lx = far + 6;
+  else if (near - 6 - lw >= L.left) lx = near - 6 - lw;
+  else lx = Math.min(L.right - lw - 4, Math.max(L.left + 4, (near + far) / 2 - lw / 2));
+  parts.push(`<text class="dof-label" x="${lx}" y="${sy(1) + 16}">${dofLabel}</text>`);
 
-  // Y axis (log blur) with the "sharp" line at 1.
+  // Y axis: sharp zone 0…1 below the dashed line, increasingly blurry above it.
+  const y1 = sy(1);
+  parts.push(`<rect class="sharp-zone" x="${L.left}" y="${y1}" width="${L.right - L.left}" height="${L.plotBottom - y1}"/>`);
   for (const y of Y_TICKS) {
     const py = sy(y);
     parts.push(`<line class="grid" x1="${L.left}" x2="${L.right}" y1="${py}" y2="${py}"/>`);
-    parts.push(`<text class="tick" x="${L.left - 6}" y="${py + 4}" text-anchor="end">${fill(t.graph.blurTimes, { value: formatNumber(y) })}</text>`);
+    const label = y === 0 ? formatNumber(0) : fill(t.graph.blurTimes, { value: formatNumber(y) });
+    parts.push(`<text class="tick" x="${L.left - 6}" y="${py + 4}" text-anchor="end">${label}</text>`);
   }
-  const y1 = sy(1);
   parts.push(`<line class="sharp-line" x1="${L.left}" x2="${L.right}" y1="${y1}" y2="${y1}"/>`);
-  parts.push(`<text class="sharp-label" x="${L.right - 4}" y="${y1 - 5}" text-anchor="end">${t.graph.sharp}</text>`);
+  parts.push(`<text class="unsharp-label" x="${L.left + 6}" y="${y1 - 6}">↑ ${t.graph.unsharp}</text>`);
+  parts.push(`<text class="sharp-label" x="${L.left + 6}" y="${y1 + 15}">↓ ${t.graph.sharp}</text>`);
   parts.push(
     `<text class="axis-title" transform="translate(12 ${(L.plotTop + L.plotBottom) / 2}) rotate(-90)" text-anchor="middle">${t.graph.sharpness}</text>`,
   );
 
   // X axis.
   parts.push(`<line class="axis" x1="${L.left}" x2="${L.right}" y1="${L.plotBottom}" y2="${L.plotBottom}"/>`);
-  for (const m of xTicks(v, L.right - L.left)) {
+  const ticks = xTicks(v, L.right - L.left);
+  // Linear ticks share one precision derived from their spacing (0.1 m steps need a decimal).
+  const tickDigits = !v.log && ticks.length > 1 && ticks[1] - ticks[0] < 1 ? 1 : undefined;
+  for (const m of ticks) {
     if (!inView(m)) continue;
     const px = sx.toPx(m);
     parts.push(`<line class="axis" x1="${px}" x2="${px}" y1="${L.plotBottom}" y2="${L.plotBottom + 4}"/>`);
-    parts.push(`<text class="tick" x="${px}" y="${L.plotBottom + 16}" text-anchor="middle">${formatNumber(m)}</text>`);
+    parts.push(`<text class="tick" x="${px}" y="${L.plotBottom + 16}" text-anchor="middle">${formatNumber(m, tickDigits)}</text>`);
   }
   parts.push(`<line class="ground" x1="${L.left}" x2="${L.right}" y1="${L.groundY}" y2="${L.groundY}"/>`);
 
-  // Blur curve, sampled every 2 px.
+  // Blur curve, sampled every 2 px plus the exact focus point so the dip reaches 0.
+  const focusPx = sx.toPx(d.settings.focusDistanceM);
+  const samples: number[] = [];
+  for (let px = L.left; px <= L.right; px += 2) samples.push(px);
+  if (focusPx > L.left && focusPx < L.right) samples.push(focusPx);
+  samples.sort((a, b) => a - b);
   const pts: string[] = [];
-  for (let px = L.left; px <= L.right; px += 2) {
-    const m = sx.toM(px);
+  for (const px of samples) {
+    const m = px === focusPx ? d.settings.focusDistanceM : sx.toM(px);
     if (m <= 0) continue;
     pts.push(`${px.toFixed(1)},${sy(d.blurAt(m)).toFixed(1)}`);
   }
@@ -271,9 +285,12 @@ function draw(d: Derived, v: XView, L: Layout): string {
   // Elements: marker on the curve + figure in the scene strip.
   // Draw far to near so nearer figures overlap farther ones.
   const visible = d.elements.filter((el) => el.visible).sort((a, b) => b.distanceM - a.distanceM);
-  for (const el of visible) {
-    parts.push(inView(el.distanceM) ? drawElement(el, sx.toPx(el.distanceM), sy, L) : drawOffscreen(el, el.distanceM < v.min, L));
-  }
+  for (const el of visible) if (inView(el.distanceM)) parts.push(drawElement(el, sx.toPx(el.distanceM), sy, L));
+  // Off-screen elements: one stacked label per side, nearest to the view on the bottom row.
+  const left = visible.filter((el) => el.distanceM < v.min);
+  const right = visible.filter((el) => el.distanceM > v.max).reverse();
+  left.forEach((el, i) => parts.push(drawOffscreen(el, true, i, L)));
+  right.forEach((el, i) => parts.push(drawOffscreen(el, false, i, L)));
 
   // Focus line with handle on top.
   const focus = d.settings.focusDistanceM;
@@ -301,7 +318,7 @@ function figureBlurPx(el: DerivedElement): number {
 }
 
 function drawElement(el: DerivedElement, x: number, sy: (b: number) => number, L: Layout): string {
-  const cy = sy(Math.min(Y_MAX, Math.max(Y_MIN, el.relativeBlur)));
+  const cy = sy(Math.min(Y_MAX, el.relativeBlur));
   const figure =
     el.id === 'background'
       ? `<polygon points="-26,0 -8,-34 2,-20 10,-30 28,0"/><circle class="sun" cx="16" cy="-40" r="5"/>`
@@ -318,11 +335,11 @@ function drawElement(el: DerivedElement, x: number, sy: (b: number) => number, L
 }
 
 /** Arrow at the plot edge for an element outside the visible range (linear zoom). */
-function drawOffscreen(el: DerivedElement, leftSide: boolean, L: Layout): string {
+function drawOffscreen(el: DerivedElement, leftSide: boolean, row: number, L: Layout): string {
   const x = leftSide ? L.left + 4 : L.right - 4;
   const anchor = leftSide ? 'start' : 'end';
   const text = `${leftSide ? '← ' : ''}${t.elements[el.id]} ${formatMeters(el.distanceM)}${leftSide ? '' : ' →'}`;
   return `<g class="el el-${el.id}" data-drag="offscreen" data-id="${el.id}">
-    <text class="el-offscreen" x="${x}" y="${L.groundY - 20}" text-anchor="${anchor}">${text}</text>
+    <text class="el-offscreen" x="${x}" y="${L.groundY - 8 - row * 18}" text-anchor="${anchor}">${text}</text>
   </g>`;
 }

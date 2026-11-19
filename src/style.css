@@ -141,8 +141,16 @@ header p {
   stroke-width: 1.5;
   stroke-dasharray: 6 4;
 }
+.graph .sharp-zone {
+  fill: var(--dof);
+  opacity: 0.5;
+}
 .graph .sharp-label {
   fill: var(--sharp);
+  font-weight: 600;
+}
+.graph .unsharp-label {
+  fill: var(--muted);
   font-weight: 600;
 }
 .graph .dof {

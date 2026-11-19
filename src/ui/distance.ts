@@ -17,8 +17,7 @@ export function formatMeters(m: number): string {
   return fill(t.graph.meters, { value: nf(digits).format(m) });
 }
 
-/** Plain number in the UI locale, for axis ticks. */
-export function formatNumber(x: number): string {
-  const digits = x < 1 ? 1 : 0;
+/** Plain number in the UI locale, for axis ticks. Default precision: one decimal below 1. */
+export function formatNumber(x: number, digits = x > 0 && x < 1 ? 1 : 0): string {
   return nf(digits).format(x);
 }

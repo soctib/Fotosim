@@ -122,6 +122,7 @@ export const de = {
     distance: 'Entfernung (m)',
     sharpness: 'Unschärfe',
     sharp: 'scharf',
+    unsharp: 'unscharf',
     dof: 'Schärfentiefe',
     dofRange: 'Schärfentiefe {near} – {far}',
     infinity: '∞',
