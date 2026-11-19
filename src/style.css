@@ -125,6 +125,18 @@ header p {
   padding: 2px 0 6px;
 }
 
+.preview > summary .verdict.exp-slightUnder,
+.preview > summary .verdict.exp-slightOver,
+.preview > summary .verdict.noise-medium {
+  color: var(--warn);
+}
+.preview > summary .verdict.exp-strongUnder,
+.preview > summary .verdict.exp-strongOver,
+.preview > summary .verdict.noise-high,
+.preview > summary .verdict.noise-veryHigh {
+  color: var(--bad);
+}
+
 .preview-body {
   display: grid;
   grid-template-columns: minmax(0, 560px) auto;
@@ -808,6 +820,17 @@ header p {
   border-left: 4px solid var(--accent);
   border-radius: 8px;
   background: var(--panel);
+}
+/*
+ * On desktop the infobox sits above controls (mid layout) or the lens panel (wide layout). Its text
+ * changes on pointerdown, so a changing height would shift the control under the pointer and swallow
+ * the click. Fixed height instead; scrolls in the rare case a text doesn't fit.
+ */
+@media (min-width: 761px) {
+  .infobox {
+    height: 15.5rem;
+    overflow-y: auto;
+  }
 }
 .infobox h2 {
   margin: 0 0 4px;
