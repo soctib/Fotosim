@@ -13,7 +13,8 @@ Ships as **one self-contained HTML file** (`npm run build` → `dist/index.html`
 
 ### 1. Sharpness graph (SVG)
 - X: distance (m). Y: relative blur (blur disc / circle of confusion). Line at 1 = "sharp".
-- Toggle **logarithmic** distance scale. In linear mode: scroll/pan + zoom (pinch / wheel); in log mode no zoom.
+- **Details** toggle (default off): off shows only the DOF band, focus line and figures in a short graph; on adds the blur curve, "sharp" threshold line and y axis.
+- Toggle **logarithmic** distance scale. Both toggles sit in the hint line under the graph. In linear mode: scroll/pan + zoom (pinch / wheel); in log mode no zoom.
 - **Three draggable elements**: Person 1, Person 2, Background.
   - Persons: stick figures; once zoomed in far enough (rendered size above a threshold) they become simple faces looking at the camera.
 - **Focus line**: vertical, draggable. Tapping an element focuses on it (simulated autofocus).
@@ -28,6 +29,7 @@ One compact row per element: visible toggle, distance as number (read + edit), "
 - **Noise**: noise index, with "≙ ISO X on full frame".
 
 ### 4. Camera image simulation ("killer feature")
+Shown together with the bars as one foldable group.
 Layers: background, person 2, person 1 – each with its own CSS `filter: blur()` from `blurFractionOfWidth × imageWidthPx`.
 On top: `brightness()` per layer from its exposure offset (flash lights only near layers),
 SVG `feTurbulence` overlay for noise (opacity from `noise.amount`), `transform: scale()` for framing (angle of view, `frameHeightFraction`).

@@ -38,6 +38,10 @@ export function setLogScale(store: Store, logScale: boolean): void {
   store.update((s) => ({ ...s, ui: { ...s.ui, logScale } }));
 }
 
+export function setShowDetails(store: Store, showDetails: boolean): void {
+  store.update((s) => ({ ...s, ui: { ...s.ui, showDetails } }));
+}
+
 /** Show the infobox text for the element the user just touched. */
 export function setInfo(store: Store, infoKey: InfoKey): void {
   if (store.get().ui.infoKey !== infoKey) store.update((s) => ({ ...s, ui: { ...s.ui, infoKey } }));

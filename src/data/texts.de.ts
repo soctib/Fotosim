@@ -78,7 +78,8 @@ export const de = {
     flash: 'Blitz',
     stabilized: 'Bildstabilisator',
     focus: 'Fokus',
-    logScale: 'Logarithmische Skala',
+    logScale: 'Logarithmisch',
+    details: 'Details',
     autoSetHint: 'von der Kamera gesetzt',
     fixedApertureHint: 'beim Handy fest',
     lensLimitHint: 'weiter geht dieses Objektiv nicht auf: {aperture}',
@@ -145,6 +146,7 @@ export const de = {
 
   sim: {
     title: 'Kamerabild',
+    group: 'Kamerabild · Belichtung · Rauschen',
     caption: '{shutter} · {aperture} · ISO {iso}',
   },
 
@@ -196,6 +198,7 @@ export const de = {
     exposure: 'Belichtung',
     noise: 'Rauschen',
     graph: 'Schärfekurve',
+    graphSimple: 'Schärfentiefe',
     sim: 'Kamerabild',
     equivalence: 'Äquivalenz',
   },
@@ -222,6 +225,8 @@ export const de = {
       'Zeigt, wie weit die Belichtung vom Ideal abweicht, in Blendenstufen. Eine Stufe = doppelt bzw. halb so viel Licht.',
     noise:
       'Rauschen hängt von ISO und Sensorgröße ab. Ein kleiner Sensor rauscht bei ISO 100 etwa so wie Vollformat bei viel höherer ISO.',
+    graphSimple:
+      'Der grüne Bereich ist die Schärfentiefe: Was darin steht, wird scharf. Personen, Hintergrund und Fokuslinie kannst du verschieben. Mit „Details“ siehst du die ganze Schärfekurve.',
     graph:
       'Die Kurve zeigt, wie unscharf etwas in welcher Entfernung wird. Unter der Linie „scharf“ gilt es als scharf. Personen und Hintergrund kannst du verschieben.',
     sim: 'So ungefähr sähe das Foto aus. Unschärfe, Helligkeit, Rauschen und Bildausschnitt kommen direkt aus den Einstellungen – die Figuren sind Comic, die Rechnung dahinter nicht.',

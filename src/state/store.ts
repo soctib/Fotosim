@@ -12,6 +12,8 @@ export interface AppState {
   /** UI-only state. */
   ui: {
     logScale: boolean;
+    /** Show the blur curve, threshold line and y axis (off = just DOF band, focus and figures). */
+    showDetails: boolean;
     /** Key into texts.info for the infobox (last clicked element). */
     infoKey: InfoKey;
   };
@@ -40,7 +42,7 @@ export const initialState: AppState = {
       { id: 'background', distanceM: 50, visible: true },
     ],
   },
-  ui: { logScale: true, infoKey: 'graph' },
+  ui: { logScale: true, showDetails: false, infoKey: 'graph' },
 };
 
 type Listener = (state: AppState, derived: Derived) => void;

@@ -4,7 +4,7 @@
 import { de as t, fill } from '../../data/texts.de';
 import type { Derived, DerivedElement } from '../../model/derive';
 import type { ElementId } from '../../model/types';
-import { focusOn, setElementDistance, setFocus, setInfo, setLogScale } from '../../state/actions';
+import { focusOn, setElementDistance, setFocus, setInfo, setLogScale, setShowDetails } from '../../state/actions';
 import type { Store } from '../../state/store';
 import { formatMeterRange, formatMeters, formatNumber } from '../distance';
 import {
@@ -16,6 +16,7 @@ import {
   xTicks,
   yScale,
   zoomLinear,
+  type XScale,
   type XView,
 } from './scale';
 
@@ -36,10 +37,11 @@ interface Layout {
   groundY: number;
 }
 
-function layoutFor(width: number): Layout {
+function layoutFor(width: number, details: boolean): Layout {
   const w = Math.max(280, width);
-  const h = Math.round(Math.min(400, Math.max(300, w * 0.55)));
-  return { w, h, left: 44, right: w - 14, plotTop: 34, plotBottom: h - 92, groundY: h - 24 };
+  // Without the curve the plot only holds the DOF band, so it can be much shorter.
+  const h = details ? Math.round(Math.min(400, Math.max(300, w * 0.55))) : 200;
+  return { w, h, left: details ? 44 : 14, right: w - 14, plotTop: 34, plotBottom: h - 92, groundY: h - 24 };
 }
 
 type Gesture =
@@ -52,19 +54,24 @@ type Gesture =
 export function mountGraph(root: HTMLElement, store: Store): void {
   root.classList.add('graph');
   root.innerHTML = `
-    <div class="graph-toolbar">
-      <label class="toggle"><input type="checkbox" data-role="log"> ${t.controls.logScale}</label>
-      <button type="button" data-role="reset">${t.graph.resetView}</button>
-    </div>
     <svg xmlns="${SVG_NS}" role="img" aria-label="${t.graph.sharpness}"></svg>
-    <p class="graph-hint"></p>`;
+    <div class="graph-footer">
+      <p class="graph-hint"></p>
+      <div class="graph-options">
+        <label class="toggle"><input type="checkbox" data-role="log"> ${t.controls.logScale}</label>
+        <label class="toggle"><input type="checkbox" data-role="details"> ${t.controls.details}</label>
+        <button type="button" data-role="reset">${t.graph.resetView}</button>
+      </div>
+    </div>`;
   const svg = root.querySelector('svg')!;
   const logBox = root.querySelector<HTMLInputElement>('[data-role="log"]')!;
+  const detailsBox = root.querySelector<HTMLInputElement>('[data-role="details"]')!;
   const resetBtn = root.querySelector<HTMLButtonElement>('[data-role="reset"]')!;
   const hint = root.querySelector<HTMLParagraphElement>('.graph-hint')!;
 
   let linearView: XView = LINEAR_DEFAULT;
-  let layout = layoutFor(root.clientWidth);
+  const details = () => store.get().ui.showDetails;
+  let layout = layoutFor(root.clientWidth, details());
   let gesture: Gesture | null = null;
   const pointers = new Map<number, number>(); // pointerId -> local x
 
@@ -81,28 +88,30 @@ export function mountGraph(root: HTMLElement, store: Store): void {
   function render(): void {
     frame = 0;
     const log = store.get().ui.logScale;
+    layout = layoutFor(root.clientWidth, details());
     logBox.checked = log;
+    detailsBox.checked = details();
     resetBtn.hidden = log;
     hint.textContent = log ? t.graph.hintLog : t.graph.hintLinear;
     svg.style.touchAction = log ? 'pan-y' : 'none';
     svg.setAttribute('viewBox', `0 0 ${layout.w} ${layout.h}`);
     svg.setAttribute('height', String(layout.h));
-    svg.innerHTML = draw(store.derived(), view(), layout);
+    svg.innerHTML = draw(store.derived(), view(), layout, details());
   }
 
   store.subscribe(scheduleRender);
   new ResizeObserver(() => {
-    const next = layoutFor(root.clientWidth);
-    if (next.w !== layout.w) {
-      layout = next;
-      scheduleRender();
-    }
+    if (layoutFor(root.clientWidth, details()).w !== layout.w) scheduleRender();
   }).observe(root);
 
   // ---- controls ----------------------------------------------------------
 
   logBox.addEventListener('change', () => {
     setLogScale(store, logBox.checked);
+    setInfo(store, 'graph');
+  });
+  detailsBox.addEventListener('change', () => {
+    setShowDetails(store, detailsBox.checked);
     setInfo(store, 'graph');
   });
   resetBtn.addEventListener('click', () => {
@@ -216,7 +225,7 @@ export function mountGraph(root: HTMLElement, store: Store): void {
 
 // ---- SVG markup ------------------------------------------------------------
 
-function draw(d: Derived, v: XView, L: Layout): string {
+function draw(d: Derived, v: XView, L: Layout, details: boolean): string {
   const sx = xScale(v, L.left, L.right);
   const sy = yScale(L.plotTop, L.plotBottom);
   const inView = (m: number) => m >= v.min && m <= v.max;
@@ -234,32 +243,20 @@ function draw(d: Derived, v: XView, L: Layout): string {
   if (far > near) {
     parts.push(`<rect class="dof" x="${near}" y="${L.plotTop}" width="${far - near}" height="${L.groundY - L.plotTop}"/>`);
   }
-  // Label just under the "sharp" line: right of the band, else left of it, else inside – always within the plot.
+  // Label just under the "sharp" line (or mid-plot without details): right of the band,
+  // else left of it, else inside – always within the plot.
   const dofLabel = fill(t.graph.dofRange, { range: formatMeterRange(d.dof.nearM, d.dof.farM) });
   const lw = dofLabel.length * CHAR_W;
-  // The "↓ scharf" label occupies the left end of the same row.
-  const minX = L.left + 6 + (t.graph.sharp.length + 2) * CHAR_W + 12;
+  // With details, the "↓ scharf" label occupies the left end of the same row.
+  const minX = details ? L.left + 6 + (t.graph.sharp.length + 2) * CHAR_W + 12 : L.left + 6;
   let lx: number;
   if (far + 6 + lw <= L.right && far + 6 >= minX) lx = far + 6;
   else if (near - 6 - lw >= minX) lx = near - 6 - lw;
   else lx = Math.min(L.right - lw - 4, Math.max(minX, (near + far) / 2 - lw / 2));
-  parts.push(`<text class="dof-label" x="${lx}" y="${sy(1) + 16}">${dofLabel}</text>`);
+  const labelY = details ? sy(1) + 16 : (L.plotTop + L.plotBottom) / 2 + 4;
+  parts.push(`<text class="dof-label" x="${lx}" y="${labelY}">${dofLabel}</text>`);
 
-  // Y axis: sharp zone 0…1 below the dashed line, increasingly blurry above it.
-  const y1 = sy(1);
-  parts.push(`<rect class="sharp-zone" x="${L.left}" y="${y1}" width="${L.right - L.left}" height="${L.plotBottom - y1}"/>`);
-  for (const y of Y_TICKS) {
-    const py = sy(y);
-    parts.push(`<line class="grid" x1="${L.left}" x2="${L.right}" y1="${py}" y2="${py}"/>`);
-    const label = y === 0 ? formatNumber(0) : fill(t.graph.blurTimes, { value: formatNumber(y) });
-    parts.push(`<text class="tick" x="${L.left - 6}" y="${py + 4}" text-anchor="end">${label}</text>`);
-  }
-  parts.push(`<line class="sharp-line" x1="${L.left}" x2="${L.right}" y1="${y1}" y2="${y1}"/>`);
-  parts.push(`<text class="unsharp-label" x="${L.left + 6}" y="${y1 - 6}">↑ ${t.graph.unsharp}</text>`);
-  parts.push(`<text class="sharp-label" x="${L.left + 6}" y="${y1 + 15}">↓ ${t.graph.sharp}</text>`);
-  parts.push(
-    `<text class="axis-title" transform="translate(12 ${(L.plotTop + L.plotBottom) / 2}) rotate(-90)" text-anchor="middle">${t.graph.sharpness}</text>`,
-  );
+  if (details) parts.push(drawYAxis(sy, L));
 
   // X axis.
   parts.push(`<line class="axis" x1="${L.left}" x2="${L.right}" y1="${L.plotBottom}" y2="${L.plotBottom}"/>`);
@@ -274,24 +271,12 @@ function draw(d: Derived, v: XView, L: Layout): string {
   }
   parts.push(`<line class="ground" x1="${L.left}" x2="${L.right}" y1="${L.groundY}" y2="${L.groundY}"/>`);
 
-  // Blur curve, sampled every 2 px plus the exact focus point so the dip reaches 0.
-  const focusPx = sx.toPx(d.settings.focusDistanceM);
-  const samples: number[] = [];
-  for (let px = L.left; px <= L.right; px += 2) samples.push(px);
-  if (focusPx > L.left && focusPx < L.right) samples.push(focusPx);
-  samples.sort((a, b) => a - b);
-  const pts: string[] = [];
-  for (const px of samples) {
-    const m = px === focusPx ? d.settings.focusDistanceM : sx.toM(px);
-    if (m <= 0) continue;
-    pts.push(`${px.toFixed(1)},${sy(d.blurAt(m)).toFixed(1)}`);
-  }
-  parts.push(`<polyline class="curve" clip-path="url(#plot-clip)" points="${pts.join(' ')}"/>`);
+  if (details) parts.push(drawCurve(d, sx, sy, L));
 
   // Elements: marker on the curve + figure in the scene strip.
   // Draw far to near so nearer figures overlap farther ones.
   const visible = d.elements.filter((el) => el.visible).sort((a, b) => b.distanceM - a.distanceM);
-  for (const el of visible) if (inView(el.distanceM)) parts.push(drawElement(el, sx.toPx(el.distanceM), sy, L));
+  for (const el of visible) if (inView(el.distanceM)) parts.push(drawElement(el, sx.toPx(el.distanceM), sy, L, details));
   // Off-screen elements: one stacked label per side, nearest to the view on the bottom row.
   const left = visible.filter((el) => el.distanceM < v.min);
   const right = visible.filter((el) => el.distanceM > v.max).reverse();
@@ -317,6 +302,42 @@ function draw(d: Derived, v: XView, L: Layout): string {
   return parts.join('');
 }
 
+/** Y axis: sharp zone 0…1 below the dashed line, increasingly blurry above it. */
+function drawYAxis(sy: (b: number) => number, L: Layout): string {
+  const out: string[] = [];
+  const y1 = sy(1);
+  out.push(`<rect class="sharp-zone" x="${L.left}" y="${y1}" width="${L.right - L.left}" height="${L.plotBottom - y1}"/>`);
+  for (const y of Y_TICKS) {
+    const py = sy(y);
+    out.push(`<line class="grid" x1="${L.left}" x2="${L.right}" y1="${py}" y2="${py}"/>`);
+    const label = y === 0 ? formatNumber(0) : fill(t.graph.blurTimes, { value: formatNumber(y) });
+    out.push(`<text class="tick" x="${L.left - 6}" y="${py + 4}" text-anchor="end">${label}</text>`);
+  }
+  out.push(`<line class="sharp-line" x1="${L.left}" x2="${L.right}" y1="${y1}" y2="${y1}"/>`);
+  out.push(`<text class="unsharp-label" x="${L.left + 6}" y="${y1 - 6}">↑ ${t.graph.unsharp}</text>`);
+  out.push(`<text class="sharp-label" x="${L.left + 6}" y="${y1 + 15}">↓ ${t.graph.sharp}</text>`);
+  out.push(
+    `<text class="axis-title" transform="translate(12 ${(L.plotTop + L.plotBottom) / 2}) rotate(-90)" text-anchor="middle">${t.graph.sharpness}</text>`,
+  );
+  return out.join('');
+}
+
+/** Blur curve, sampled every 2 px plus the exact focus point so the dip reaches 0. */
+function drawCurve(d: Derived, sx: XScale, sy: (b: number) => number, L: Layout): string {
+  const focusPx = sx.toPx(d.settings.focusDistanceM);
+  const samples: number[] = [];
+  for (let px = L.left; px <= L.right; px += 2) samples.push(px);
+  if (focusPx > L.left && focusPx < L.right) samples.push(focusPx);
+  samples.sort((a, b) => a - b);
+  const pts: string[] = [];
+  for (const px of samples) {
+    const m = px === focusPx ? d.settings.focusDistanceM : sx.toM(px);
+    if (m <= 0) continue;
+    pts.push(`${px.toFixed(1)},${sy(d.blurAt(m)).toFixed(1)}`);
+  }
+  return `<polyline class="curve" clip-path="url(#plot-clip)" points="${pts.join(' ')}"/>`;
+}
+
 /** Cartoon cue only: figures get fuzzy once they leave the sharp zone. */
 function figureBlurPx(el: DerivedElement): number {
   const b = el.relativeBlur;
@@ -324,15 +345,15 @@ function figureBlurPx(el: DerivedElement): number {
   return Math.min(3, Math.log2(b) * 0.6);
 }
 
-function drawElement(el: DerivedElement, x: number, sy: (b: number) => number, L: Layout): string {
+function drawElement(el: DerivedElement, x: number, sy: (b: number) => number, L: Layout, details: boolean): string {
   const cy = sy(Math.min(Y_MAX, el.relativeBlur));
   const figure =
     el.id === 'background'
       ? `<polygon points="-26,0 -8,-34 2,-20 10,-30 28,0"/><circle class="sun" cx="16" cy="-40" r="5"/>`
       : `<circle cx="0" cy="-38" r="6"/><path d="M0,-32 V-14 M0,-14 L-7,0 M0,-14 L7,0 M-9,-20 L0,-27 L9,-20"/>`;
   return `<g class="el el-${el.id}">
-    <line class="el-stem" x1="${x}" x2="${x}" y1="${cy}" y2="${L.groundY - 48}"/>
-    <circle class="el-dot" cx="${x}" cy="${cy}" r="5"/>
+    ${details ? `<line class="el-stem" x1="${x}" x2="${x}" y1="${cy}" y2="${L.groundY - 48}"/>
+    <circle class="el-dot" cx="${x}" cy="${cy}" r="5"/>` : ''}
     <g data-drag="element" data-id="${el.id}" transform="translate(${x} ${L.groundY})">
       <rect class="hit" x="-22" y="-54" width="44" height="74"/>
       <g class="figure" filter="url(#blur-${el.id})">${figure}</g>

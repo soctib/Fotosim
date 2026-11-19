@@ -97,7 +97,14 @@ header p {
   min-width: 0;
 }
 
-.preview {
+.preview > summary {
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 2px 0 6px;
+}
+
+.preview-body {
   display: grid;
   grid-template-columns: minmax(0, 560px) auto;
   gap: 12px;
@@ -120,13 +127,15 @@ header p {
     grid-area: auto;
     min-width: 0;
   }
-  /* Keep the camera image and bars in view while moving sliders on a phone. */
-  .preview {
+  /* Keep the camera image and bars in view while moving sliders on a phone (only when unfolded). */
+  .preview[open] {
     position: sticky;
     top: 0;
     z-index: 2;
     background: var(--bg);
     padding: 6px 0;
+  }
+  .preview-body {
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 8px;
   }
@@ -134,17 +143,26 @@ header p {
 
 /* ---- graph ---- */
 
-.graph-toolbar {
+.graph-footer {
   display: flex;
-  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: space-between;
   align-items: center;
-  min-height: 32px;
+  gap: 4px 12px;
+  margin-top: 4px;
 }
 
-.graph-toolbar button {
+.graph-options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
+}
+
+.graph-options button {
   font: inherit;
-  font-size: 0.85rem;
-  padding: 4px 10px;
+  font-size: 0.8rem;
+  padding: 2px 8px;
   border: 1px solid var(--line);
   border-radius: 6px;
   background: var(--panel);
@@ -156,7 +174,7 @@ header p {
   display: inline-flex;
   gap: 6px;
   align-items: center;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   cursor: pointer;
 }
 
@@ -172,7 +190,7 @@ header p {
 }
 
 .graph-hint {
-  margin: 4px 0 0;
+  margin: 0;
   font-size: 0.8rem;
   color: var(--muted);
 }

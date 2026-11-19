@@ -13,7 +13,8 @@ export function mountInfobox(root: HTMLElement, store: Store): void {
   const text = root.querySelector('p')!;
 
   store.subscribe((state, d) => {
-    const key = state.ui.infoKey;
+    // Without details there is no curve to talk about.
+    const key = state.ui.infoKey === 'graph' && !state.ui.showDetails ? 'graphSimple' : state.ui.infoKey;
     title.textContent = t.infoTitles[key];
     text.textContent = fill(t.info[key], {
       aperture: formatAperture(d.settings.aperture),

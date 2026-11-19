@@ -17,10 +17,13 @@ app.innerHTML = `
   <main class="layout">
     <div class="stage">
       <section id="graph"></section>
-      <div class="preview">
-        <section id="sim"></section>
-        <section id="bars"></section>
-      </div>
+      <details class="preview" open>
+        <summary>${t.sim.group}</summary>
+        <div class="preview-body">
+          <section id="sim"></section>
+          <section id="bars"></section>
+        </div>
+      </details>
     </div>
     <aside class="side">
       <div id="controls"></div>
