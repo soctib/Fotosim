@@ -12,7 +12,8 @@ Ships as **one self-contained HTML file** (`npm run build` → `dist/index.html`
 ## Output (what the user sees)
 
 ### 1. Sharpness graph (SVG)
-- X: distance (m). Y: relative blur (blur disc / circle of confusion). Line at 1 = "sharp".
+- X: distance (m, unit at the axis arrow). Y: relative blur (blur disc / circle of confusion). Line at 1 = "sharp".
+- Left margin: a photographer labelled "Kamera" (where distances are measured from); zoomed in (linear) to face scale it becomes a camera.
 - **Details** toggle (default off): off shows only the DOF band, focus line and figures in a short graph; on adds the blur curve, "sharp" threshold line and y axis.
 - Toggle **logarithmic** distance scale. Both toggles sit in the hint line under the graph. In linear mode: scroll/pan + zoom (pinch / wheel); in log mode no zoom.
 - **Three draggable elements**: Person 1, Person 2, Background.
@@ -106,7 +107,8 @@ Unidirectional: input → `store.update()` → `resolveMode()` → `derive()` �
 
 - **Desktop**: graph top left, simulation + bars below it, then the scene panel (light situation + one row per element);
   camera controls in the next column. Wide screens (≥ 1400 px): third column with the infobox on top and the lens/phone
-  list (open) below; narrower: infobox above the controls, lens list collapsible below them.
+  list (open) below; while the list is folded, the lens panel moves into the third column under the infobox.
+  Narrower: infobox above the controls, lens list collapsible below them.
 - **Mobile**: graph, simulation + bars (pinned at the top while scrolling the rest), scene panel, controls, infobox, lens list (collapsible).
 - Pointer Events everywhere (mouse + touch identical).
 

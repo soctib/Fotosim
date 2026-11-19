@@ -43,7 +43,8 @@ function layoutFor(width: number, details: boolean): Layout {
   const w = Math.max(280, width);
   // Without the curve the plot only holds the DOF band, so it can be much shorter.
   const h = details ? Math.round(Math.min(400, Math.max(300, w * 0.55))) : 200;
-  return { w, h, left: details ? 44 : 14, right: w - 14, plotTop: 34, plotBottom: h - 92, groundY: h - 24 };
+  // Left margin holds the y axis (details) and the photographer; right margin the axis arrow + unit.
+  return { w, h, left: 46, right: w - 24, plotTop: 34, plotBottom: h - 92, groundY: h - 24 };
 }
 
 type Gesture =
@@ -280,7 +281,15 @@ function draw(d: Derived, v: XView, L: Layout, details: boolean): string {
     parts.push(`<line class="axis" x1="${px}" x2="${px}" y1="${L.plotBottom}" y2="${L.plotBottom + 4}"/>`);
     parts.push(`<text class="tick" x="${px}" y="${L.plotBottom + 16}" text-anchor="middle">${formatNumber(m, tickDigits)}</text>`);
   }
+  // Axis arrow with the unit, so the scale reads "… m".
+  const ax = L.right + 10;
+  parts.push(`<path class="axis axis-arrow" d="M${L.right},${L.plotBottom} H${ax} M${ax - 5},${L.plotBottom - 3.5} L${ax},${L.plotBottom} L${ax - 5},${L.plotBottom + 3.5}"/>`);
+  parts.push(`<text class="tick axis-unit" x="${ax - 2}" y="${L.plotBottom - 7}" text-anchor="middle">${t.graph.unit}</text>`);
   parts.push(`<line class="ground" x1="${L.left}" x2="${L.right}" y1="${L.groundY}" y2="${L.groundY}"/>`);
+  // Where distances are measured from: a photographer – or, zoomed in (linear) to face scale, just the camera.
+  const pxPerM = (L.right - L.left) / (v.max - v.min);
+  const closeUp = !v.log && pxPerM * (FACE_DEPTH_M.backOfHead - FACE_DEPTH_M.noseTip) >= HEAD_MIN_PX;
+  parts.push(drawCameraMarker(L, closeUp));
 
   if (details) parts.push(drawCurve(d, sx, sy, L));
 
@@ -369,6 +378,25 @@ function drawFlashZone(z: FlashZone, xOf: (m: number) => number, L: Layout): str
     <rect class="flash-range" x="${close}" y="${y}" width="${Math.max(0, range - close)}" height="${h}"/>
     <rect fill="url(#flash-fade)" x="${range}" y="${y}" width="${Math.max(0, weakEnd - range)}" height="${h}"/>
     ${label(L.left, close, t.flash.zoneTooClose)}${label(close, range, t.flash.zoneRange)}${label(range, weakEnd, t.flash.zoneWeak)}
+  </g>`;
+}
+
+/** Photographer (or close up: a camera) in the left margin, facing the scene, labelled "Kamera". */
+function drawCameraMarker(L: Layout, closeUp: boolean): string {
+  const x = L.left - 22;
+  const figure = closeUp
+    ? `<rect class="cam-body" x="-13" y="-30" width="22" height="15" rx="2.5"/>
+       <rect class="cam-body" x="-8" y="-34" width="8" height="5" rx="1"/>
+       <rect class="cam-lens" x="9" y="-28" width="9" height="11" rx="1.5"/>
+       <circle class="cam-glass" cx="-2" cy="-22.5" r="3.6"/>`
+    : `<circle class="ph-line" cx="-3" cy="-38" r="5.5"/>
+       <path class="ph-line" d="M-3,-32 V-14 M-3,-14 L-9,0 M-3,-14 L3,0 M-3,-27 L5,-35"/>
+       <rect class="cam-body" x="2" y="-42" width="10" height="7" rx="1.2"/>
+       <rect class="cam-lens" x="12" y="-40.5" width="4" height="4"/>`;
+  return `<g class="camera-marker" transform="translate(${x} ${L.groundY})">
+    <title>${t.graph.cameraTitle}</title>
+    ${figure}
+    <text class="camera-label" x="0" y="16" text-anchor="middle">${t.graph.camera}</text>
   </g>`;
 }
 

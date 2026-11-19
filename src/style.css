@@ -71,23 +71,9 @@ header p {
   max-width: 1200px;
 }
 
-/* Wide screens: infobox and lens/phone list get their own column, infobox on top. */
-@media (min-width: 1400px) {
-  .layout {
-    grid-template-columns: minmax(0, 1fr) 300px 340px;
-    grid-template-rows: auto 1fr;
-    grid-template-areas:
-      'stage side info'
-      'stage side gear';
-    max-width: 1720px;
-  }
-}
-
-.stage {
-  grid-area: stage;
-  display: grid;
-  gap: 16px;
-  min-width: 0;
+/* Two columns: the right column wrapper dissolves; infobox, controls and list are placed by area. */
+.col-info {
+  display: contents;
 }
 #controls {
   grid-area: side;
@@ -98,6 +84,38 @@ header p {
 }
 #gear {
   grid-area: gear;
+}
+
+/*
+ * Wide screens: third column with the infobox on top and the lens/phone list below.
+ * While the list is folded, main.ts moves the lens panel into this column as well.
+ */
+@media (min-width: 1400px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr) 300px 340px;
+    grid-template-rows: auto;
+    grid-template-areas: 'stage side info';
+    max-width: 1720px;
+  }
+  .col-info {
+    display: grid;
+    gap: 16px;
+    grid-area: info;
+    min-width: 0;
+  }
+  /* Inside the column, stack in DOM order (the area names belong to the two-column layout). */
+  .col-info > #infobox,
+  .col-info > #gear,
+  .col-info > #lens-panel {
+    grid-area: auto;
+  }
+}
+
+.stage {
+  grid-area: stage;
+  display: grid;
+  gap: 16px;
+  min-width: 0;
 }
 
 .preview > summary {
@@ -243,6 +261,33 @@ header p {
   stroke-linejoin: round;
 }
 
+.graph .axis-arrow {
+  fill: none;
+}
+.graph .camera-marker .ph-line {
+  fill: none;
+  stroke: var(--fg);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.graph .camera-marker .cam-body {
+  fill: var(--fg);
+}
+.graph .camera-marker .cam-lens {
+  fill: var(--muted);
+}
+.graph .camera-marker .cam-glass {
+  fill: var(--panel);
+  stroke: var(--muted);
+  stroke-width: 1.5;
+}
+.graph .camera-label {
+  fill: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
 .graph .flash-close {
   fill: var(--bad);
   opacity: 0.55;
@@ -356,7 +401,7 @@ header p {
   display: grid;
   gap: 16px;
 }
-.controls .panel {
+.panel {
   display: grid;
   gap: 14px;
   padding: 12px;
@@ -398,7 +443,7 @@ header p {
   padding: 4px;
 }
 
-.controls h3 {
+.panel h3 {
   margin: 6px 0 -6px;
   font-size: 0.72rem;
   font-weight: 700;
@@ -410,7 +455,7 @@ header p {
   font-weight: 600;
   font-size: 0.9rem;
 }
-.controls h3:first-child {
+.panel h3:first-child {
   margin-top: 0;
 }
 

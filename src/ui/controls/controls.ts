@@ -57,10 +57,12 @@ const checkbox = (id: string, label: string, info: string) => `
 
 export function mountControls(root: HTMLElement, store: Store): void {
   root.classList.add('controls');
+  // The layout may move the lens panel to another column (see main.ts), so lookups are by id
+  // on the document and listeners sit on the panels, not on `root`.
   // Two panels like the real thing: the body (type, mode, exposure – modern bodies set the
   // aperture too) and the lens (type, zoom, stabiliser, focus). Each starts with its type dropdown.
   root.innerHTML = `
-    <section class="panel" aria-label="${t.controls.sectionCamera}">
+    <section class="panel" id="camera-panel" aria-label="${t.controls.sectionCamera}">
       <h3>${t.controls.sectionCamera}</h3>
       <div class="control" data-info="sensor">
         <select id="c-sensor" aria-label="${t.controls.cameraType}">
@@ -88,7 +90,7 @@ export function mountControls(root: HTMLElement, store: Store): void {
       ${checkbox('flash', t.controls.flash, 'flash')}
     </section>
 
-    <section class="panel" aria-label="${t.controls.sectionLens}">
+    <section class="panel" id="lens-panel" aria-label="${t.controls.sectionLens}">
       <h3>${t.controls.sectionLens}</h3>
       <div class="control" data-info="lens">
         <select id="c-lens" aria-label="${t.controls.lensType}">
@@ -108,7 +110,7 @@ export function mountControls(root: HTMLElement, store: Store): void {
       ${range('focus', t.controls.focus, FOCUS_STEPS, 'focus')}
     </section>`;
 
-  const $ = <T extends HTMLElement>(id: string) => root.querySelector<T>(`#${id}`)!;
+  const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
   const sensor = $<HTMLSelectElement>('c-sensor');
   const lens = $<HTMLSelectElement>('c-lens');
   const focal = $<HTMLInputElement>('c-focal');
@@ -127,8 +129,10 @@ export function mountControls(root: HTMLElement, store: Store): void {
     const key = (e.target as Element).closest<HTMLElement>('[data-info]')?.dataset.info;
     if (key) setInfo(store, key as InfoKey);
   };
-  root.addEventListener('pointerdown', showInfo);
-  root.addEventListener('focusin', showInfo);
+  for (const panel of root.querySelectorAll('.panel')) {
+    panel.addEventListener('pointerdown', showInfo);
+    panel.addEventListener('focusin', showInfo);
+  }
 
   sensor.addEventListener('change', () => {
     // Keep the angle of view: pick the new sensor's step closest to the current equivalent focal length.

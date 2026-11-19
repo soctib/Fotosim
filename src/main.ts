@@ -28,8 +28,10 @@ app.innerHTML = `
       <section id="elements"></section>
     </div>
     <aside id="controls"></aside>
-    <section id="infobox"></section>
-    <details id="gear"></details>
+    <div class="col-info">
+      <section id="infobox"></section>
+      <details id="gear"></details>
+    </div>
   </main>`;
 
 const $ = <T extends HTMLElement>(sel: string) => app.querySelector<T>(sel)!;
@@ -41,3 +43,16 @@ mountElements($('#elements'), store);
 mountControls($('#controls'), store);
 mountInfobox($('#infobox'), store);
 mountGear($<HTMLDetailsElement>('#gear'), store);
+
+// Wide layout: while the lens/phone list is folded, the third column has room – move the
+// lens panel there (under the infobox). Otherwise it stays under the camera panel.
+const wide = window.matchMedia('(min-width: 1400px)');
+const gear = $<HTMLDetailsElement>('#gear');
+const lensPanel = $<HTMLElement>('#lens-panel');
+function placeLensPanel(): void {
+  if (wide.matches && !gear.open) gear.before(lensPanel);
+  else $('#controls').append(lensPanel);
+}
+gear.addEventListener('toggle', placeLensPanel);
+wide.addEventListener('change', placeLensPanel);
+placeLensPanel();
