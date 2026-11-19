@@ -23,6 +23,14 @@ import type { InfoKey, Store } from '../../state/store';
 import { formatMeters } from '../distance';
 
 const AF_TARGETS: ElementId[] = ['person1', 'person2', 'background'];
+/** Shutter ranges for handheld shooting, slow → fast as on the slider. */
+const SHAKE_ZONES = ['tripod', 'is', 'hand'] as const;
+type ShakeZone = (typeof SHAKE_ZONES)[number];
+const SHAKE_ZONE_LABELS: Record<ShakeZone, string> = {
+  tripod: t.shake.zoneTripod,
+  is: t.shake.zoneIS,
+  hand: t.shake.zoneHand,
+};
 const MODES: Mode[] = ['auto', 'P', 'Av', 'Tv', 'M'];
 
 /** Focus slider resolution; positions map logarithmically onto the distance range. */
@@ -82,8 +90,10 @@ export function mountControls(root: HTMLElement, store: Store): void {
         t.controls.shutter,
         SHUTTER_SPEEDS_S.length - 1,
         'shutter',
-        `<span class="range-marker" id="m-hand"><span>${t.shake.markerHand}</span></span>
-         <span class="range-marker" id="m-is"><span>${t.shake.markerIS}</span></span>`,
+        `<div class="shake-zones" id="shake-zones" aria-hidden="true">
+          ${SHAKE_ZONES.map((z) => `<span class="zone zone-${z}"></span>`).join('')}
+          ${SHAKE_ZONES.map((z) => `<span class="zone-label zone-${z}">${SHAKE_ZONE_LABELS[z]}</span>`).join('')}
+        </div>`,
       )}
       ${range('iso', t.controls.iso, ISOS.length - 1, 'iso')}
       ${checkbox('autoiso', t.controls.autoIso, 'iso')}
@@ -160,6 +170,7 @@ export function mountControls(root: HTMLElement, store: Store): void {
   focus.addEventListener('input', () => setFocus(store, posToFocus(Number(focus.value))));
 
   const hint = (id: string, text: string) => ($(`h-${id}`).textContent = text);
+  const shakeZones = mountShakeZones($('shake-zones'));
 
   store.subscribe((_state, d: Derived) => {
     const s = d.settings;
@@ -214,9 +225,8 @@ export function mountControls(root: HTMLElement, store: Store): void {
     shutter.disabled = auto.has('shutterS');
     shutter.value = String(nearestIndex(SHUTTER_SPEEDS_S, s.shutterS));
     $('o-shutter').textContent = formatShutter(s.shutterS, t.locale);
-    placeMarker($('m-hand'), shutterPos(d.shake.limitS, SHUTTER_SPEEDS_S[fastestIdx]));
-    placeMarker($('m-is'), shutterPos(d.shake.limitIsS, SHUTTER_SPEEDS_S[fastestIdx]));
-    $('m-is').classList.toggle('off', !s.stabilized);
+    const fastest = SHUTTER_SPEEDS_S[fastestIdx];
+    shakeZones.update(shutterPos(d.shake.limitIsS, fastest), shutterPos(d.shake.limitS, fastest), s.stabilized);
     hint('shutter', [autoHint('shutterS'), d.shake.cls !== 'safe' ? t.shake[d.shake.cls] : ''].filter(Boolean).join(' · '));
 
     // ISO: always automatic in A; auto ISO is a choice in P/Av/Tv; M is fully manual.
@@ -251,8 +261,68 @@ export function mountControls(root: HTMLElement, store: Store): void {
   });
 }
 
-/** Marker above a range input at fraction `pos`; hidden outside the slider. Accounts for the thumb width. */
-function placeMarker(el: HTMLElement, pos: number): void {
-  el.hidden = !(pos >= 0 && pos <= 1);
-  el.style.left = `calc(${(pos * 100).toFixed(2)}% + ${(8 - pos * 16).toFixed(2)}px)`;
+/** Range thumb width (px): positions on the track run from half a thumb in to half a thumb before the end. */
+const THUMB_PX = 16;
+
+/**
+ * Coloured band above the shutter slider: tripod | handheld with stabiliser | handheld, split at the two
+ * handheld limits (slider fractions, may lie outside 0…1). Without a stabiliser its range is shown struck out.
+ * Labels sit centred over their range, nudged apart if a range is too narrow, and kept inside the slider.
+ */
+function mountShakeZones(root: HTMLElement) {
+  const zone = (z: ShakeZone) => root.querySelector<HTMLElement>(`.zone.zone-${z}`)!;
+  const label = (z: ShakeZone) => root.querySelector<HTMLElement>(`.zone-label.zone-${z}`)!;
+  let last: [number, number, boolean] | null = null;
+
+  const place = () => {
+    if (!last) return;
+    const [isLimit, handLimit, stabilized] = last;
+    const clamp = (p: number) => Math.min(1, Math.max(0, p));
+    const a = clamp(isLimit);
+    const b = clamp(Math.max(isLimit, handLimit));
+    const ranges: Record<ShakeZone, [number, number]> = { tripod: [0, a], is: [a, b], hand: [b, 1] };
+    const w = root.clientWidth;
+    const px = (p: number) => THUMB_PX / 2 + p * (w - THUMB_PX);
+    const GAP = 6;
+    const lefts: Partial<Record<ShakeZone, number>> = {};
+    const widths: Partial<Record<ShakeZone, number>> = {};
+    let prevRight = -Infinity;
+    for (const z of SHAKE_ZONES) {
+      const [from, to] = ranges[z];
+      const el = zone(z);
+      const lab = label(z);
+      const empty = to - from < 1e-6;
+      el.hidden = empty;
+      lab.hidden = empty;
+      el.style.left = `calc(${(from * 100).toFixed(2)}% + ${(THUMB_PX / 2 - from * THUMB_PX).toFixed(2)}px)`;
+      el.style.width = `calc(${((to - from) * 100).toFixed(2)}% - ${((to - from) * THUMB_PX).toFixed(2)}px)`;
+      const off = z === 'is' && !stabilized;
+      el.classList.toggle('off', off);
+      lab.classList.toggle('off', off);
+      if (empty || w === 0) continue;
+      const lw = lab.offsetWidth;
+      // Left to right: centred, but clear of the previous label.
+      const left = Math.max(0, (px(from) + px(to)) / 2 - lw / 2, prevRight + GAP);
+      lefts[z] = left;
+      widths[z] = lw;
+      prevRight = left + lw;
+    }
+    // Right to left: pull back whatever ran past the end, keeping the gaps.
+    let limit = w;
+    for (const z of [...SHAKE_ZONES].reverse()) {
+      if (lefts[z] === undefined) continue;
+      const left = Math.min(lefts[z]!, limit - widths[z]!);
+      label(z).style.left = `${left.toFixed(1)}px`;
+      limit = left - GAP;
+    }
+  };
+  // Label positions are in px, so redo them when the slider changes width.
+  new ResizeObserver(place).observe(root);
+
+  return {
+    update(isLimit: number, handLimit: number, stabilized: boolean) {
+      last = [isLimit, handLimit, stabilized];
+      place();
+    },
+  };
 }

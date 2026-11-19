@@ -129,8 +129,9 @@ export const de = {
     safe: 'aus der Hand',
     needsIS: 'aus der Hand nur mit Stabilisator',
     needsTripod: 'Stativ nötig',
-    markerHand: 'Hand',
-    markerIS: 'Hand + IS',
+    zoneTripod: 'Stativ',
+    zoneIS: 'Hand + IS',
+    zoneHand: 'Hand',
   },
 
   flash: {

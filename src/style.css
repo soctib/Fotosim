@@ -531,42 +531,52 @@ header p {
   font-weight: 600;
 }
 
-/* Range with markers above the track (shutter: handheld limits). */
+/* Shutter: handheld ranges as a coloured band above the track, each labelled above its middle. */
 .range-wrap {
   position: relative;
 }
-.range-wrap:has(.range-marker) {
-  padding-top: 16px;
-}
-.range-marker {
-  position: absolute;
-  top: 0;
-  width: 0;
-  height: 22px;
-  border-left: 2px solid var(--warn);
+.shake-zones {
+  position: relative;
+  height: 19px;
   pointer-events: none;
 }
-.range-marker span {
+.shake-zones .zone {
   position: absolute;
-  bottom: 9px;
-  left: 3px;
+  bottom: 0;
+  height: 5px;
+  background: var(--zc);
+}
+.shake-zones .zone + .zone {
+  /* thin gap at each limit */
+  border-left: 2px solid var(--panel);
+}
+.shake-zones .zone-label {
+  position: absolute;
   white-space: nowrap;
   font-size: 0.65rem;
   font-weight: 600;
-  color: var(--warn);
+  line-height: 1;
+  color: var(--zc);
+  bottom: 8px;
 }
-#m-is {
-  border-color: var(--sharp);
+.shake-zones .zone-tripod {
+  --zc: var(--bad);
 }
-#m-is span {
-  color: var(--sharp);
-  left: auto;
-  right: 3px;
+.shake-zones .zone-is {
+  --zc: var(--warn);
 }
-.range-marker.off {
-  opacity: 0.35;
+.shake-zones .zone-hand {
+  --zc: var(--sharp);
 }
-.range-marker[hidden] {
+/* Stabiliser off: its range needs a tripod too. */
+.shake-zones .zone.off {
+  background: repeating-linear-gradient(135deg, var(--bad) 0 3px, transparent 3px 6px);
+}
+.shake-zones .zone-label.off {
+  opacity: 0.4;
+  text-decoration: line-through;
+}
+.shake-zones [hidden] {
   display: none;
 }
 
