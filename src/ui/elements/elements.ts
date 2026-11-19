@@ -1,15 +1,31 @@
-// One compact row per scene element: show/hide, distance (read + edit), focus on it.
+// Scene panel – what's in front of the camera: the light situation, and one compact row
+// per element (show/hide, distance read + edit, focus on it).
 
+import { LIGHT_PRESETS } from '../../data/lightPresets';
 import { de as t } from '../../data/texts.de';
 import type { ElementId } from '../../model/types';
-import { MAX_DISTANCE_M, MIN_DISTANCE_M, focusOn, setElementDistance, setElementVisible, setInfo } from '../../state/actions';
+import {
+  MAX_DISTANCE_M,
+  MIN_DISTANCE_M,
+  focusOn,
+  setElementDistance,
+  setElementVisible,
+  setInfo,
+  setLight,
+} from '../../state/actions';
 import type { Store } from '../../state/store';
 
 const IDS: ElementId[] = ['person1', 'person2', 'background'];
 
 export function mountElements(root: HTMLElement, store: Store): void {
   root.classList.add('elements');
-  root.innerHTML = IDS.map(
+  root.innerHTML = `
+    <h3>${t.controls.sectionScene}</h3>
+    <label class="scene-light" data-info="light">${t.controls.light}
+      <select data-role="light">
+        ${LIGHT_PRESETS.map((p) => `<option value="${p.id}">${t.light[p.id as keyof typeof t.light]}</option>`).join('')}
+      </select>
+    </label>` + IDS.map(
     (id) => `
     <div class="el-row el-${id}" data-id="${id}">
       <label class="toggle el-name"><input type="checkbox" data-role="visible" aria-label="${t.elements.visible}">
@@ -20,6 +36,11 @@ export function mountElements(root: HTMLElement, store: Store): void {
         <span class="long">${t.elements.focusHere}</span><span class="short">${t.elements.focusHereShort}</span></button>
     </div>`,
   ).join('');
+
+  const light = root.querySelector<HTMLSelectElement>('[data-role="light"]')!;
+  light.addEventListener('change', () => setLight(store, light.value));
+  light.addEventListener('pointerdown', () => setInfo(store, 'light'));
+  light.addEventListener('focus', () => setInfo(store, 'light'));
 
   for (const id of IDS) {
     const row = root.querySelector<HTMLElement>(`[data-id="${id}"]`)!;
@@ -40,6 +61,7 @@ export function mountElements(root: HTMLElement, store: Store): void {
   }
 
   store.subscribe((state, d) => {
+    light.value = state.scene.lightPresetId;
     const tracking = d.settings.afTarget !== null;
     for (const el of state.scene.elements) {
       const row = root.querySelector<HTMLElement>(`[data-id="${el.id}"]`)!;

@@ -18,7 +18,6 @@ app.innerHTML = `
   <main class="layout">
     <div class="stage">
       <section id="graph"></section>
-      <section id="elements"></section>
       <details class="preview" open>
         <summary>${t.sim.group}</summary>
         <div class="preview-body">
@@ -26,11 +25,10 @@ app.innerHTML = `
           <section id="bars"></section>
         </div>
       </details>
+      <section id="elements"></section>
     </div>
-    <aside class="side">
-      <div id="controls"></div>
-      <section id="infobox"></section>
-    </aside>
+    <aside id="controls"></aside>
+    <section id="infobox"></section>
     <details id="gear"></details>
   </main>`;
 

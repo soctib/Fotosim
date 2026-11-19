@@ -21,8 +21,8 @@ Ships as **one self-contained HTML file** (`npm run build` → `dist/index.html`
 - **Depth-of-field band** (near/far limit) shaded.
 - **Flash zone** shaded when the flash is on: too close / range / falling off / no effect.
 
-### 2. Element panels
-One compact row per element: visible toggle, distance as number (read + edit), "focus here" button.
+### 2. Scene panel
+Light situation, plus one compact row per element: visible toggle, distance as number (read + edit), "focus here" button.
 
 ### 3. Bars (vertical)
 - **Exposure**: offset in stops, markers at ±1 (slight) and ±2 (strong) under/over.
@@ -96,9 +96,10 @@ Unidirectional: input → `store.update()` → `resolveMode()` → `derive()` �
 
 ## Layout
 
-- **Desktop**: graph top left, simulation + bars below it; controls and infobox in a right column.
-  Lens/phone list: own third column (open) on wide screens (≥ 1400 px), otherwise collapsible under the infobox.
-- **Mobile**: graph first, then simulation + bars (pinned at the top while scrolling the rest), element panels, controls in tabs (Kamera / Licht / Modus), lens list collapsible.
+- **Desktop**: graph top left, simulation + bars below it, then the scene panel (light situation + one row per element);
+  camera controls in the next column. Wide screens (≥ 1400 px): third column with the infobox on top and the lens/phone
+  list (open) below; narrower: infobox above the controls, lens list collapsible below them.
+- **Mobile**: graph, simulation + bars (pinned at the top while scrolling the rest), scene panel, controls, infobox, lens list (collapsible).
 - Pointer Events everywhere (mouse + touch identical).
 
 ## Milestones

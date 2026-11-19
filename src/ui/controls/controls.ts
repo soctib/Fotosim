@@ -1,10 +1,9 @@
-// Camera controls, grouped: scene (light), camera (sensor, lens, focal length, stabiliser),
+// Camera controls, grouped: camera (sensor, lens, focal length, stabiliser),
 // mode, exposure (aperture, shutter, ISO, flash) and sharpness (focus tracking, focus).
 // DOM is built once; the subscriber only syncs values so sliders aren't replaced mid-drag.
 // Fields the current mode sets itself are disabled and show the camera's choice.
 
 import { LENS_ORDER } from '../../data/cameraLenses';
-import { LIGHT_PRESETS } from '../../data/lightPresets';
 import { SENSORS, SENSOR_ORDER } from '../../data/sensors';
 import { de as t, fill } from '../../data/texts.de';
 import type { Derived } from '../../model/derive';
@@ -60,14 +59,6 @@ const checkbox = (id: string, label: string, info: string) => `
 export function mountControls(root: HTMLElement, store: Store): void {
   root.classList.add('controls');
   root.innerHTML = `
-    <h3>${t.controls.sectionScene}</h3>
-    <div class="control" data-info="light">
-      <label for="c-light">${t.controls.light}</label>
-      <select id="c-light">
-        ${LIGHT_PRESETS.map((p) => `<option value="${p.id}">${t.light[p.id as keyof typeof t.light]}</option>`).join('')}
-      </select>
-    </div>
-
     <h3>${t.controls.sectionCamera}</h3>
     <div class="control" data-info="sensor">
       <label for="c-sensor">${t.controls.sensor}</label>
@@ -117,7 +108,6 @@ export function mountControls(root: HTMLElement, store: Store): void {
     ${range('focus', t.controls.focus, FOCUS_STEPS, 'focus')}`;
 
   const $ = <T extends HTMLElement>(id: string) => root.querySelector<T>(`#${id}`)!;
-  const light = $<HTMLSelectElement>('c-light');
   const sensor = $<HTMLSelectElement>('c-sensor');
   const lens = $<HTMLSelectElement>('c-lens');
   const focal = $<HTMLInputElement>('c-focal');
@@ -139,9 +129,6 @@ export function mountControls(root: HTMLElement, store: Store): void {
   root.addEventListener('pointerdown', showInfo);
   root.addEventListener('focusin', showInfo);
 
-  light.addEventListener('change', () =>
-    store.update((s) => ({ ...s, scene: { ...s.scene, lightPresetId: light.value } })),
-  );
   sensor.addEventListener('change', () => {
     // Keep the angle of view: pick the new sensor's step closest to the current equivalent focal length.
     const next = SENSORS[sensor.value as SensorId];
@@ -174,7 +161,6 @@ export function mountControls(root: HTMLElement, store: Store): void {
     const auto = d.autoFields;
     const autoHint = (field: AutoField) => (auto.has(field) ? t.controls.autoSetHint : '');
 
-    light.value = state.scene.lightPresetId;
     sensor.value = s.sensorId;
 
     const opts = focalOptions(d.sensor);

@@ -28,6 +28,10 @@ export function setElementDistance(store: Store, id: ElementId, distanceM: numbe
   }));
 }
 
+export function setLight(store: Store, lightPresetId: string): void {
+  store.update((s) => ({ ...s, scene: { ...s.scene, lightPresetId } }));
+}
+
 export function setElementVisible(store: Store, id: ElementId, visible: boolean): void {
   store.update((s) => ({
     ...s,
