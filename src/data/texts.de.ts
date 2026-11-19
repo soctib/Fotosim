@@ -159,6 +159,21 @@ export const de = {
   sim: {
     title: 'Kamerabild',
     group: 'Kamerabild · Belichtung · Rauschen',
+    // Folded: the heading carries the verdict instead.
+    groupFolded: 'Kamerabild – {exposure}, {noise}',
+    exposureVerdict: {
+      strongUnder: 'stark unterbelichtet',
+      slightUnder: 'leicht unterbelichtet',
+      ok: 'richtig belichtet',
+      slightOver: 'leicht überbelichtet',
+      strongOver: 'stark überbelichtet',
+    },
+    noiseVerdict: {
+      low: 'rauscharm',
+      medium: 'leicht verrauscht',
+      high: 'verrauscht',
+      veryHigh: 'stark verrauscht',
+    },
     caption: '{shutter} · {aperture} · ISO {iso}',
   },
 

@@ -7,6 +7,7 @@ import { mountElements } from './ui/elements/elements';
 import { mountGear } from './ui/gear/gear';
 import { mountGraph } from './ui/graph/graph';
 import { mountInfobox } from './ui/infobox/infobox';
+import { mountPreviewSummary } from './ui/previewSummary';
 import { mountSim } from './ui/sim/sim';
 
 const app = document.querySelector<HTMLDivElement>('#app')!;
@@ -39,6 +40,7 @@ const store = createStore();
 mountSim($('#sim'), store);
 mountBars($('#bars'), store);
 mountGraph($('#graph'), store);
+mountPreviewSummary($<HTMLDetailsElement>('.preview'), store);
 mountElements($('#elements'), store);
 mountControls($('#controls'), store);
 mountInfobox($('#infobox'), store);
