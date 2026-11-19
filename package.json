@@ -1,0 +1,32 @@
+{
+  "name": "fotosim",
+  "version": "1.0.0",
+  "description": "Interaktiver Foto-Lernsimulator: Schärfentiefe, Belichtung, Rauschen, Kamerabild",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/soctib/fotosim.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/soctib/fotosim/issues"
+  },
+  "homepage": "https://github.com/soctib/fotosim#readme",
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8",
+    "vite-plugin-singlefile": "^2.3.4",
+    "vitest": "^5.1.1"
+  },
+  "private": true,
+  "type": "module"
+}
