@@ -247,6 +247,13 @@ header p {
 .graph .axis-title {
   fill: var(--muted);
 }
+/* Text that can sit on top of figures: a panel-coloured outline keeps it readable. */
+.graph .halo {
+  paint-order: stroke;
+  stroke: var(--panel);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
 .graph .sharp-line {
   stroke: var(--sharp);
   stroke-width: 1.5;

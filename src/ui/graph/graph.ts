@@ -269,7 +269,8 @@ function draw(d: Derived, v: XView, L: Layout, details: boolean): string {
   const labelY = details ? sy(1) + 16 : (L.plotTop + L.plotBottom) / 2 + 4;
   parts.push(`<text class="dof-label" x="${lx}" y="${labelY}">${dofLabel}</text>`);
 
-  if (details) parts.push(drawYAxis(sy, L));
+  const yAxis = details ? drawYAxis(sy, L) : null;
+  if (yAxis) parts.push(yAxis.under);
   if (d.flash?.zone) parts.push(drawFlashZone(d.flash.zone, xOf, L));
 
   // X axis.
@@ -293,14 +294,22 @@ function draw(d: Derived, v: XView, L: Layout, details: boolean): string {
   const closeUp = !v.log && pxPerM * (FACE_DEPTH_M.backOfHead - FACE_DEPTH_M.noseTip) >= HEAD_MIN_PX;
   // Close up, the camera sits at the heads' eye level.
   const eyeY = closeUp ? L.groundY - (HEAD_NECK_M + HEAD_EYE_M) * headScaleY(pxPerM, L) : L.groundY;
-  parts.push(drawCameraMarker(L, closeUp, eyeY));
+  // With details the left margin holds the y axis; close up there's no room for the camera icon as well.
+  parts.push(drawCameraMarker(L, closeUp, eyeY, !(closeUp && details)));
 
   if (details) parts.push(drawCurve(d, sx, sy, L));
 
   // Elements: marker on the curve + figure in the scene strip.
   // Draw far to near so nearer figures overlap farther ones.
   const visible = d.elements.filter((el) => el.visible).sort((a, b) => b.distanceM - a.distanceM);
-  for (const el of visible) if (inView(el.distanceM)) parts.push(drawElement(el, sx, sy, L, details, d.blurAt));
+  const onScreen = visible.filter((el) => inView(el.distanceM));
+  const labelDx = spreadLabels(
+    onScreen.map((el) => ({ x: sx.toPx(el.distanceM), text: formatMeters(el.distanceM) })),
+    { x: L.left - CAMERA_X_OFFSET, text: t.graph.camera },
+    L.w,
+  );
+  onScreen.forEach((el, i) => parts.push(drawElement(el, sx, sy, L, details, d.blurAt, labelDx[i])));
+  if (yAxis) parts.push(yAxis.over);
   // Off-screen elements: one stacked label per side, nearest to the view on the bottom row.
   const left = visible.filter((el) => el.distanceM < v.min);
   const right = visible.filter((el) => el.distanceM > v.max).reverse();
@@ -329,23 +338,25 @@ function draw(d: Derived, v: XView, L: Layout, details: boolean): string {
 }
 
 /** Y axis: sharp zone 0…1 below the dashed line, increasingly blurry above it. */
-function drawYAxis(sy: (b: number) => number, L: Layout): string {
+function drawYAxis(sy: (b: number) => number, L: Layout): { under: string; over: string } {
   const out: string[] = [];
+  const labels: string[] = [];
   const y1 = sy(1);
   out.push(`<rect class="sharp-zone" x="${L.left}" y="${y1}" width="${L.right - L.left}" height="${L.plotBottom - y1}"/>`);
   for (const y of Y_TICKS) {
     const py = sy(y);
     out.push(`<line class="grid" x1="${L.left}" x2="${L.right}" y1="${py}" y2="${py}"/>`);
     const label = y === 0 ? formatNumber(0) : fill(t.graph.blurTimes, { value: formatNumber(y) });
-    out.push(`<text class="tick" x="${L.left - 6}" y="${py + 4}" text-anchor="end">${label}</text>`);
+    labels.push(`<text class="tick halo" x="${L.left - 6}" y="${py + 4}" text-anchor="end">${label}</text>`);
   }
   out.push(`<line class="sharp-line" x1="${L.left}" x2="${L.right}" y1="${y1}" y2="${y1}"/>`);
   out.push(`<text class="unsharp-label" x="${L.left + 6}" y="${y1 - 6}">↑ ${t.graph.unsharp}</text>`);
   out.push(`<text class="sharp-label" x="${L.left + 6}" y="${y1 + 15}">↓ ${t.graph.sharp}</text>`);
-  out.push(
-    `<text class="axis-title" transform="translate(12 ${(L.plotTop + L.plotBottom) / 2}) rotate(-90)" text-anchor="middle">${t.graph.sharpness}</text>`,
+  labels.push(
+    `<text class="axis-title halo" transform="translate(12 ${(L.plotTop + L.plotBottom) / 2}) rotate(-90)" text-anchor="middle">${t.graph.sharpness}</text>`,
   );
-  return out.join('');
+  // The labels sit in the left margin, where a close-up head's nose can reach: they're drawn after the figures.
+  return { under: out.join(''), over: labels.join('') };
 }
 
 /** Blur curve, sampled every 2 px plus the exact focus point so the dip reaches 0. */
@@ -400,8 +411,9 @@ function headScaleY(pxPerM: number, L: Layout): number {
 }
 
 /** Photographer (or close up: a camera at eye level `y`) in the left margin, facing the scene, labelled "Kamera". */
-function drawCameraMarker(L: Layout, closeUp: boolean, y: number): string {
-  const x = L.left - 22;
+const CAMERA_X_OFFSET = 22;
+function drawCameraMarker(L: Layout, closeUp: boolean, y: number, icon: boolean): string {
+  const x = L.left - CAMERA_X_OFFSET;
   const figure = closeUp
     ? `<rect class="cam-body" x="-13" y="-30" width="22" height="15" rx="2.5"/>
        <rect class="cam-body" x="-8" y="-34" width="8" height="5" rx="1"/>
@@ -415,7 +427,7 @@ function drawCameraMarker(L: Layout, closeUp: boolean, y: number): string {
   const iconY = closeUp ? y + 22.5 : L.groundY;
   return `<g class="camera-marker">
     <title>${t.graph.cameraTitle}</title>
-    <g transform="translate(${x} ${iconY})">${figure}</g>
+    ${icon ? `<g transform="translate(${x} ${iconY})">${figure}</g>` : ''}
     <text class="camera-label" x="${x}" y="${L.groundY + 16}" text-anchor="middle">${t.graph.camera}</text>
   </g>`;
 }
@@ -431,6 +443,35 @@ function blurCuePx(relativeBlur: number): number {
   return Math.min(3, Math.log2(relativeBlur) * 0.6);
 }
 
+/**
+ * Horizontal shifts for the distance labels under the figures so they don't overprint each other
+ * or the fixed "Kamera" label: left to right, each label moves right just enough to clear the previous
+ * one, then the row is pulled back if it ran past the right edge. Returns one shift per label, in input order.
+ */
+function spreadLabels(labels: { x: number; text: string }[], fixed: { x: number; text: string }, width: number): number[] {
+  const GAP = 6;
+  const halfW = (text: string) => (text.length * CHAR_W) / 2 + 2;
+  const order = labels.map((_, i) => i).sort((a, b) => labels[a].x - labels[b].x);
+  const pos = labels.map((l) => l.x);
+  let prevRight = fixed.x + halfW(fixed.text);
+  for (const i of order) {
+    const h = halfW(labels[i].text);
+    pos[i] = Math.max(pos[i], prevRight + GAP + h);
+    prevRight = pos[i] + h;
+  }
+  const overflow = prevRight - (width - 2);
+  if (overflow > 0) {
+    // Pull the rightmost labels back inside, keeping the gaps (only when figures crowd the right edge).
+    let limit = width - 2;
+    for (const i of [...order].reverse()) {
+      const h = halfW(labels[i].text);
+      pos[i] = Math.min(pos[i], limit - h);
+      limit = pos[i] - h - GAP;
+    }
+  }
+  return pos.map((p, i) => p - labels[i].x);
+}
+
 /** A person turns into a profile head once the head would be at least this wide on screen. */
 const HEAD_MIN_PX = 36;
 
@@ -441,6 +482,7 @@ function drawElement(
   L: Layout,
   details: boolean,
   blurAt: (m: number) => number,
+  labelDx = 0,
 ): string {
   const x = sx.toPx(el.distanceM);
   const cy = sy(Math.min(Y_MAX, el.relativeBlur));
@@ -466,7 +508,7 @@ function drawElement(
     <g data-drag="element" data-id="${el.id}" transform="translate(${x} ${L.groundY})">
       ${hit}
       <g class="figure${asHead ? ' head' : ''}${big ? ' big' : ''}">${figure}</g>
-      <text class="el-label" y="16" text-anchor="middle">${formatMeters(el.distanceM)}</text>
+      <text class="el-label halo" x="${labelDx}" y="16" text-anchor="middle">${formatMeters(el.distanceM)}</text>
     </g>
   </g>`;
 }
