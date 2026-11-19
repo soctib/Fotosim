@@ -241,6 +241,35 @@ function drawAfFrame(el: DerivedElement, W: number, H: number): string {
     M${r},${b - c} V${b} H${r - c} M${l + c},${b} H${l} V${b - c}"/>`;
 }
 
+/** Iris must be at least this many pixels in radius before the eye is drawn in detail. */
+const EYE_DETAIL_MIN_PX = 3;
+
+/**
+ * One eye at (x, -165 cm). Close up: white, textured iris, pupil, catchlight and lid line –
+ * fine detail to judge sharpness by (the catchlight especially). Far away: just white and iris.
+ */
+function drawEye(x: number, perM: number): string {
+  const y = -165;
+  const irisR = 1.0;
+  const white = `<ellipse class="sclera" cx="${x}" cy="${y}" rx="2.3" ry="1.45"/>`;
+  // Same size from afar, just without the fine detail – no jump when crossing the threshold.
+  if (irisR * (perM / 100) < EYE_DETAIL_MIN_PX) return `${white}<circle class="iris eye-simple" cx="${x}" cy="${y}" r="${irisR}"/>`;
+  const rays = Array.from({ length: 18 }, (_, i) => {
+    const a = (i / 18) * Math.PI * 2;
+    const [c, s] = [Math.cos(a), Math.sin(a)];
+    return `M${(x + c * 0.5).toFixed(3)},${(y + s * 0.5).toFixed(3)} L${(x + c * 0.92).toFixed(3)},${(y + s * 0.92).toFixed(3)}`;
+  }).join(' ');
+  return `<g class="eye-detail">
+    ${white}
+    <circle class="iris" cx="${x}" cy="${y}" r="${irisR}"/>
+    <path class="iris-rays" d="${rays}"/>
+    <circle class="limbus" cx="${x}" cy="${y}" r="${irisR - 0.04}"/>
+    <circle class="pupil" cx="${x}" cy="${y}" r="0.42"/>
+    <circle class="catchlight" cx="${x + 0.32}" cy="${y - 0.34}" r="0.19"/>
+    <path class="lid" d="M${x - 2.4},${y + 0.15} Q${x},${y - 2.1} ${x + 2.4},${y + 0.15}"/>
+  </g>`;
+}
+
 /**
  * Person facing the camera. Distance = eyes. Nose, face/body and ears each get their own
  * blur from their own distance – with a shallow enough depth of field the nose tip can be
@@ -267,7 +296,7 @@ function drawPerson(el: DerivedElement, W: number, H: number, sigma: (dm: number
        <rect class="skin" x="-4.5" y="-152" width="9" height="8"/>
        <circle class="skin" cx="0" cy="-163" r="11.5"/>
        <path class="hair" d="M-11.8,-163 Q-12,-178 0,-177 Q12,-178 11.8,-163 Q8,-171 0,-171 Q-8,-171 -11.8,-163 Z"/>
-       <circle class="eye" cx="-4.2" cy="-165" r="1.4"/><circle class="eye" cx="4.2" cy="-165" r="1.4"/>
+       ${drawEye(-4.2, perM)}${drawEye(4.2, perM)}
        <path class="mouth" d="M-3.8,-155.8 Q0,-153 3.8,-155.8"/>`,
     )}
     ${part('nose', `<path class="nose" d="M0,-165 L-2.4,-158.6 Q0,-157.2 2.4,-158.6 Z"/>`)}

@@ -597,8 +597,18 @@ header p {
 .sim .legs { fill: #34405a; }
 .sim .skin { fill: #f1c27d; }
 .sim .hair { fill: #4a3222; }
-.sim .eye { fill: #222; }
 .sim .nose { fill: #dfa463; }
+.sim .sclera { fill: #fbfaf6; stroke: #c99a68; stroke-width: 0.12; }
+.sim .iris { fill: #7a5232; }
+.sim .iris.eye-simple { fill: #3b2414; }
+.sim .person-person2 .iris.eye-simple { fill: #24476b; }
+.sim .person-person2 .iris { fill: #3f74a8; }
+.sim .iris-rays { stroke: #3b2412; stroke-width: 0.07; opacity: 0.55; fill: none; }
+.sim .person-person2 .iris-rays { stroke: #1d3d5e; }
+.sim .limbus { fill: none; stroke: #2a1a0d; stroke-width: 0.14; }
+.sim .pupil { fill: #111; }
+.sim .catchlight { fill: #fff; }
+.sim .lid { fill: none; stroke: #3a2516; stroke-width: 0.3; stroke-linecap: round; }
 .sim .ear { fill: #eab676; stroke: #c98d4f; stroke-width: 0.6; }
 .sim .mouth,
 .sim .arm {
