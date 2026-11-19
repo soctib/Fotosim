@@ -3,6 +3,7 @@ import { de as t } from './data/texts.de';
 import { createStore } from './state/store';
 import { mountBars } from './ui/bars/bars';
 import { mountControls } from './ui/controls/controls';
+import { mountElements } from './ui/elements/elements';
 import { mountGear } from './ui/gear/gear';
 import { mountGraph } from './ui/graph/graph';
 import { mountInfobox } from './ui/infobox/infobox';
@@ -17,6 +18,7 @@ app.innerHTML = `
   <main class="layout">
     <div class="stage">
       <section id="graph"></section>
+      <section id="elements"></section>
       <details class="preview" open>
         <summary>${t.sim.group}</summary>
         <div class="preview-body">
@@ -37,6 +39,7 @@ const store = createStore();
 mountSim($('#sim'), store);
 mountBars($('#bars'), store);
 mountGraph($('#graph'), store);
+mountElements($('#elements'), store);
 mountControls($('#controls'), store);
 mountInfobox($('#infobox'), store);
 mountGear($<HTMLDetailsElement>('#gear'), store);

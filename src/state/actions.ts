@@ -28,6 +28,13 @@ export function setElementDistance(store: Store, id: ElementId, distanceM: numbe
   }));
 }
 
+export function setElementVisible(store: Store, id: ElementId, visible: boolean): void {
+  store.update((s) => ({
+    ...s,
+    scene: { ...s.scene, elements: s.scene.elements.map((el) => (el.id === id ? { ...el, visible } : el)) },
+  }));
+}
+
 /** Simulated autofocus: focus exactly on an element. */
 export function focusOn(store: Store, id: ElementId): void {
   const el = store.get().scene.elements.find((e) => e.id === id);

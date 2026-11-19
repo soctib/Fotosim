@@ -101,6 +101,7 @@ export const de = {
     visible: 'Anzeigen',
     distance: 'Entfernung',
     focusHere: 'Hierauf fokussieren',
+    focusHereShort: 'Fokussieren',
   },
 
   exposure: {

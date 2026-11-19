@@ -104,10 +104,10 @@ Unidirectional: input → `store.update()` → `resolveMode()` → `derive()` �
 ## Milestones
 
 1. ✅ Scaffold, model, tests
-2. Graph: scales (lin/log), drag elements, focus line, DOF band, flash zone
-3. Controls, modes, element panels, bars
-4. Camera image simulation
-5. Infobox, lens/phone list, mobile polish
+2. ✅ Graph: scales (lin/log), drag elements, focus line, DOF band, flash zone (faces when zoomed in: open)
+3. ✅ Controls, modes, element panels, bars, lens choice, focus tracking
+4. ✅ Camera image simulation
+5. Infobox ✅, lens/phone list ✅, mobile polish (control tabs on phones: open)
 6. English texts
 
 ## Open questions
