@@ -1,5 +1,6 @@
 // Simulated camera image: sky/ground, background scenery and the persons as
-// separate layers, each with its own blur and brightness from derive().
+// separate layers, each with its own blur and brightness from derive(). The backdrop and
+// scenery follow the light situation (see scenery.ts), so dusk looks like dusk.
 // Scenery and persons are stacked by distance, so nearer things cover farther ones. Noise overlay and
 // directional shake blur on top. Layout uses each element's projected scale
 // (heightFractionPerM), so framing follows focal length and sensor.
@@ -11,15 +12,10 @@ import type { ElementId } from '../../model/types';
 import { focusOn, setAutofocus, setInfo } from '../../state/actions';
 import { FACE_DEPTH_M } from '../face';
 import type { Store } from '../../state/store';
+import { projection } from './projection';
+import { sceneryFor, type Scenery } from './scenery';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
-
-// Scene composition (metres). Camera is level, so the horizon sits mid-frame.
-/** Camera held at eye height (eyes are drawn at 165 cm), so it points straight at the faces. */
-const CAMERA_HEIGHT_M = 1.65;
-const LATERAL_M: Record<ElementId, number> = { person1: -0.35, person2: 0.55, background: 0 };
-/** Closer than this, the photographer aims at the person: the sideways offset shrinks (quadratically). */
-const AIM_DISTANCE_M = 3;
 
 /** CSS blur takes a Gaussian sigma; the blur disc diameter is roughly 2 sigma. */
 const SIGMA_PER_DISC = 0.5;
@@ -79,10 +75,10 @@ export function mountSim(root: HTMLElement, store: Store): void {
   });
 
   let width = 0;
-  let last: Derived | null = null;
+  let last: { d: Derived; scenery: Scenery } | null = null;
 
-  function render(d: Derived): void {
-    last = d;
+  function render(d: Derived, scenery: Scenery): void {
+    last = { d, scenery };
     frame.style.aspectRatio = `${d.sensor.widthMm} / ${d.sensor.heightMm}`;
     const W = frame.clientWidth;
     const H = (W * d.sensor.heightMm) / d.sensor.widthMm;
@@ -94,13 +90,14 @@ export function mountSim(root: HTMLElement, store: Store): void {
     const filterFor = (el: DerivedElement) =>
       `blur(${Math.min(MAX_BLUR_PX, el.blurFractionOfWidth * W * SIGMA_PER_DISC).toFixed(2)}px) ${brightness(el)}`;
 
-    // Sky and open ground are always furthest back; they share the background's blur and light.
+    // Sky (or wall) and open ground are always furthest back; they share the background's blur and light.
     const bg = d.elements.find((e) => e.id === 'background')!;
     const sky = layer('sky');
     sky.setAttribute('viewBox', `0 0 ${W} ${H}`);
-    sky.innerHTML = drawSky(bg, W, H);
+    sky.innerHTML = scenery.backdrop(bg, W, H);
     sky.style.filter = filterFor(bg);
     sky.style.zIndex = '0';
+    frame.style.background = scenery.frameColor;
 
     // Far to near: a person behind the house disappears behind it.
     const byDistance = [...d.elements].sort((a, b) => b.distanceM - a.distanceM);
@@ -110,7 +107,7 @@ export function mountSim(root: HTMLElement, store: Store): void {
       svg.style.display = el.visible ? '' : 'none';
       svg.style.zIndex = String(i + 1);
       if (el.id === 'background') {
-        svg.innerHTML = drawScenery(el, W, H);
+        svg.innerHTML = scenery.scenery(el, W, H);
         svg.style.filter = filterFor(el);
       } else {
         // Persons blur per part (nose, face, ears sit at different distances), so the layer only gets the light.
@@ -124,10 +121,11 @@ export function mountSim(root: HTMLElement, store: Store): void {
     const tracked = d.elements.find((e) => e.id === d.settings.afTarget && e.visible);
     const sinceTap = tapped ? performance.now() - tapped.at : Infinity;
     const flashed = sinceTap < AF_FLASH_MS ? d.elements.find((e) => e.id === tapped!.id) : undefined;
+    const afFrame = (el: DerivedElement) => drawAfFrame(el, scenery.afTarget, W, H);
     afOverlay.innerHTML = tracked
-      ? drawAfFrame(tracked, W, H)
+      ? afFrame(tracked)
       : flashed
-        ? `<g class="af-flash" style="animation-delay:-${sinceTap.toFixed(0)}ms">${drawAfFrame(flashed, W, H)}</g>`
+        ? `<g class="af-flash" style="animation-delay:-${sinceTap.toFixed(0)}ms">${afFrame(flashed)}</g>`
         : '';
 
     // Quadratic so "low" noise stays nearly clean and "very high" is unmistakable.
@@ -150,88 +148,22 @@ export function mountSim(root: HTMLElement, store: Store): void {
     caption.textContent = parts.join(' · ');
   }
 
-  store.subscribe((_s, d) => render(d));
+  store.subscribe((s, d) => render(d, sceneryFor(s.scene.lightPresetId)));
   new ResizeObserver(() => {
     if (frame.clientWidth !== width && last) {
       width = frame.clientWidth;
-      render(last);
+      render(last.d, last.scenery);
     }
   }).observe(frame);
 }
 
-/** Pixels per metre at an element's distance, plus the y of its ground contact. */
-function projection(el: DerivedElement, W: number, H: number) {
-  const perM = el.heightFractionPerM * H;
-  const aim = Math.min(1, (el.distanceM / AIM_DISTANCE_M) ** 2);
-  return { perM, groundY: H / 2 + CAMERA_HEIGHT_M * perM, cx: W / 2 + LATERAL_M[el.id] * aim * perM };
-}
-
-function drawSky(bg: DerivedElement, W: number, H: number): string {
-  const { groundY } = projection(bg, W, H);
-  return `
-    <defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" class="sky-top"/><stop offset="1" class="sky-bottom"/></linearGradient></defs>
-    <rect width="${W}" height="${H / 2 + 1}" fill="url(#sky)"/>
-    <circle class="sun" cx="${W * 0.82}" cy="${H * 0.16}" r="${H * 0.06}"/>
-    <rect class="far-ground" y="${H / 2}" width="${W}" height="${Math.max(0, groundY - H / 2)}"/>
-    <rect class="near-ground" y="${groundY}" width="${W}" height="${Math.max(0, H - groundY)}"/>`;
-}
-
-/** Below this many pixels per brick course the texture would be sub-pixel noise (and slow); draw flat. */
-const MIN_TEXTURE_PX = 1.5;
-
-function drawScenery(el: DerivedElement, W: number, H: number): string {
-  const { perM, groundY } = projection(el, W, H);
-  const x = (m: number) => W / 2 + m * perM;
-  const px = (m: number) => m * perM;
-  // Trees (height, lateral position) and a brick house, all standing at the background distance.
-  const trees: [number, number][] = [
-    [11, -14], [9, -9.5], [12, -5.5], [10, 9], [13, 13.5], [8, 18], [12, -20], [10, 23],
-  ];
-  const tree = ([h, lat]: [number, number]) =>
-    `<rect class="trunk" x="${x(lat) - px(0.25)}" y="${groundY - px(h * 0.35)}" width="${px(0.5)}" height="${px(h * 0.35)}"/>
-     <ellipse class="crown" cx="${x(lat)}" cy="${groundY - px(h * 0.62)}" rx="${px(h * 0.24)}" ry="${px(h * 0.38)}"/>`;
-
-  const hx = x(1.5);
-  const wallX = hx - px(4);
-  const wallY = groundY - px(5);
-  const roofTop = groundY - px(8.5);
-  // Real-world brick: 24 cm long, 7.5 cm per course incl. 1 cm mortar. Roof tiles: 30 cm rows.
-  const course = px(0.075);
-  const textured = course >= MIN_TEXTURE_PX;
-  const mortar = Math.max(0.5, px(0.012));
-  const brickW = px(0.24);
-  const defs = textured
-    ? `<pattern id="bricks" patternUnits="userSpaceOnUse" x="${wallX}" y="${groundY}" width="${brickW}" height="${2 * course}">
-         <path class="mortar" stroke-width="${mortar}" d="M0,0 H${brickW} M0,${course} H${brickW} M0,0 V${course} M${brickW / 2},${course} V${2 * course}"/>
-       </pattern>
-       <pattern id="tiles" patternUnits="userSpaceOnUse" x="${wallX}" y="${roofTop}" width="${px(0.3)}" height="${px(0.3)}">
-         <path class="tile-line" stroke-width="${mortar * 1.5}" d="M0,${px(0.3)} H${px(0.3)} M${px(0.15)},0 V${px(0.3)}"/>
-       </pattern>`
-    : '';
-  const roofPts = `${hx - px(4.6)},${wallY} ${hx},${roofTop} ${hx + px(4.6)},${wallY}`;
-  const win = (wx: number) => {
-    const s = px(1.4);
-    return `<rect class="window" x="${wx}" y="${groundY - px(3.8)}" width="${s}" height="${s}"/>
-      <path class="frame" stroke-width="${Math.max(0.5, px(0.06))}" d="M${wx},${groundY - px(3.8)} h${s} v${s} h${-s} Z M${wx + s / 2},${groundY - px(3.8)} v${s} M${wx},${groundY - px(3.8) + s / 2} h${s}"/>`;
-  };
-  const house = `
-    <rect class="house" x="${wallX}" y="${wallY}" width="${px(8)}" height="${px(5)}"/>
-    ${textured ? `<rect fill="url(#bricks)" x="${wallX}" y="${wallY}" width="${px(8)}" height="${px(5)}"/>` : ''}
-    <polygon class="roof" points="${roofPts}"/>
-    ${textured ? `<polygon fill="url(#tiles)" points="${roofPts}"/>` : ''}
-    ${win(hx - px(2.8))}${win(hx + px(1.4))}
-    <rect class="door" x="${hx - px(0.6)}" y="${groundY - px(2.2)}" width="${px(1.2)}" height="${px(2.2)}"/>`;
-  return `<defs>${defs}</defs>${trees.map(tree).join('')}${house}`;
-}
-
-/** Camera-style AF frame (corner brackets) around the face, or the house. */
-function drawAfFrame(el: DerivedElement, W: number, H: number): string {
+/** Camera-style AF frame (corner brackets) around the face, or the scenery's main object. */
+function drawAfFrame(el: DerivedElement, target: Scenery['afTarget'], W: number, H: number): string {
   const { perM, groundY, cx } = projection(el, W, H);
   const isPerson = el.id !== 'background';
-  const x = isPerson ? cx : W / 2 + 1.5 * perM; // house centre, see drawScenery
-  const y = isPerson ? groundY - 1.63 * perM : groundY - 4.5 * perM;
-  const size = Math.min(H * 0.6, Math.max(18, (isPerson ? 0.45 : 7) * perM));
+  const x = isPerson ? cx : W / 2 + target.lateralM * perM;
+  const y = groundY - (isPerson ? 1.63 : target.heightM) * perM;
+  const size = Math.min(H * 0.6, Math.max(18, (isPerson ? 0.45 : target.sizeM) * perM));
   // Keep the frame inside the image even when the target is huge or at the edge.
   const half = size / 2;
   const fx = Math.min(W - half - 2, Math.max(half + 2, x));

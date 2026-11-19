@@ -578,7 +578,7 @@ header p {
   position: relative;
   overflow: hidden;
   border-radius: 6px;
-  background: #9cc3e6;
+  background: #cfe5f5; /* overwritten per light situation */
   cursor: help;
   box-shadow: 0 0 0 1px var(--line);
 }
@@ -636,21 +636,8 @@ header p {
   font-variant-numeric: tabular-nums;
 }
 
-/* Scene colours are the "real world" – the same in light and dark mode. */
-.sim .sky-top { stop-color: #5b9bd5; }
-.sim .sky-bottom { stop-color: #cfe5f5; }
-.sim .sun { fill: #ffe066; }
-.sim .far-ground { fill: #8fbf6a; }
-.sim .near-ground { fill: #74a854; }
-.sim .trunk { fill: #7a5230; }
-.sim .crown { fill: #3f7d3a; }
-.sim .house { fill: #b5603a; }
-.sim .mortar { stroke: #e6d9c6; fill: none; }
-.sim .roof { fill: #5a4a48; }
-.sim .tile-line { stroke: #3a2f2e; fill: none; }
-.sim .window { fill: #6fa3c9; }
-.sim .frame { stroke: #f4f1ea; fill: none; }
-.sim .door { fill: #7a5230; }
+/* Scene colours are the "real world" – the same in light and dark mode. Backdrop and scenery
+   colours live in sim/scenery.ts (one set per light situation). */
 .sim .legs { fill: #34405a; }
 .sim .skin { fill: #f1c27d; }
 .sim .hair { fill: #4a3222; }
