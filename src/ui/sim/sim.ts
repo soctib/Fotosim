@@ -271,6 +271,21 @@ function drawEye(x: number, perM: number): string {
 }
 
 /**
+ * Nose (front view). Close up the tip gets fine detail – highlight, nostrils, freckles – so
+ * you can tell whether the tip itself is sharp.
+ */
+function drawNose(perM: number): string {
+  const shape = `<path class="nose" d="M0,-165 L-2.4,-158.6 Q0,-157.2 2.4,-158.6 Z"/>`;
+  if (perM / 100 < EYE_DETAIL_MIN_PX) return shape;
+  const freckles: [number, number][] = [[-1.1, -160.4], [-0.5, -161.6], [0.6, -160.9], [1.2, -159.9], [0.1, -162.6], [-1.5, -159.3]];
+  return `${shape}
+    <ellipse class="nostril" cx="-0.95" cy="-158.15" rx="0.5" ry="0.26"/>
+    <ellipse class="nostril" cx="0.95" cy="-158.15" rx="0.5" ry="0.26"/>
+    ${freckles.map(([x, y]) => `<circle class="freckle" cx="${x}" cy="${y}" r="0.13"/>`).join('')}
+    <ellipse class="nose-highlight" cx="0.25" cy="-159.3" rx="0.42" ry="0.3"/>`;
+}
+
+/**
  * Person facing the camera. Distance = eyes. Nose, face/body and ears each get their own
  * blur from their own distance – with a shallow enough depth of field the nose tip can be
  * sharp while the eyes are not. `sigma(dm)` gives the blur for an offset from the eye plane.
@@ -299,6 +314,6 @@ function drawPerson(el: DerivedElement, W: number, H: number, sigma: (dm: number
        ${drawEye(-4.2, perM)}${drawEye(4.2, perM)}
        <path class="mouth" d="M-3.8,-155.8 Q0,-153 3.8,-155.8"/>`,
     )}
-    ${part('nose', `<path class="nose" d="M0,-165 L-2.4,-158.6 Q0,-157.2 2.4,-158.6 Z"/>`)}
+    ${part('nose', drawNose(perM))}
   </g>`;
 }
