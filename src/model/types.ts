@@ -23,6 +23,18 @@ export interface Sensor {
   isFilm?: boolean;
 }
 
+export type LensId = 'kit' | 'fastZoom' | 'prime';
+
+/** Interchangeable lens class; limits the widest aperture. Focal range is given as full-frame equivalent. */
+export interface CameraLens {
+  id: LensId;
+  /** Widest aperture at the wide end (≤ wideEqMm) and at the long end (≥ teleEqMm); log-interpolated between. */
+  maxApertureWide: number;
+  maxApertureTele: number;
+  wideEqMm: number;
+  teleEqMm: number;
+}
+
 export type Mode = 'auto' | 'P' | 'Av' | 'Tv' | 'M';
 
 export type ElementId = 'person1' | 'person2' | 'background';
@@ -35,6 +47,8 @@ export interface SceneElement {
 
 export interface CameraSettings {
   sensorId: SensorId;
+  /** Ignored for phones (fixed aperture). */
+  lensId: LensId;
   /** Real (not equivalent) focal length. */
   focalLengthMm: number;
   aperture: number;

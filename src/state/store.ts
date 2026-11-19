@@ -20,9 +20,10 @@ export interface AppState {
 export const initialState: AppState = {
   camera: {
     sensorId: 'apsc',
+    lensId: 'kit',
     // Start on a slider step (≙ 50 mm KB) so the control and the physics agree.
     focalLengthMm: focalOptions(SENSORS.apsc).find((o) => o.equivalentMm === 50)!.realMm,
-    aperture: 2.8,
+    aperture: 5.6, // widest the default kit zoom offers at 50 mm KB
     shutterS: 1 / 125,
     iso: 100,
     autoIso: true,

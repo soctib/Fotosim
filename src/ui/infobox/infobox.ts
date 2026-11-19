@@ -17,6 +17,7 @@ export function mountInfobox(root: HTMLElement, store: Store): void {
     title.textContent = t.infoTitles[key];
     text.textContent = fill(t.info[key], {
       aperture: formatAperture(d.settings.aperture),
+      maxAperture: formatAperture(d.maxAperture),
       eqAperture: formatAperture(d.equivalentAperture),
       handLimit: formatShutter(d.shake.limitS),
       isLimit: formatShutter(d.shake.limitIsS),

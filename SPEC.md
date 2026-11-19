@@ -46,7 +46,8 @@ Shows the text for the **last clicked/tapped element**, filled with live values 
 |---|---|
 | Sensor / film | Phone 2019, phone current (Pro), 1", MFT, APS-C, full frame, MF digital 44×33, MF 645, 6×6, 6×7 (film) |
 | Focal length | Steps are common full-frame-equivalent focal lengths; shown as **real + equivalent**, e.g. "50 mm (≙ 76 mm KB)". Phones: native lenses vs. digital crop marked. |
-| Aperture | 1.4 … 22 (phones: fixed, control locked) |
+| Lens | Kit zoom f/3.5–5.6 (default), pro zoom f/2.8, fast prime f/1.4 – limits the widest aperture (phones: built in, control locked) |
+| Aperture | 1.4 … 22, limited by the lens (phones: fixed, control locked) |
 | Shutter | 30 s … 1/4000, with markers **"hand"** (1/(f·crop)) and **"hand + IS"** (+3 stops) that move with focal length |
 | ISO | 100 … 12800, optional auto ISO |
 | Light | Sun 15, cloudy 13, shade 12, dusk 9, office 8, living room 6, night street 4, candle 3 (EV100) |
@@ -71,6 +72,7 @@ All formulas use mm for focal length/sensor, m for distances, s for shutter.
 - **Flash**: guide number model, full power correct at `GN·√(ISO/100)/N`, −2 stops per doubled distance.
   TTL: camera throttles power (0…7 stops) so the focused subject is correct; other elements get the same power.
   Built-in flash syncs at max 1/250 s.
+- **Lens limit** (`lens.ts`): widest aperture log-interpolated over the equivalent focal range (kit: f/3.5 at ≤ 28 mm to f/5.6 at ≥ 85 mm), rounded to the next list value that isn't faster. All modes clamp to it.
 - **Modes** (`modes.ts`): brute-force search over the discrete value lists, minimising
   `10·|subject offset| + shake penalties + aperture preference (P) + ISO preference (auto ISO)`.
   Auto mode fires the flash if it'd otherwise be ≥ 1 stop under, slower than the plain handheld limit, or need ISO ≥ 1600.
@@ -105,6 +107,5 @@ Unidirectional: input → `store.update()` → `resolveMode()` → `derive()` �
 
 ## Open questions
 
-- **Lens max aperture**: currently every interchangeable-lens sensor can go to f/1.4, so P mode happily picks f/1.4 at night. Add a "lens" setting (kit zoom f/3.5–5.6 vs. fast prime) that limits the aperture?
 - Subject motion (people moving) as an extra warning separate from camera shake?
 - Exact threshold for stick figure → face.

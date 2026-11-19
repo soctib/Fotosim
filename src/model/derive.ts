@@ -13,7 +13,7 @@ import {
   ttlPowerReductionStops,
   type FlashZone,
 } from './flash';
-import { resolveMode } from './modes';
+import { maxApertureFor, resolveMode } from './modes';
 import { classifyNoise, equivalentIso, noiseAmount, noiseIndexStops, type NoiseClass } from './noise';
 import {
   blurFractionOfWidth,
@@ -57,6 +57,8 @@ export interface Derived {
   settings: CameraSettings;
   autoFields: Set<AutoField>;
   sensor: Sensor;
+  /** Widest aperture the current lens (or phone) allows at this focal length. */
+  maxAperture: number;
   crop: number;
   cocMm: number;
   equivalentFocalMm: number;
@@ -122,6 +124,7 @@ export function derive(input: CameraSettings, scene: Scene): Derived {
     settings,
     autoFields,
     sensor,
+    maxAperture: maxApertureFor(settings, sensor),
     crop,
     cocMm: circleOfConfusionMm(sensor),
     equivalentFocalMm: equivalentFocalLengthMm(f, sensor),

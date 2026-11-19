@@ -36,7 +36,7 @@ describe('derive() layout and gear', () => {
   });
 
   it('suggests a fast 50 mm-class prime for f/1.8 at 50 mm, not the kit zoom', () => {
-    const d = derive({ ...initialState.camera, sensorId: 'fullFrame', focalLengthMm: 50, aperture: 1.8 }, initialState.scene);
+    const d = derive({ ...initialState.camera, sensorId: 'fullFrame', lensId: 'prime', focalLengthMm: 50, aperture: 1.8 }, initialState.scene);
     expect(d.gear.lensIds).toContain('nifty50');
     expect(d.gear.lensIds).not.toContain('kitZoom');
     expect(d.gear.phoneIds).toEqual([]);

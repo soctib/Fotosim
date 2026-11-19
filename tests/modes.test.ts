@@ -7,7 +7,8 @@ import { FLASH_SYNC_S } from '../src/model/stops';
 import type { CameraSettings, Scene } from '../src/model/types';
 import { initialState } from '../src/state/store';
 
-const base: CameraSettings = { ...initialState.camera, sensorId: 'fullFrame', focalLengthMm: 50 };
+// Fast lens so tests aren't limited by the aperture; lens limits are tested in lens.test.ts.
+const base: CameraSettings = { ...initialState.camera, sensorId: 'fullFrame', lensId: 'prime', focalLengthMm: 50 };
 const ff = SENSORS.fullFrame;
 
 describe('modes', () => {
@@ -39,7 +40,7 @@ describe('modes', () => {
   });
 
   it('auto mode fires the flash in a dark room and not in the sun', () => {
-    expect(resolveMode({ ...base, mode: 'auto' }, ff, 3).settings.flashOn).toBe(true);
+    expect(resolveMode({ ...base, lensId: 'kit', mode: 'auto' }, ff, 3).settings.flashOn).toBe(true);
     expect(resolveMode({ ...base, mode: 'auto', flashOn: true }, ff, 15).settings.flashOn).toBe(false);
   });
 
@@ -71,7 +72,7 @@ describe('derive', () => {
 
   it('with flash in candle light, near people are lit and the background stays darker', () => {
     const d = derive(
-      { ...base, mode: 'auto' },
+      { ...base, lensId: 'kit', mode: 'auto' },
       { ...scene, lightPresetId: 'candle' },
     );
     expect(d.settings.flashOn).toBe(true);

@@ -1,4 +1,6 @@
 import { exposureOffsetStops } from './exposure';
+import { CAMERA_LENSES } from '../data/cameraLenses';
+import { lensMaxAperture } from './lens';
 import { flashFullOffsetStops, litOffsetStops, ttlPowerReductionStops } from './flash';
 import { cropFactor } from './optics';
 import { handheldLimitS, handheldLimitWithIsS } from './shake';
@@ -78,11 +80,12 @@ function solve(
   const plainLimit = handheldLimitS(s.focalLengthMm, crop);
   const shakeLimit = s.stabilized ? handheldLimitWithIsS(s.focalLengthMm, crop) : plainLimit;
 
+  const widest = maxApertureFor(s, sensor);
   const apertures = sensor.fixedAperture
     ? [sensor.fixedAperture]
     : auto.has('aperture')
-      ? [...APERTURES]
-      : [s.aperture];
+      ? APERTURES.filter((n) => n >= widest)
+      : [Math.max(s.aperture, widest)];
   let shutters = auto.has('shutterS') ? [...SHUTTER_SPEEDS_S] : [s.shutterS];
   if (flashOn && auto.has('shutterS')) {
     shutters = shutters.filter((t) => t <= FLASH_SLOWEST_S + 1e-9 && t >= FLASH_SYNC_S - 1e-9);
@@ -164,11 +167,17 @@ export function resolveMode(
   return {
     settings: {
       ...settings,
-      aperture: sensor.fixedAperture ?? best.aperture,
+      aperture: sensor.fixedAperture ?? best.aperture, // already limited to the lens
       shutterS: best.shutterS,
       iso: best.iso,
       flashOn,
     },
     autoFields: auto,
   };
+}
+
+/** Widest aperture available: the phone's fixed one, or the lens limit at the current focal length. */
+export function maxApertureFor(settings: CameraSettings, sensor: Sensor): number {
+  if (sensor.fixedAperture) return sensor.fixedAperture;
+  return lensMaxAperture(CAMERA_LENSES[settings.lensId], settings.focalLengthMm * cropFactor(sensor));
 }

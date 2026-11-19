@@ -1,12 +1,13 @@
-// Basic camera controls: sensor, focal length, aperture, focus.
+// Basic camera controls: sensor, lens, focal length, aperture, focus.
 // DOM is built once; render() only syncs values so sliders aren't replaced mid-drag.
 
-import { de as t } from '../../data/texts.de';
+import { LENS_ORDER } from '../../data/cameraLenses';
 import { SENSORS, SENSOR_ORDER } from '../../data/sensors';
+import { de as t, fill } from '../../data/texts.de';
 import type { Derived } from '../../model/derive';
 import { focalOptions, formatFocal } from '../../model/focal';
 import { APERTURES, formatAperture } from '../../model/stops';
-import type { SensorId } from '../../model/types';
+import type { LensId, SensorId } from '../../model/types';
 import { MAX_DISTANCE_M, MIN_DISTANCE_M, setCamera, setFocus, setInfo } from '../../state/actions';
 import type { InfoKey, Store } from '../../state/store';
 import { formatMeters } from '../distance';
@@ -33,6 +34,13 @@ export function mountControls(root: HTMLElement, store: Store): void {
         ${SENSOR_ORDER.map((id) => `<option value="${id}">${t.sensors[id]}</option>`).join('')}
       </select>
     </div>
+    <div class="control" data-info="lens">
+      <label for="c-lens">${t.controls.lens}</label>
+      <select id="c-lens">
+        ${LENS_ORDER.map((id) => `<option value="${id}">${t.cameraLenses[id]}</option>`).join('')}
+      </select>
+      <small class="hint" id="h-lens"></small>
+    </div>
     <div class="control" data-info="focalLength">
       <label for="c-focal">${t.controls.focalLength} <output id="o-focal"></output></label>
       <input id="c-focal" type="range" min="0" step="1">
@@ -50,6 +58,7 @@ export function mountControls(root: HTMLElement, store: Store): void {
 
   const $ = <T extends HTMLElement>(id: string) => root.querySelector<T>(`#${id}`)!;
   const sensor = $<HTMLSelectElement>('c-sensor');
+  const lens = $<HTMLSelectElement>('c-lens');
   const focal = $<HTMLInputElement>('c-focal');
   const aperture = $<HTMLInputElement>('c-aperture');
   const focus = $<HTMLInputElement>('c-focus');
@@ -69,6 +78,7 @@ export function mountControls(root: HTMLElement, store: Store): void {
     const i = nearestIndex(opts.map((o) => o.equivalentMm), store.derived().equivalentFocalMm);
     setCamera(store, { sensorId: next.id, focalLengthMm: opts[i].realMm });
   });
+  lens.addEventListener('change', () => setCamera(store, { lensId: lens.value as LensId }));
   focal.addEventListener('input', () => {
     const opts = focalOptions(store.derived().sensor);
     setCamera(store, { focalLengthMm: opts[Number(focal.value)].realMm });
@@ -76,7 +86,7 @@ export function mountControls(root: HTMLElement, store: Store): void {
   aperture.addEventListener('input', () => setCamera(store, { aperture: APERTURES[Number(aperture.value)] }));
   focus.addEventListener('input', () => setFocus(store, posToFocus(Number(focus.value))));
 
-  store.subscribe((_state, d: Derived) => {
+  store.subscribe((state, d: Derived) => {
     const s = d.settings;
     sensor.value = s.sensorId;
 
@@ -88,10 +98,20 @@ export function mountControls(root: HTMLElement, store: Store): void {
     $('h-focal').textContent = opts[fi].native ? '' : t.controls.digitalCropHint;
 
     const fixed = d.sensor.fixedAperture !== undefined;
+    lens.value = s.lensId;
+    lens.disabled = fixed;
+    $('h-lens').textContent = fixed ? t.controls.phoneLensHint : '';
+
+    // The slider covers all apertures; the model clamps a wish wider than the lens allows.
+    const limited = !fixed && state.camera.aperture < d.maxAperture;
     aperture.disabled = fixed;
     aperture.value = String(nearestIndex(APERTURES, s.aperture));
     $('o-aperture').textContent = formatAperture(s.aperture);
-    $('h-aperture').textContent = fixed ? t.controls.fixedApertureHint : '';
+    $('h-aperture').textContent = fixed
+      ? t.controls.fixedApertureHint
+      : limited
+        ? fill(t.controls.lensLimitHint, { aperture: formatAperture(d.maxAperture) })
+        : '';
 
     focus.value = String(focusToPos(s.focusDistanceM));
     $('o-focus').textContent = formatMeters(s.focusDistanceM);

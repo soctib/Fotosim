@@ -20,6 +20,12 @@ export const de = {
     mf67: 'Mittelformat 6×7 (Film)',
   },
 
+  cameraLenses: {
+    kit: 'Kit-Zoom (f/3.5–5.6)',
+    fastZoom: 'Profi-Zoom (f/2.8)',
+    prime: 'Lichtstarke Festbrennweite (f/1.4)',
+  },
+
   modes: {
     auto: {
       short: 'A',
@@ -61,6 +67,7 @@ export const de = {
 
   controls: {
     sensor: 'Sensor / Film',
+    lens: 'Objektiv',
     focalLength: 'Brennweite',
     aperture: 'Blende',
     shutter: 'Belichtungszeit',
@@ -74,6 +81,8 @@ export const de = {
     logScale: 'Logarithmische Skala',
     autoSetHint: 'von der Kamera gesetzt',
     fixedApertureHint: 'beim Handy fest',
+    lensLimitHint: 'weiter geht dieses Objektiv nicht auf: {aperture}',
+    phoneLensHint: 'beim Handy eingebaut',
     digitalCropHint: 'Digitalzoom (Ausschnitt)',
   },
 
@@ -175,6 +184,7 @@ export const de = {
   // Infobox titles, keyed like `info`.
   infoTitles: {
     sensor: 'Sensor / Film',
+    lens: 'Objektiv',
     focalLength: 'Brennweite',
     aperture: 'Blende',
     shutter: 'Belichtungszeit',
@@ -194,6 +204,7 @@ export const de = {
   info: {
     sensor:
       'Je größer der Sensor, desto mehr Licht sammelt er insgesamt – weniger Rauschen, und bei gleicher Blende weniger Schärfentiefe. Die Belichtungszeit hängt NICHT von der Sensorgröße ab.',
+    lens: 'Das Objektiv legt fest, wie weit die Blende aufgeht. Das Kit-Zoom aus dem Kamera-Set ist günstig, aber lichtschwach – gerade am langen Ende. Lichtstarke Objektive (kleine Blendenzahl) kosten mehr, lassen mehr Licht herein und machen den Hintergrund unschärfer. Gerade: größte Blende {maxAperture}.',
     focalLength:
       'Die Brennweite bestimmt den Bildausschnitt. Angegeben ist die echte Brennweite und in Klammern, was sie an Kleinbild entspricht. Lange Brennweiten verwackeln leichter.',
     aperture:
