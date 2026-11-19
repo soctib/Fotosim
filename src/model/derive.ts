@@ -14,7 +14,7 @@ import {
   ttlPowerReductionStops,
   type FlashZone,
 } from './flash';
-import { maxApertureFor, resolveMode } from './modes';
+import { autoIsoMax, maxApertureFor, resolveMode } from './modes';
 import { fastestShutterS } from './stops';
 import { classifyNoise, equivalentIso, noiseAmount, noiseIndexStops, type NoiseClass } from './noise';
 import {
@@ -78,6 +78,8 @@ export interface Derived {
   /** Exposure of the focused subject (ambient + flash). Drives the exposure bar. */
   exposureOffsetStops: number;
   exposureClass: ExposureClass;
+  /** Auto ISO is at its upper limit and the subject is still too dark: that limit, else null. */
+  autoIsoCapped: number | null;
   /** Flash on: its zone (null while the ambient light alone is enough) and the TTL power reduction. */
   flash: { zone: FlashZone | null; powerReductionStops: number } | null;
   shake: { limitS: number; limitIsS: number; cls: ShakeClass; blurFactor: number };
@@ -148,6 +150,10 @@ export function derive(input: CameraSettings, scene: Scene): Derived {
     ambientOffsetStops: ambient,
     exposureOffsetStops: subject,
     exposureClass: classifyExposure(subject),
+    autoIsoCapped:
+      autoFields.has('iso') && iso >= autoIsoMax(settings.flashOn) && classifyExposure(subject).endsWith('Under')
+        ? autoIsoMax(settings.flashOn)
+        : null,
     flash,
     shake: {
       limitS: handheldLimitS(f, crop),

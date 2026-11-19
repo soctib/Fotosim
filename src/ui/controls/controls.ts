@@ -223,7 +223,7 @@ export function mountControls(root: HTMLElement, store: Store): void {
     iso.disabled = auto.has('iso');
     iso.value = String(nearestIndex(ISOS, s.iso));
     $('o-iso').textContent = String(s.iso);
-    hint('iso', autoHint('iso'));
+    hint('iso', d.autoIsoCapped !== null ? fill(t.controls.autoIsoCapHint, { iso: String(d.autoIsoCapped) }) : autoHint('iso'));
     autoIso.checked = s.autoIso;
     // Hidden where it means nothing: A (always auto), M (always manual), film (the film decides).
     autoIso.closest<HTMLElement>('.control')!.hidden = s.mode === 'auto' || s.mode === 'M' || !!d.sensor.isFilm;

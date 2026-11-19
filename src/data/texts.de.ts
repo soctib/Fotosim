@@ -90,6 +90,7 @@ export const de = {
     logScale: 'Logarithmisch',
     details: 'Details',
     autoSetHint: 'von der Kamera gesetzt',
+    autoIsoCapHint: 'Auto-ISO geht nur bis {iso} – heller wird es nur über Zeit, Blende oder Blitz',
     fixedApertureHint: 'beim Handy fest',
     lensLimitHint: 'Objektiv öffnet bei dieser Brennweite nur bis {aperture}',
     nearLimitHint: 'näher stellt dieses Objektiv nicht scharf: {min}',

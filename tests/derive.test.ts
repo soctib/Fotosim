@@ -74,3 +74,20 @@ describe('derive().blurFractionAt', () => {
     expect(d.blurAt(0.8)).toBeGreaterThan(3); // eyes: several times the "sharp" limit
   });
 });
+
+describe('derive().autoIsoCapped', () => {
+  const tv = { ...initialState.camera, mode: 'Tv' as const, shutterS: 1 / 60, autoIso: true };
+  const scene = (lightPresetId: string) => ({ ...initialState.scene, lightPresetId });
+
+  it('names the limit when auto ISO is maxed out and the subject is still too dark', () => {
+    const d = derive(tv, scene('candle'));
+    expect(d.settings.iso).toBe(3200);
+    expect(d.exposureClass.endsWith('Under')).toBe(true);
+    expect(d.autoIsoCapped).toBe(3200);
+  });
+
+  it('is null when the exposure works out, or the ISO is set by hand', () => {
+    expect(derive(tv, scene('cloudy')).autoIsoCapped).toBeNull();
+    expect(derive({ ...tv, autoIso: false, iso: 3200 }, scene('candle')).autoIsoCapped).toBeNull();
+  });
+});

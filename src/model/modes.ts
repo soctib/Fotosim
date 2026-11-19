@@ -18,6 +18,11 @@ import type { AutoField, CameraSettings, Sensor } from './types';
 /** Auto mode fires the flash once it would need this ISO or more. */
 export const AUTO_FLASH_ISO = 1600;
 
+/** Highest ISO auto ISO picks: lower with flash, where the flash should do the work. */
+export function autoIsoMax(flashOn: boolean): number {
+  return flashOn ? AUTO_FLASH_ISO : AUTO_ISO_MAX;
+}
+
 export interface ResolvedSettings {
   settings: CameraSettings;
   /** Fields the camera set itself (greyed out in the UI). */
@@ -96,7 +101,7 @@ function solve(
   if (flashOn && auto.has('shutterS') && !sensor.ledFlash) {
     shutters = shutters.filter((t) => t <= FLASH_SLOWEST_S + 1e-9 && t >= FLASH_SYNC_S - 1e-9);
   }
-  const isoMax = flashOn ? AUTO_FLASH_ISO : AUTO_ISO_MAX;
+  const isoMax = autoIsoMax(flashOn);
   const isos = auto.has('iso') ? ISOS.filter((i) => i <= isoMax) : [s.iso];
 
   let best: Candidate | null = null;
