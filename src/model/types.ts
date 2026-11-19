@@ -7,6 +7,7 @@ export type SensorId =
   | 'mft'
   | 'apsc'
   | 'fullFrame'
+  | 'film35'
   | 'mf4433'
   | 'mf645'
   | 'mf66'
@@ -20,6 +21,7 @@ export interface Sensor {
   fixedAperture?: number;
   /** Typical flash guide number at ISO 100 in metres (pop-up ≈ 12, phone LED ≈ 2). */
   flashGuideNumber: number;
+  /** Film: the ISO is the loaded film's speed – no camera mode can change it. */
   isFilm?: boolean;
 }
 

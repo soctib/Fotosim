@@ -10,6 +10,8 @@ export const SENSORS: Record<SensorId, Sensor> = {
   mft: { id: 'mft', widthMm: 17.3, heightMm: 13, flashGuideNumber: 10 },
   apsc: { id: 'apsc', widthMm: 23.5, heightMm: 15.6, flashGuideNumber: 12 },
   fullFrame: { id: 'fullFrame', widthMm: 36, heightMm: 24, flashGuideNumber: 12 },
+  // Same format on 35 mm film
+  film35: { id: 'film35', widthMm: 36, heightMm: 24, flashGuideNumber: 12, isFilm: true },
   mf4433: { id: 'mf4433', widthMm: 43.8, heightMm: 32.9, flashGuideNumber: 12 },
   mf645: { id: 'mf645', widthMm: 56, heightMm: 41.5, flashGuideNumber: 12, isFilm: true },
   mf66: { id: 'mf66', widthMm: 56, heightMm: 56, flashGuideNumber: 12, isFilm: true },
@@ -23,6 +25,7 @@ export const SENSOR_ORDER: SensorId[] = [
   'mft',
   'apsc',
   'fullFrame',
+  'film35',
   'mf4433',
   'mf645',
   'mf66',

@@ -140,6 +140,7 @@ export function resolveMode(
 ): ResolvedSettings {
   const auto = autoFieldsForMode(settings);
   if (sensor.fixedAperture) auto.delete('aperture');
+  if (sensor.isFilm) auto.delete('iso'); // the loaded film decides, in every mode
 
   let flashOn = settings.flashOn;
   if (settings.mode === 'auto') {

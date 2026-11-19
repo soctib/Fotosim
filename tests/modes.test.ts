@@ -49,6 +49,17 @@ describe('modes', () => {
     expect(r.settings.shutterS).toBeCloseTo(FLASH_SYNC_S, 6);
   });
 
+  it('film never changes the ISO by itself, not even in auto mode', () => {
+    const film = SENSORS.film35;
+    for (const mode of ['auto', 'P', 'Av', 'Tv'] as const) {
+      const r = resolveMode({ ...base, sensorId: 'film35', mode, autoIso: true, iso: 400 }, film, 6);
+      expect(r.settings.iso).toBe(400);
+      expect(r.autoFields.has('iso')).toBe(false);
+    }
+    // Digital full frame of the same size does raise the ISO indoors.
+    expect(resolveMode({ ...base, mode: 'Av', autoIso: true, iso: 100, aperture: 5.6 }, ff, 6).settings.iso).toBeGreaterThan(100);
+  });
+
   it('phones keep their fixed aperture in every mode', () => {
     const phone = SENSORS.phone2019;
     for (const mode of ['auto', 'P', 'Av', 'Tv', 'M'] as const) {

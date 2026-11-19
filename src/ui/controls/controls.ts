@@ -1,5 +1,5 @@
-// Camera controls, grouped: camera (sensor, lens, focal length, stabiliser),
-// mode, exposure (aperture, shutter, ISO, flash) and sharpness (focus tracking, focus).
+// Camera controls in two panels: camera body (type, mode, aperture, shutter, ISO, flash)
+// and lens (type, focal length, stabiliser, focus tracking, focus).
 // DOM is built once; the subscriber only syncs values so sliders aren't replaced mid-drag.
 // Fields the current mode sets itself are disabled and show the camera's choice.
 
@@ -58,54 +58,56 @@ const checkbox = (id: string, label: string, info: string) => `
 
 export function mountControls(root: HTMLElement, store: Store): void {
   root.classList.add('controls');
+  // Two panels like the real thing: the body (type, mode, exposure – modern bodies set the
+  // aperture too) and the lens (type, zoom, stabiliser, focus). Each starts with its type dropdown.
   root.innerHTML = `
-    <h3>${t.controls.sectionCamera}</h3>
-    <div class="control" data-info="sensor">
-      <label for="c-sensor">${t.controls.sensor}</label>
-      <select id="c-sensor">
-        ${SENSOR_ORDER.map((id) => `<option value="${id}">${t.sensors[id]}</option>`).join('')}
-      </select>
-    </div>
-    <div class="control" data-info="lens">
-      <label for="c-lens">${t.controls.lens}</label>
-      <select id="c-lens">
-        ${LENS_ORDER.map((id) => `<option value="${id}">${t.cameraLenses[id]}</option>`).join('')}
-      </select>
-    </div>
-    ${range('focal', t.controls.focalLength, 0, 'focalLength')}
-    ${checkbox('stabilized', t.controls.stabilized, 'stabilized')}
-
-    <h3>${t.controls.mode}</h3>
-    <div class="control" data-info="mode">
-      <div class="segmented" role="radiogroup" aria-label="${t.controls.mode}">
-        ${MODES.map((m) => `<button type="button" role="radio" data-mode="${m}" title="${t.modes[m].name}">${t.modes[m].short}</button>`).join('')}
+    <section class="panel" aria-label="${t.controls.sectionCamera}">
+      <h3>${t.controls.sectionCamera}</h3>
+      <div class="control" data-info="sensor">
+        <select id="c-sensor" aria-label="${t.controls.cameraType}">
+          ${SENSOR_ORDER.map((id) => `<option value="${id}">${t.sensors[id]}</option>`).join('')}
+        </select>
       </div>
-      <p class="mode-desc"><strong id="mode-name"></strong> <span id="mode-text"></span></p>
-    </div>
+      <div class="control" data-info="mode">
+        <span class="control-label">${t.controls.mode}</span>
+        <div class="segmented" role="radiogroup" aria-label="${t.controls.mode}">
+          ${MODES.map((m) => `<button type="button" role="radio" data-mode="${m}" title="${t.modes[m].name}">${t.modes[m].short}</button>`).join('')}
+        </div>
+        <p class="mode-desc"><strong id="mode-name"></strong> <span id="mode-text"></span></p>
+      </div>
+      ${range('aperture', t.controls.aperture, APERTURES.length - 1, 'aperture')}
+      ${range(
+        'shutter',
+        t.controls.shutter,
+        SHUTTER_SPEEDS_S.length - 1,
+        'shutter',
+        `<span class="range-marker" id="m-hand"><span>${t.shake.markerHand}</span></span>
+         <span class="range-marker" id="m-is"><span>${t.shake.markerIS}</span></span>`,
+      )}
+      ${range('iso', t.controls.iso, ISOS.length - 1, 'iso')}
+      ${checkbox('autoiso', t.controls.autoIso, 'iso')}
+      ${checkbox('flash', t.controls.flash, 'flash')}
+    </section>
 
-    <h3>${t.controls.sectionExposure}</h3>
-    ${range('aperture', t.controls.aperture, APERTURES.length - 1, 'aperture')}
-    ${range(
-      'shutter',
-      t.controls.shutter,
-      SHUTTER_SPEEDS_S.length - 1,
-      'shutter',
-      `<span class="range-marker" id="m-hand"><span>${t.shake.markerHand}</span></span>
-       <span class="range-marker" id="m-is"><span>${t.shake.markerIS}</span></span>`,
-    )}
-    ${range('iso', t.controls.iso, ISOS.length - 1, 'iso')}
-    ${checkbox('autoiso', t.controls.autoIso, 'iso')}
-    ${checkbox('flash', t.controls.flash, 'flash')}
-
-    <h3>${t.controls.sectionFocus}</h3>
-    <div class="control" data-info="autofocus">
-      <label for="c-af">${t.controls.autofocus}</label>
-      <select id="c-af">
-        <option value="">${t.controls.autofocusOff}</option>
-        ${AF_TARGETS.map((id) => `<option value="${id}">${t.elements[id]}</option>`).join('')}
-      </select>
-    </div>
-    ${range('focus', t.controls.focus, FOCUS_STEPS, 'focus')}`;
+    <section class="panel" aria-label="${t.controls.sectionLens}">
+      <h3>${t.controls.sectionLens}</h3>
+      <div class="control" data-info="lens">
+        <select id="c-lens" aria-label="${t.controls.lensType}">
+          ${LENS_ORDER.map((id) => `<option value="${id}">${t.cameraLenses[id]}</option>`).join('')}
+        </select>
+        <small class="hint" id="h-lens"></small>
+      </div>
+      ${range('focal', t.controls.focalLength, 0, 'focalLength')}
+      ${checkbox('stabilized', t.controls.stabilized, 'stabilized')}
+      <div class="control" data-info="autofocus">
+        <label for="c-af">${t.controls.autofocus}</label>
+        <select id="c-af">
+          <option value="">${t.controls.autofocusOff}</option>
+          ${AF_TARGETS.map((id) => `<option value="${id}">${t.elements[id]}</option>`).join('')}
+        </select>
+      </div>
+      ${range('focus', t.controls.focus, FOCUS_STEPS, 'focus')}
+    </section>`;
 
   const $ = <T extends HTMLElement>(id: string) => root.querySelector<T>(`#${id}`)!;
   const sensor = $<HTMLSelectElement>('c-sensor');
@@ -171,9 +173,10 @@ export function mountControls(root: HTMLElement, store: Store): void {
     hint('focal', opts[fi].native ? '' : t.controls.digitalCropHint);
 
     const fixed = d.sensor.fixedAperture !== undefined;
-    // Phones have built-in lenses: no lens choice at all.
+    // Phones have built-in lenses: no lens choice, just a note.
     lens.value = s.lensId;
-    lens.closest<HTMLElement>('.control')!.hidden = fixed;
+    lens.hidden = fixed;
+    hint('lens', fixed ? t.controls.phoneLensHint : '');
     stabilized.checked = s.stabilized;
 
     for (const b of modeButtons) {
@@ -215,7 +218,8 @@ export function mountControls(root: HTMLElement, store: Store): void {
     $('o-iso').textContent = String(s.iso);
     hint('iso', autoHint('iso'));
     autoIso.checked = s.autoIso;
-    autoIso.closest<HTMLElement>('.control')!.hidden = s.mode === 'auto' || s.mode === 'M';
+    // Hidden where it means nothing: A (always auto), M (always manual), film (the film decides).
+    autoIso.closest<HTMLElement>('.control')!.hidden = s.mode === 'auto' || s.mode === 'M' || !!d.sensor.isFilm;
 
     flash.checked = s.flashOn;
     flash.disabled = auto.has('flashOn');

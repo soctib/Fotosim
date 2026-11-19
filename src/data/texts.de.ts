@@ -10,10 +10,11 @@ export const de = {
   sensors: {
     phone2019: 'Handy (2019)',
     phoneModern: 'Handy (aktuell, Pro)',
-    oneInch: '1-Zoll',
+    oneInch: 'Kompaktkamera (1 Zoll)',
     mft: 'Micro Four Thirds',
     apsc: 'APS-C',
-    fullFrame: 'Vollformat (Kleinbild)',
+    fullFrame: 'Vollformat digital',
+    film35: 'Kleinbild analog (Film)',
     mf4433: 'Mittelformat digital (44×33)',
     mf645: 'Mittelformat 6×4,5 (Film)',
     mf66: 'Mittelformat 6×6 (Film)',
@@ -66,8 +67,6 @@ export const de = {
   },
 
   controls: {
-    sensor: 'Sensor / Film',
-    lens: 'Objektiv',
     focalLength: 'Brennweite',
     aperture: 'Blende',
     shutter: 'Belichtungszeit',
@@ -80,8 +79,10 @@ export const de = {
     focus: 'Fokus',
     sectionScene: 'Szene',
     sectionCamera: 'Kamera',
-    sectionExposure: 'Belichtung',
-    sectionFocus: 'Schärfe',
+    sectionLens: 'Objektiv',
+    cameraType: 'Kameratyp',
+    lensType: 'Objektivtyp',
+    phoneLensHint: 'Beim Handy fest eingebaut.',
     autofocus: 'Fokus nachführen',
     autofocusOff: 'Aus',
     autofocusHint: 'folgt {target} – zum Verstellen „Fokus nachführen“ ausschalten',
@@ -194,7 +195,7 @@ export const de = {
 
   // Infobox titles, keyed like `info`.
   infoTitles: {
-    sensor: 'Sensor / Film',
+    sensor: 'Kameratyp',
     lens: 'Objektiv',
     focalLength: 'Brennweite',
     aperture: 'Blende',
@@ -217,7 +218,7 @@ export const de = {
   // Infobox: shown for the last clicked/tapped element. {placeholders} get live values.
   info: {
     sensor:
-      'Je größer der Sensor, desto mehr Licht sammelt er insgesamt – weniger Rauschen, und bei gleicher Blende weniger Schärfentiefe. Die Belichtungszeit hängt NICHT von der Sensorgröße ab.',
+      'Der Kameratyp steht vor allem für die Größe des Sensors (oder Films). Je größer der Sensor, desto mehr Licht sammelt er insgesamt – weniger Rauschen, und bei gleicher Blende weniger Schärfentiefe. Die Belichtungszeit hängt NICHT von der Sensorgröße ab.',
     lens: 'Das Objektiv legt fest, wie weit die Blende aufgeht. Das Kit-Zoom aus dem Kamera-Set ist günstig, aber lichtschwach – gerade am langen Ende. Lichtstarke Objektive (kleine Blendenzahl) kosten mehr, lassen mehr Licht herein und machen den Hintergrund unschärfer. Gerade: größte Blende {maxAperture}.',
     focalLength:
       'Die Brennweite bestimmt den Bildausschnitt. Angegeben ist die echte Brennweite und in Klammern, was sie an Kleinbild entspricht. Lange Brennweiten verwackeln leichter.',

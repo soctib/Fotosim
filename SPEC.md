@@ -44,14 +44,18 @@ Shows the text for the **last clicked/tapped element**, filled with live values 
 
 ## Inputs
 
+Grouped like the real thing: a **camera** panel (type, mode, aperture, shutter, ISO, flash – modern bodies set the
+aperture) and a **lens** panel (type, focal length, stabiliser, focus tracking, focus), each starting with its type
+dropdown. Light and element distances live in the scene panel.
+
 | Control | Values |
 |---|---|
-| Sensor / film | Phone 2019, phone current (Pro), 1", MFT, APS-C, full frame, MF digital 44×33, MF 645, 6×6, 6×7 (film) |
+| Camera type (= sensor/film size) | Phone 2019, phone current (Pro), 1" compact, MFT, APS-C, full frame digital, 35 mm film, MF digital 44×33, MF 645, 6×6, 6×7 (film) |
 | Focal length | Steps are common full-frame-equivalent focal lengths; shown as **real + equivalent**, e.g. "50 mm (≙ 76 mm KB)". Phones: native lenses vs. digital crop marked. |
 | Lens | Kit zoom f/3.5–5.6 (default), pro zoom f/2.8, fast prime f/1.4 – limits the widest aperture (phones: built in, control locked) |
 | Aperture | 1.4 … 22, limited by the lens (phones: fixed, control locked) |
 | Shutter | 30 s … 1/4000, with markers **"hand"** (1/(f·crop)) and **"hand + IS"** (+3 stops) that move with focal length |
-| ISO | 100 … 12800, optional auto ISO |
+| ISO | 100 … 12800 in ⅓ stops, optional auto ISO (P/Av/Tv). Film: fixed by the loaded film in every mode, no auto ISO |
 | Light | Sun 15, cloudy 13, shade 12, dusk 9, office 8, living room 6, night street 4, candle 3 (EV100) |
 | Mode | **A** (full auto), **P**, **Av** (Nikon/Sony: A), **Tv** (Nikon/Sony: S), **M** – each with a short explanation |
 | Flash | Checkbox in P/Av/Tv/M; in A the camera switches it on/off itself |
