@@ -96,7 +96,9 @@ export function mountGraph(root: HTMLElement, store: Store): void {
     detailsBox.checked = details();
     resetBtn.hidden = log;
     const afOn = store.derived().settings.afTarget !== null;
-    hint.textContent = !log ? t.graph.hintLinear : afOn ? t.graph.hintAutofocus : t.graph.hintLog;
+    hint.textContent = log
+      ? afOn ? t.graph.hintAutofocus : t.graph.hintLog
+      : afOn ? t.graph.hintLinearAutofocus : t.graph.hintLinear;
     svg.style.touchAction = log ? 'pan-y' : 'none';
     svg.setAttribute('viewBox', `0 0 ${layout.w} ${layout.h}`);
     svg.setAttribute('height', String(layout.h));
@@ -268,7 +270,7 @@ function draw(d: Derived, v: XView, L: Layout, details: boolean): string {
   parts.push(`<text class="dof-label" x="${lx}" y="${labelY}">${dofLabel}</text>`);
 
   if (details) parts.push(drawYAxis(sy, L));
-  if (d.flash) parts.push(drawFlashZone(d.flash.zone, xOf, L));
+  if (d.flash?.zone) parts.push(drawFlashZone(d.flash.zone, xOf, L));
 
   // X axis.
   parts.push(`<line class="axis" x1="${L.left}" x2="${L.right}" y1="${L.plotBottom}" y2="${L.plotBottom}"/>`);
@@ -362,13 +364,18 @@ function drawCurve(d: Derived, sx: XScale, sy: (b: number) => number, L: Layout)
   return `<polyline class="curve" clip-path="url(#plot-clip)" points="${pts.join(' ')}"/>`;
 }
 
-/** Strip along the bottom of the plot: too close / in range / fading out, nothing beyond. */
+/**
+ * Strip along the bottom of the plot: too close / in range / fading out, nothing beyond.
+ * Boundaries the ambient light already clears are infinite and land on the right edge; then
+ * the fade runs to the edge and "too weak" isn't claimed.
+ */
 function drawFlashZone(z: FlashZone, xOf: (m: number) => number, L: Layout): string {
   const h = 12;
   const y = L.plotBottom - h - 2;
   const close = xOf(z.tooCloseM);
   const range = xOf(z.maxRangeM);
   const weakEnd = xOf(z.strongUnderM);
+  const weakLabel = Number.isFinite(z.slightUnderM) ? t.flash.zoneWeak : '';
   const label = (x0: number, x1: number, text: string) =>
     x1 - x0 > text.length * 5.6 + 6
       ? `<text class="flash-label" x="${(x0 + x1) / 2}" y="${y + h - 3}" text-anchor="middle">${text}</text>`
@@ -379,7 +386,7 @@ function drawFlashZone(z: FlashZone, xOf: (m: number) => number, L: Layout): str
     <rect class="flash-close" x="${L.left}" y="${y}" width="${Math.max(0, close - L.left)}" height="${h}"/>
     <rect class="flash-range" x="${close}" y="${y}" width="${Math.max(0, range - close)}" height="${h}"/>
     <rect fill="url(#flash-fade)" x="${range}" y="${y}" width="${Math.max(0, weakEnd - range)}" height="${h}"/>
-    ${label(L.left, close, t.flash.zoneTooClose)}${label(close, range, t.flash.zoneRange)}${label(range, weakEnd, t.flash.zoneWeak)}
+    ${label(L.left, close, t.flash.zoneTooClose)}${label(close, range, t.flash.zoneRange)}${weakLabel && label(range, weakEnd, weakLabel)}
   </g>`;
 }
 

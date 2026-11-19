@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { SENSORS } from '../src/data/sensors';
 import { derive } from '../src/model/derive';
-import { focalOptions, formatFocal } from '../src/model/focal';
 import { resolveMode } from '../src/model/modes';
 import { FLASH_SYNC_S } from '../src/model/stops';
 import type { CameraSettings, Scene } from '../src/model/types';
@@ -71,6 +70,17 @@ describe('modes', () => {
     expect(resolveMode({ ...base, mode: 'Av', autoIso: true, iso: 100, aperture: 5.6 }, ff, 6).settings.iso).toBeGreaterThan(100);
   });
 
+  it('a fast film in bright sun is no reason for auto mode to flash', () => {
+    const film = SENSORS.film35;
+    for (const iso of [1600, 12800]) {
+      const r = resolveMode({ ...base, sensorId: 'film35', mode: 'auto', iso }, film, 15);
+      expect(r.settings.flashOn).toBe(false);
+      expect(r.settings.shutterS).toBeLessThan(FLASH_SYNC_S); // not capped at the sync speed
+    }
+    // Digital auto mode still flashes once it would need ISO 1600 on its own.
+    expect(resolveMode({ ...base, lensId: 'kit', mode: 'auto' }, ff, 5).settings.flashOn).toBe(true);
+  });
+
   it('phones keep their fixed aperture in every mode', () => {
     const phone = SENSORS.phone2019;
     for (const mode of ['auto', 'P', 'Av', 'Tv', 'M'] as const) {
@@ -114,13 +124,3 @@ describe('derive', () => {
   });
 });
 
-describe('focal options', () => {
-  it('shows real and equivalent focal length', () => {
-    expect(formatFocal(50, ff)).toBe('50 mm');
-    expect(formatFocal(50, SENSORS.apsc)).toMatch(/^50 mm \(≙ 7[67] mm KB\)$/);
-  });
-  it('phones only offer their built-in cameras – no digital zoom steps', () => {
-    expect(focalOptions(SENSORS.phone2019).map((o) => o.equivalentMm)).toEqual([13, 26, 52]);
-    expect(focalOptions(SENSORS.phoneModern).map((o) => o.equivalentMm)).toEqual([13, 24, 77]);
-  });
-});

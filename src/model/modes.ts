@@ -91,7 +91,9 @@ function solve(
   let shutters = auto.has('shutterS')
     ? SHUTTER_SPEEDS_S.filter((t) => t >= fastest)
     : [Math.max(s.shutterS, fastestShutterS(sensor))];
-  if (flashOn && auto.has('shutterS')) {
+  // A real flash tube needs the shutter between the sync speed and the slowest flash time;
+  // a phone's LED is continuous light and doesn't care.
+  if (flashOn && auto.has('shutterS') && !sensor.ledFlash) {
     shutters = shutters.filter((t) => t <= FLASH_SLOWEST_S + 1e-9 && t >= FLASH_SYNC_S - 1e-9);
   }
   const isoMax = flashOn ? AUTO_FLASH_ISO : AUTO_ISO_MAX;
@@ -151,6 +153,8 @@ export function resolveMode(
     const noFlash = solve(settings, sensor, sceneEv100, auto, false);
     // Green-mode cameras pop the flash early: as soon as the shot would need high ISO,
     // a shutter slower than the plain handheld limit (people move!) or is still too dark.
+    // The ISO criterion only makes sense when the camera chose the ISO itself – a fast film
+    // in bright sun is no reason to flash.
     const plainLimit = handheldLimitS(settings.focalLengthMm, cropFactor(sensor));
     const off = subjectOffsetStops(
       sceneEv100,
@@ -162,12 +166,16 @@ export function resolveMode(
       settings.focusDistanceM,
     );
     flashOn =
-      off <= -1 || noFlash.shutterS > plainLimit * 1.01 || noFlash.iso >= AUTO_FLASH_ISO;
+      off <= -1 ||
+      noFlash.shutterS > plainLimit * 1.01 ||
+      (auto.has('iso') && noFlash.iso >= AUTO_FLASH_ISO);
   }
 
-  // Built-in flash cannot sync faster than the sync speed.
+  // Built-in flash cannot sync faster than the sync speed (an LED can).
   const input =
-    flashOn && settings.shutterS < FLASH_SYNC_S ? { ...settings, shutterS: FLASH_SYNC_S } : settings;
+    flashOn && !sensor.ledFlash && settings.shutterS < FLASH_SYNC_S
+      ? { ...settings, shutterS: FLASH_SYNC_S }
+      : settings;
   const best = solve(input, sensor, sceneEv100, auto, flashOn);
   return {
     settings: {

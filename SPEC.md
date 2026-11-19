@@ -23,7 +23,8 @@ Ships as **one self-contained HTML file** (`npm run build` → `dist/index.html`
     each blurred by its own distance. Very large heads grow into the plot, drawn see-through.
 - **Focus line**: vertical, draggable. Tapping an element focuses on it (simulated autofocus).
 - **Depth-of-field band** (near/far limit) shaded.
-- **Flash zone** shaded when the flash is on: too close / range / falling off / no effect.
+- **Flash zone** shaded when the flash is on: too close / range / falling off / no effect. Computed for ambient + flash,
+  so ambient light extends the range; hidden while the ambient light alone is enough (the flash then does nothing).
 
 ### 2. Scene panel
 Light situation, plus one compact row per element: visible toggle, distance as number (read + edit), "focus here" button.
@@ -45,7 +46,9 @@ Optional: directional blur for camera shake when `shake.blurFactor > 1`.
 Shows the text for the **last clicked/tapped element**, filled with live values (`texts.info`, `fill()`).
 
 ### 6. Lens & phone list (side panel / bottom sheet on mobile)
-- Rough lens prices (orders of magnitude), highlighting classes that match the current real focal length + aperture.
+- Rough lens prices (orders of magnitude), highlighting classes that match the current framing (full-frame-equivalent
+  focal length) + aperture, so a "50 mm f/1.8" is the normal prime of any system. Medium format gets a note that its
+  lenses are another price league.
 - Phone classes (2019 basic/tele, current basic/pro/zoom flagship) and what they can do. Note that phone background blur is mostly software.
 
 ## Inputs
@@ -64,10 +67,10 @@ dropdown. Light and element distances live in the scene panel.
 | ISO | 100 … 12800 in ⅓ stops, optional auto ISO (P/Av/Tv). Film: fixed by the loaded film in every mode, no auto ISO |
 | Light | Sun 15, cloudy 13, shade 12, dusk 9, office 8, living room 6, night street 4, candle 3 (EV100) |
 | Mode | **A** (full auto), **P**, **Av** (Nikon/Sony: A), **Tv** (Nikon/Sony: S), **M** – each with a short explanation |
-| Flash | Checkbox in P/Av/Tv/M; in A the camera switches it on/off itself |
+| Flash | Checkbox in P/Av/Tv/M; in A the camera switches it on/off itself. Phones have an LED: no sync speed |
 | Stabiliser | Checkbox |
-| Focus | Slider + focus line + tap-to-focus, all synced |
-| Focus tracking ("Fokus nachführen", AF-C) | Off (default) or tracking Person 1 / Person 2 / background, switched on only via its dropdown. While on, focus follows the target, the focus slider and line are display-only, and graph taps do nothing. Tapping an object in the camera image is tap-to-focus (one shot) when tracking is off, or moves the tracked target when it's on. Off keeps the last distance. |
+| Focus | Slider + focus line + tap-to-focus, all synced. Can't go closer than the lens's near limit (≈ 8× focal length, at least 0.3 m); element distances share that limit and are pushed out when a longer lens is chosen |
+| Focus tracking ("Fokus nachführen", AF-C) | Off (default) or tracking Person 1 / Person 2 / background, switched on only via its dropdown. While on, focus follows the target, the focus slider and line are display-only, and graph taps do nothing. Tapping an object in the camera image is tap-to-focus (one shot) when tracking is off, or moves the tracked target when it's on. Off keeps the last distance. Hiding the tracked element switches tracking off (keeping the distance). |
 
 Modes grey out and set the controls they own (`autoFields`).
 
@@ -76,19 +79,26 @@ Modes grey out and set the controls they own (`autoFields`).
 All formulas use mm for focal length/sensor, m for distances, s for shutter.
 
 - **Crop factor** = 43.27 mm / sensor diagonal. **CoC** = diagonal / 1500.
-- **Blur disc** `b = f² / (N (s − f)) · |d − s| / d` (object at d, focus at s; d = ∞ allowed).
+- **Blur disc** `b = f² / (N (s − f)) · |d − s| / d` (object at d, focus at s; d = ∞ allowed). Thin-lens formulas, so
+  distances stay ≥ the **near limit** `max(0.3 m, 8·f)` – the UI clamps focus and elements to it.
 - **Hyperfocal** `H = f² / (N c) + f`; DOF near/far from H.
 - **Exposure**: `EV_settings = log2(N²/t) − log2(ISO/100)`; offset = `EV_scene − EV_settings` (+ = over).
-  Sensor size does **not** affect exposure (light per area), only noise and DOF.
+  Sensor size does **not** affect exposure (light per area), only noise and DOF. Classified (±1 slight, ±2 strong) on
+  the value rounded to one decimal, as displayed.
 - **Noise index** (stops) = `log2(ISO/100) + 2·log2(crop) + underexposure`. Equivalent ISO = ISO · crop².
+  Verdict for normal viewing size: low < 4 (≈ ISO 1600 full frame), medium < 6, high < 8, else very high; the overlay
+  starts at index 2 (≈ ISO 400 full frame).
 - **Shake**: handheld limit `1/(f·crop)`, IS adds 3 stops.
 - **Flash**: guide number model, full power correct at `GN·√(ISO/100)/N`, −2 stops per doubled distance.
   TTL: camera throttles power (0…7 stops) so the focused subject is correct; other elements get the same power.
-  Built-in flash syncs at max 1/250 s.
+  Built-in flash syncs at max 1/250 s (and ≥ 1/60 s in auto-shutter modes); a phone LED has no such limits.
+  Zone from ambient + flash: too close = over by ≥ 1 stop even at minimum power; range = full power reaches 0;
+  slight/strong under = −1/−2 stops. Boundaries the ambient light already clears are ∞; ambient ≥ 0 → no zone.
 - **Lens limit** (`lens.ts`): widest aperture log-interpolated over the equivalent focal range (kit: f/3.5 at ≤ 28 mm to f/5.6 at ≥ 85 mm), rounded to the next list value that isn't faster. All modes clamp to it.
 - **Modes** (`modes.ts`): brute-force search over the discrete value lists, minimising
   `10·|subject offset| + shake penalties + aperture preference (P) + ISO preference (auto ISO)`.
-  Auto mode fires the flash if it'd otherwise be ≥ 1 stop under, slower than the plain handheld limit, or need ISO ≥ 1600.
+  Auto mode fires the flash if it'd otherwise be ≥ 1 stop under, slower than the plain handheld limit, or (auto ISO
+  only – a fast film doesn't count) need ISO ≥ 1600.
 - **Focus tracking** (`autofocus.ts`): applied before mode resolution (auto modes and flash use the focus distance).
 - **derive.ts**: one function `(settings, scene) → Derived`. Everything the UI renders comes from here.
 

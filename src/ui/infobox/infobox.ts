@@ -20,8 +20,8 @@ export function mountInfobox(root: HTMLElement, store: Store): void {
       aperture: formatAperture(d.settings.aperture),
       maxAperture: formatAperture(d.maxAperture),
       eqAperture: formatAperture(d.equivalentAperture),
-      handLimit: formatShutter(d.shake.limitS),
-      isLimit: formatShutter(d.shake.limitIsS),
+      handLimit: formatShutter(d.shake.limitS, t.locale),
+      isLimit: formatShutter(d.shake.limitIsS, t.locale),
       dof: formatMeterRange(d.dof.nearM, d.dof.farM),
     });
   });

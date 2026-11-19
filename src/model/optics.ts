@@ -3,6 +3,21 @@ import type { Sensor } from './types';
 /** Diagonal of the 36×24 mm full-frame format. */
 export const FULL_FRAME_DIAGONAL_MM = Math.hypot(36, 24);
 
+/** Distance range the simulator deals with (metres). The lower end moves up with the focal length, see minDistanceM(). */
+export const MIN_DISTANCE_M = 0.3;
+export const MAX_DISTANCE_M = 1000;
+/** Rule of thumb for a lens's near limit: about 8× its focal length (50 mm → 0.4 m, 400 mm → 3.2 m). */
+export const MIN_FOCUS_FOCAL_FACTOR = 8;
+
+/**
+ * Closest distance for focus and elements with this lens. Real lenses can't focus closer than
+ * a few times their focal length, and the thin-lens formulas below only hold for distances
+ * well beyond f – at d ≤ f there is no real image at all.
+ */
+export function minDistanceM(focalMm: number): number {
+  return Math.max(MIN_DISTANCE_M, (MIN_FOCUS_FOCAL_FACTOR * focalMm) / 1000);
+}
+
 export function sensorDiagonalMm(sensor: Sensor): number {
   return Math.hypot(sensor.widthMm, sensor.heightMm);
 }

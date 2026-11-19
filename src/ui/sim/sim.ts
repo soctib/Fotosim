@@ -139,7 +139,7 @@ export function mountSim(root: HTMLElement, store: Store): void {
 
     const parts = [
       fill(t.sim.caption, {
-        shutter: formatShutter(d.settings.shutterS),
+        shutter: formatShutter(d.settings.shutterS, t.locale),
         aperture: formatAperture(d.settings.aperture),
         iso: d.settings.iso,
       }),

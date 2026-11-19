@@ -161,7 +161,7 @@ export function mountControls(root: HTMLElement, store: Store): void {
 
   const hint = (id: string, text: string) => ($(`h-${id}`).textContent = text);
 
-  store.subscribe((state, d: Derived) => {
+  store.subscribe((_state, d: Derived) => {
     const s = d.settings;
     const auto = d.autoFields;
     const autoHint = (field: AutoField) => (auto.has(field) ? t.controls.autoSetHint : '');
@@ -172,7 +172,7 @@ export function mountControls(root: HTMLElement, store: Store): void {
     const fi = nearestIndex(opts.map((o) => o.realMm), s.focalLengthMm);
     focal.max = String(opts.length - 1);
     focal.value = String(fi);
-    $('o-focal').textContent = formatFocal(opts[fi].realMm, d.sensor, t.kb);
+    $('o-focal').textContent = formatFocal(opts[fi].realMm, d.sensor, t.kb, t.locale);
 
     const fixed = d.sensor.fixedAperture !== undefined;
     // Phones have built-in lenses: no lens choice, just a note.
@@ -190,8 +190,10 @@ export function mountControls(root: HTMLElement, store: Store): void {
     $('mode-text').textContent = t.modes[s.mode].description;
 
     // Aperture: fixed on phones, set by the camera in A/P/Tv, otherwise limited by the lens.
-    const limited = !fixed && state.camera.aperture < d.maxAperture;
+    // The slider starts at the lens's widest aperture here, so its track only covers what the lens can do.
+    const limited = !fixed && d.maxAperture > APERTURES[0];
     aperture.disabled = fixed || auto.has('aperture');
+    aperture.min = String(fixed ? 0 : nearestIndex(APERTURES, d.maxAperture));
     aperture.value = String(nearestIndex(APERTURES, s.aperture));
     $('o-aperture').textContent = formatAperture(s.aperture);
     hint(
@@ -211,7 +213,7 @@ export function mountControls(root: HTMLElement, store: Store): void {
     shutter.max = String(fastestIdx);
     shutter.disabled = auto.has('shutterS');
     shutter.value = String(nearestIndex(SHUTTER_SPEEDS_S, s.shutterS));
-    $('o-shutter').textContent = formatShutter(s.shutterS);
+    $('o-shutter').textContent = formatShutter(s.shutterS, t.locale);
     placeMarker($('m-hand'), shutterPos(d.shake.limitS, SHUTTER_SPEEDS_S[fastestIdx]));
     placeMarker($('m-is'), shutterPos(d.shake.limitIsS, SHUTTER_SPEEDS_S[fastestIdx]));
     $('m-is').classList.toggle('off', !s.stabilized);
@@ -231,11 +233,21 @@ export function mountControls(root: HTMLElement, store: Store): void {
     hint('flash', autoHint('flashOn'));
 
     // With focus tracking on, the focus slider only displays where the camera focused.
+    // The slider starts at the lens's near limit, which moves out with the focal length.
     af.value = s.afTarget ?? '';
     focus.disabled = s.afTarget !== null;
+    focus.min = String(focusToPos(d.minDistanceM));
     focus.value = String(focusToPos(s.focusDistanceM));
     $('o-focus').textContent = formatMeters(s.focusDistanceM);
-    hint('focus', s.afTarget ? fill(t.controls.autofocusHint, { target: t.elements[s.afTarget] }) : '');
+    const nearLimit = d.minDistanceM > MIN_DISTANCE_M + 1e-9;
+    hint(
+      'focus',
+      s.afTarget
+        ? fill(t.controls.autofocusHint, { target: t.elements[s.afTarget] })
+        : nearLimit
+          ? fill(t.controls.nearLimitHint, { min: formatMeters(d.minDistanceM) })
+          : '',
+    );
   });
 }
 

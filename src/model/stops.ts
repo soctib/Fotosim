@@ -50,12 +50,19 @@ export function nearest<T extends number>(values: readonly T[], target: number):
   return best;
 }
 
-/** Human-readable shutter speed: "1/250 s", "0.6 s", "2 s" (≥ 0.3 s in seconds, as cameras show it). */
-export function formatShutter(s: number): string {
-  if (s >= 0.3 - 1e-9) return `${Math.round(s * 10) / 10} s`;
+/**
+ * Human-readable shutter speed: "1/250 s", "0.6 s", "2 s" (≥ 0.3 s in seconds, as cameras show it).
+ * With a locale the decimal separator follows it ("0,6 s").
+ */
+export function formatShutter(s: number, locale?: string): string {
+  if (s >= 0.3 - 1e-9) {
+    const v = Math.round(s * 10) / 10;
+    return `${locale ? v.toLocaleString(locale, { maximumFractionDigits: 1 }) : v} s`;
+  }
   return `1/${Math.round(1 / s)} s`;
 }
 
+/** f-numbers keep the dot in every language ("f/5.6"), like lens barrels and the lens list do. */
 export function formatAperture(n: number): string {
   return `f/${Math.round(n * 10) / 10}`;
 }

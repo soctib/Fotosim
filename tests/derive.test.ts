@@ -42,6 +42,16 @@ describe('derive() layout and gear', () => {
     expect(d.gear.phoneIds).toEqual([]);
   });
 
+  it('matches lens classes by framing, so a normal lens is a normal lens on every sensor', () => {
+    for (const sensorId of ['mft', 'apsc', 'mf67'] as const) {
+      const crop = cropFactor(SENSORS[sensorId]);
+      const d = derive({ ...initialState.camera, sensorId, lensId: 'prime', focalLengthMm: 50 / crop, aperture: 1.8 }, initialState.scene);
+      expect(d.gear.lensIds, sensorId).toContain('nifty50');
+      expect(d.gear.lensIds, sensorId).not.toContain('wideZoom');
+      expect(d.gear.lensIds, sensorId).not.toContain('teleZoom28');
+    }
+  });
+
   it('lists phone classes with a native lens at the current framing', () => {
     const crop = cropFactor(SENSORS.phoneModern);
     const d = derive({ ...initialState.camera, sensorId: 'phoneModern', focalLengthMm: 77 / crop }, initialState.scene);

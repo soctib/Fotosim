@@ -42,23 +42,44 @@ export function litOffsetStops(
   return addLightStops(ambientStops, flashFullStops - powerReductionStops);
 }
 
+/** Closer than tooCloseM the subject is over by at least this much even at minimum power. */
+export const FLASH_TOO_CLOSE_STOPS = 1;
+
+/** Distances are for ambient + flash together; boundaries the ambient light alone already clears are Infinity. */
 export interface FlashZone {
   /** Closer than this: overexposed even at minimum power. */
   tooCloseM: number;
   /** Up to here full power is enough for correct exposure. */
   maxRangeM: number;
-  /** Farther than this: ≥ 1 stop underexposed (flash alone). */
+  /** Farther than this: ≥ 1 stop underexposed. */
   slightUnderM: number;
   /** Farther than this: ≥ 2 stops under, the flash barely matters. */
   strongUnderM: number;
 }
 
-export function flashZone(guideNumber: number, aperture: number, iso: number): FlashZone {
+/**
+ * Where the flash helps, given the ambient exposure of the scene (stops). Null when the ambient
+ * light alone is enough: TTL then cuts the flash to minimum power and it changes nothing.
+ */
+export function flashZone(
+  guideNumber: number,
+  aperture: number,
+  iso: number,
+  ambientStops: number,
+): FlashZone | null {
+  if (ambientStops >= 0) return null;
   const ideal = flashIdealDistanceM(guideNumber, aperture, iso);
+  // Distance at which ambient + flash (at `powerReduction` below full) reaches `totalStops`.
+  const distanceFor = (totalStops: number, powerReduction: number): number => {
+    const flashLinear = 2 ** totalStops - 2 ** ambientStops;
+    if (flashLinear <= 0) return Infinity; // ambient alone is already brighter than that
+    const fullNeeded = Math.log2(flashLinear) + powerReduction;
+    return ideal / 2 ** (fullNeeded / 2);
+  };
   return {
-    tooCloseM: ideal / 2 ** (FLASH_MIN_POWER_STOPS / 2),
-    maxRangeM: ideal,
-    slightUnderM: ideal * Math.SQRT2,
-    strongUnderM: ideal * 2,
+    tooCloseM: distanceFor(FLASH_TOO_CLOSE_STOPS, FLASH_MIN_POWER_STOPS),
+    maxRangeM: distanceFor(0, 0),
+    slightUnderM: distanceFor(-1, 0),
+    strongUnderM: distanceFor(-2, 0),
   };
 }

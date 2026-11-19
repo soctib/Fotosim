@@ -23,6 +23,8 @@ export interface Sensor {
   fastestShutterS?: number;
   /** Typical flash guide number at ISO 100 in metres (pop-up ≈ 12, phone LED ≈ 2). */
   flashGuideNumber: number;
+  /** The "flash" is a continuous LED: no sync speed, works with any shutter time. */
+  ledFlash?: boolean;
   /** Film: the ISO is the loaded film's speed – no camera mode can change it. */
   isFilm?: boolean;
 }

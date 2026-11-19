@@ -46,7 +46,15 @@ export function mountGear(root: HTMLDetailsElement, store: Store): void {
       });
     mark('lenses', d.gear.lensIds);
     mark('phones', d.gear.phoneIds);
-    lensNote.textContent = isPhone ? t.gear.phoneHasNoLenses : d.gear.lensIds.length ? '' : t.gear.noLensMatch;
+    // Medium format: the classes still mark the framing, but the prices are another league.
+    const mediumFormat = d.crop < 0.9;
+    lensNote.textContent = isPhone
+      ? t.gear.phoneHasNoLenses
+      : mediumFormat
+        ? t.gear.mediumFormatNote
+        : d.gear.lensIds.length
+          ? ''
+          : t.gear.noLensMatch;
     phoneNote.textContent = isPhone && !d.gear.phoneIds.length ? t.gear.noPhoneMatch : '';
   });
 }

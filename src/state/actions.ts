@@ -1,42 +1,71 @@
 // Small, named state mutations so UI modules don't each spell out the spread boilerplate.
 
-import type { CameraSettings, ElementId, Mode } from '../model/types';
-import type { InfoKey, Store } from './store';
+import { MAX_DISTANCE_M, minDistanceM } from '../model/optics';
+import type { CameraSettings, ElementId, Mode, Scene } from '../model/types';
+import type { AppState, InfoKey, Store } from './store';
 
-/** Range for element and focus distances (UI limits, not physics). */
-export const MIN_DISTANCE_M = 0.3;
-export const MAX_DISTANCE_M = 1000;
+export { MAX_DISTANCE_M, MIN_DISTANCE_M } from '../model/optics';
 
-const clampDistance = (m: number) => Math.min(MAX_DISTANCE_M, Math.max(MIN_DISTANCE_M, m));
+/** Distances never go below the lens's near limit nor beyond the far end of the graph. */
+const clampDistance = (m: number, focalMm: number) =>
+  Math.min(MAX_DISTANCE_M, Math.max(minDistanceM(focalMm), m));
 
+/** Elements closer than the lens's near limit are pushed out to it (returns the same array if nothing moved). */
+function clampElements(scene: Scene, focalMm: number): Scene['elements'] {
+  const min = minDistanceM(focalMm);
+  return scene.elements.some((el) => el.distanceM < min)
+    ? scene.elements.map((el) => (el.distanceM < min ? { ...el, distanceM: min } : el))
+    : scene.elements;
+}
+
+/**
+ * Patch the camera. A longer lens has a farther near limit, so the focus and the elements
+ * are kept at or beyond it – like a real lens that simply won't focus any closer.
+ */
 export function setCamera(store: Store, patch: Partial<CameraSettings>): void {
-  store.update((s) => ({ ...s, camera: { ...s.camera, ...patch } }));
+  store.update((s: AppState) => {
+    const camera = { ...s.camera, ...patch };
+    camera.focusDistanceM = clampDistance(camera.focusDistanceM, camera.focalLengthMm);
+    const elements = clampElements(s.scene, camera.focalLengthMm);
+    return { ...s, camera, scene: elements === s.scene.elements ? s.scene : { ...s.scene, elements } };
+  });
 }
 
 export function setFocus(store: Store, distanceM: number): void {
-  setCamera(store, { focusDistanceM: clampDistance(distanceM) });
+  setCamera(store, { focusDistanceM: distanceM });
 }
 
 export function setElementDistance(store: Store, id: ElementId, distanceM: number): void {
-  const d = clampDistance(distanceM);
-  store.update((s) => ({
-    ...s,
-    scene: {
-      ...s.scene,
-      elements: s.scene.elements.map((el) => (el.id === id ? { ...el, distanceM: d } : el)),
-    },
-  }));
+  store.update((s) => {
+    const d = clampDistance(distanceM, s.camera.focalLengthMm);
+    return {
+      ...s,
+      scene: {
+        ...s.scene,
+        elements: s.scene.elements.map((el) => (el.id === id ? { ...el, distanceM: d } : el)),
+      },
+    };
+  });
 }
 
 export function setLight(store: Store, lightPresetId: string): void {
   store.update((s) => ({ ...s, scene: { ...s.scene, lightPresetId } }));
 }
 
+/**
+ * Show or hide an element. Hiding the element the autofocus is tracking switches the
+ * tracking off (keeping the focus where it was) – there is nothing left to follow.
+ */
 export function setElementVisible(store: Store, id: ElementId, visible: boolean): void {
-  store.update((s) => ({
-    ...s,
-    scene: { ...s.scene, elements: s.scene.elements.map((el) => (el.id === id ? { ...el, visible } : el)) },
-  }));
+  const focus = store.derived().settings.focusDistanceM;
+  store.update((s) => {
+    const dropTracking = !visible && s.camera.afTarget === id;
+    return {
+      ...s,
+      camera: dropTracking ? { ...s.camera, afTarget: null, focusDistanceM: focus } : s.camera,
+      scene: { ...s.scene, elements: s.scene.elements.map((el) => (el.id === id ? { ...el, visible } : el)) },
+    };
+  });
 }
 
 /** Simulated autofocus: focus exactly on an element. */

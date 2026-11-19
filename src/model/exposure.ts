@@ -30,10 +30,12 @@ export type ExposureClass = 'strongUnder' | 'slightUnder' | 'ok' | 'slightOver' 
 export const EXPOSURE_SLIGHT = 1;
 export const EXPOSURE_STRONG = 2;
 
+/** Classifies the value as the UI shows it (one decimal), so "−1,0" never reads "passt". */
 export function classifyExposure(offsetStops: number): ExposureClass {
-  if (offsetStops <= -EXPOSURE_STRONG) return 'strongUnder';
-  if (offsetStops <= -EXPOSURE_SLIGHT) return 'slightUnder';
-  if (offsetStops >= EXPOSURE_STRONG) return 'strongOver';
-  if (offsetStops >= EXPOSURE_SLIGHT) return 'slightOver';
+  const shown = Math.round(offsetStops * 10) / 10;
+  if (shown <= -EXPOSURE_STRONG) return 'strongUnder';
+  if (shown <= -EXPOSURE_SLIGHT) return 'slightUnder';
+  if (shown >= EXPOSURE_STRONG) return 'strongOver';
+  if (shown >= EXPOSURE_SLIGHT) return 'slightOver';
   return 'ok';
 }

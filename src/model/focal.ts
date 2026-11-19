@@ -17,10 +17,15 @@ export function focalOptions(sensor: Sensor): FocalOption[] {
   return steps.map((eq) => ({ realMm: eq / crop, equivalentMm: eq }));
 }
 
-/** e.g. "50 mm (≙ 80 mm KB)" – just "50 mm" when crop ≈ 1. */
-export function formatFocal(realMm: number, sensor: Sensor, kbLabel = 'KB'): string {
+/** e.g. "50 mm (≙ 80 mm KB)" – just "50 mm" when crop ≈ 1. Sub-10 mm lengths get a decimal in the locale's format. */
+export function formatFocal(realMm: number, sensor: Sensor, kbLabel = 'KB', locale?: string): string {
   const crop = cropFactor(sensor);
-  const real = realMm < 10 ? realMm.toFixed(1) : Math.round(realMm).toString();
+  const real =
+    realMm < 10
+      ? locale
+        ? realMm.toLocaleString(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+        : realMm.toFixed(1)
+      : Math.round(realMm).toString();
   if (Math.abs(crop - 1) < 0.05) return `${real} mm`;
   return `${real} mm (≙ ${Math.round(realMm * crop)} mm ${kbLabel})`;
 }

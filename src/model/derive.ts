@@ -27,6 +27,7 @@ import {
   frameHeightFraction,
   horizontalAngleOfViewDeg,
   hyperfocalDistanceM,
+  minDistanceM,
   relativeBlur,
   type DepthOfField,
 } from './optics';
@@ -63,6 +64,8 @@ export interface Derived {
   fastestShutterS: number;
   /** Widest aperture the current lens (or phone) allows at this focal length. */
   maxAperture: number;
+  /** Near limit of the current lens: focus and elements can't get closer. */
+  minDistanceM: number;
   crop: number;
   cocMm: number;
   equivalentFocalMm: number;
@@ -75,7 +78,8 @@ export interface Derived {
   /** Exposure of the focused subject (ambient + flash). Drives the exposure bar. */
   exposureOffsetStops: number;
   exposureClass: ExposureClass;
-  flash: { zone: FlashZone; powerReductionStops: number } | null;
+  /** Flash on: its zone (null while the ambient light alone is enough) and the TTL power reduction. */
+  flash: { zone: FlashZone | null; powerReductionStops: number } | null;
   shake: { limitS: number; limitIsS: number; cls: ShakeClass; blurFactor: number };
   noise: { indexStops: number; cls: NoiseClass; amount: number; equivalentIso: number };
   elements: DerivedElement[];
@@ -102,7 +106,7 @@ export function derive(input: CameraSettings, scene: Scene): Derived {
     const fullAtFocus = flashFullOffsetStops(gn, N, iso, focus);
     const reduction = ttlPowerReductionStops(ambient, fullAtFocus);
     subject = litOffsetStops(ambient, fullAtFocus, reduction);
-    flash = { zone: flashZone(gn, N, iso), powerReductionStops: reduction };
+    flash = { zone: flashZone(gn, N, iso, ambient), powerReductionStops: reduction };
   }
 
   const elements: DerivedElement[] = scene.elements.map((el) => {
@@ -131,6 +135,7 @@ export function derive(input: CameraSettings, scene: Scene): Derived {
     autoFields,
     sensor,
     maxAperture: maxApertureFor(settings, sensor),
+    minDistanceM: minDistanceM(f),
     fastestShutterS: fastestShutterS(sensor),
     crop,
     cocMm: circleOfConfusionMm(sensor),
@@ -163,15 +168,15 @@ export function derive(input: CameraSettings, scene: Scene): Derived {
   };
 }
 
-/** Phones: classes with a native lens near this framing. Cameras: lens classes for this focal length and aperture. */
+/** Phones: classes with a native lens near this framing. Cameras: lens classes for this framing (equivalent focal length) and aperture. */
 function matchingGear(sensor: Sensor, focalMm: number, aperture: number, crop: number): Derived['gear'] {
+  const eq = focalMm * crop;
   if (sensor.fixedAperture !== undefined) {
-    const eq = focalMm * crop;
     // 9 %: 24 vs 26 mm main cameras count as the same framing, 70 vs 77 mm teles don't.
     const phoneIds = PHONE_CLASSES.filter(
       (p) => p.sensorId === sensor.id && p.lensesEqMm.some((l) => Math.abs(Math.log(l / eq)) < 0.09),
     ).map((p) => p.id);
     return { lensIds: [], phoneIds };
   }
-  return { lensIds: matchingLenses(focalMm, aperture).map((l) => l.id), phoneIds: [] };
+  return { lensIds: matchingLenses(eq, aperture).map((l) => l.id), phoneIds: [] };
 }

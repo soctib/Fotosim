@@ -71,6 +71,7 @@ export function mountElements(root: HTMLElement, store: Store): void {
       row.classList.toggle('hidden-el', !el.visible);
       // Don't overwrite what the user is typing.
       if (document.activeElement !== distance) distance.value = String(Math.round(el.distanceM * 100) / 100);
+      distance.min = String(Math.round(d.minDistanceM * 100) / 100);
       distance.disabled = !el.visible;
       // Manual focusing is locked while focus tracking is on.
       focus.disabled = !el.visible || tracking;

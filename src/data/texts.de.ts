@@ -91,7 +91,8 @@ export const de = {
     details: 'Details',
     autoSetHint: 'von der Kamera gesetzt',
     fixedApertureHint: 'beim Handy fest',
-    lensLimitHint: 'weiter geht dieses Objektiv nicht auf: {aperture}',
+    lensLimitHint: 'Objektiv öffnet bei dieser Brennweite nur bis {aperture}',
+    nearLimitHint: 'näher stellt dieses Objektiv nicht scharf: {min}',
   },
 
   elements: {
@@ -153,7 +154,8 @@ export const de = {
     resetView: 'Ansicht zurücksetzen',
     hintLog: 'Personen und Fokuslinie ziehen · Antippen stellt scharf',
     hintAutofocus: 'Personen ziehen – der Fokus folgt',
-    hintLinear: 'Ziehen verschiebt · Mausrad oder zwei Finger zoomen',
+    hintLinear: 'Antippen stellt scharf · Ziehen verschiebt · Mausrad oder zwei Finger zoomen',
+    hintLinearAutofocus: 'Personen ziehen – der Fokus folgt · Mausrad oder zwei Finger zoomen',
   },
 
   sim: {
@@ -179,12 +181,13 @@ export const de = {
 
   gear: {
     title: 'Objektive & Handys',
-    lenses: 'Objektive (grobe Neupreise)',
+    lenses: 'Objektive (grobe Neupreise, Brennweiten ≙ KB)',
     phones: 'Handys',
     price: '{min} – {max} €',
     phoneLenses: 'Brennweiten (≙ KB): {list} mm',
     matches: 'passt zu den aktuellen Einstellungen',
     noLensMatch: 'Für diese Brennweite und Blende passt keine der typischen Klassen – oft heißt das: teuer oder gar nicht erhältlich.',
+    mediumFormatNote: 'Für Mittelformat gibt es diese Klassen so nicht – dort kosten Objektive meist ein Mehrfaches.',
     phoneHasNoLenses: 'Beim Handy gibt es keine Wechselobjektive – hier zählen die eingebauten Kameras.',
     noPhoneMatch: 'Diese Brennweite hat kein Handy dieser Klasse als echtes Objektiv – das wäre Digitalzoom.',
   },
@@ -229,13 +232,12 @@ export const de = {
     graph: 'Schärfekurve',
     graphSimple: 'Schärfentiefe',
     sim: 'Kamerabild',
-    equivalence: 'Äquivalenz',
   },
 
   // Infobox: shown for the last clicked/tapped element. {placeholders} get live values.
   info: {
     sensor:
-      'Der Kameratyp steht vor allem für die Größe des Sensors (oder Films). Je größer der Sensor, desto mehr Licht sammelt er insgesamt – weniger Rauschen, und bei gleicher Blende weniger Schärfentiefe. Die Belichtungszeit hängt NICHT von der Sensorgröße ab.',
+      'Der Kameratyp steht vor allem für die Größe des Sensors (oder Films). Je größer der Sensor, desto mehr Licht sammelt er insgesamt – weniger Rauschen, und bei gleicher Blende weniger Schärfentiefe. Die Belichtungszeit hängt NICHT von der Sensorgröße ab. Faustregel: Brennweite und Blende mal Cropfaktor ergeben, was es an Kleinbild entspricht – f/1.8 an einem Handy von 2019 wirkt in Schärfentiefe und Rauschen etwa wie f/11 an Vollformat.',
     lens: 'Das Objektiv legt fest, wie weit die Blende aufgeht. Das Kit-Zoom aus dem Kamera-Set ist günstig, aber lichtschwach – gerade am langen Ende. Lichtstarke Objektive (kleine Blendenzahl) kosten mehr, lassen mehr Licht herein und machen den Hintergrund unschärfer. Gerade: größte Blende {maxAperture}.',
     focalLength:
       'Die Brennweite bestimmt den Bildausschnitt. Angegeben ist die echte Brennweite und in Klammern, was sie an Kleinbild entspricht. Lange Brennweiten verwackeln leichter.',
@@ -263,8 +265,6 @@ export const de = {
     autofocus:
       'Beim Nachführen bleibt die Schärfe auf dem gewählten Motiv, auch wenn es sich bewegt – an Kameras heißt das „AF-C“ oder kontinuierlicher Autofokus. Tippst du jetzt im Kamerabild auf etwas anderes, wird das verfolgt. Zum Scharfstellen von Hand: „Aus“.',
     sim: 'Tippe auf eine Person oder den Hintergrund, um darauf scharfzustellen. So ungefähr sähe das Foto aus. Unschärfe, Helligkeit, Rauschen und Bildausschnitt kommen direkt aus den Einstellungen – die Figuren sind Comic, die Rechnung dahinter nicht.',
-    equivalence:
-      'Gleiches Bild an verschiedenen Sensoren: Brennweite und Blende mit dem Cropfaktor multiplizieren. f/1.8 an einem Handy von 2019 wirkt in Schärfentiefe und Rauschen etwa wie f/11 an Vollformat.',
   },
 };
 
