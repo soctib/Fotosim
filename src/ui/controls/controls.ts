@@ -39,7 +39,6 @@ export function mountControls(root: HTMLElement, store: Store): void {
       <select id="c-lens">
         ${LENS_ORDER.map((id) => `<option value="${id}">${t.cameraLenses[id]}</option>`).join('')}
       </select>
-      <small class="hint" id="h-lens"></small>
     </div>
     <div class="control" data-info="focalLength">
       <label for="c-focal">${t.controls.focalLength} <output id="o-focal"></output></label>
@@ -98,9 +97,9 @@ export function mountControls(root: HTMLElement, store: Store): void {
     $('h-focal').textContent = opts[fi].native ? '' : t.controls.digitalCropHint;
 
     const fixed = d.sensor.fixedAperture !== undefined;
+    // Phones have built-in lenses: no lens choice at all.
     lens.value = s.lensId;
-    lens.disabled = fixed;
-    $('h-lens').textContent = fixed ? t.controls.phoneLensHint : '';
+    lens.closest<HTMLElement>('.control')!.hidden = fixed;
 
     // The slider covers all apertures; the model clamps a wish wider than the lens allows.
     const limited = !fixed && state.camera.aperture < d.maxAperture;

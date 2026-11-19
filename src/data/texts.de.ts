@@ -83,7 +83,6 @@ export const de = {
     autoSetHint: 'von der Kamera gesetzt',
     fixedApertureHint: 'beim Handy fest',
     lensLimitHint: 'weiter geht dieses Objektiv nicht auf: {aperture}',
-    phoneLensHint: 'beim Handy eingebaut',
     digitalCropHint: 'Digitalzoom (Ausschnitt)',
   },
 
