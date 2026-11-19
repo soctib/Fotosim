@@ -289,7 +289,13 @@ function draw(d: Derived, v: XView, L: Layout, details: boolean): string {
   // Where distances are measured from: a photographer – or, zoomed in (linear) to face scale, just the camera.
   const pxPerM = (L.right - L.left) / (v.max - v.min);
   const closeUp = !v.log && pxPerM * (FACE_DEPTH_M.backOfHead - FACE_DEPTH_M.noseTip) >= HEAD_MIN_PX;
-  parts.push(drawCameraMarker(L, closeUp));
+  if (closeUp) {
+    // Camera at the heads' eye level; grey wedge = what's in frame vertically at each distance.
+    const ky = headScaleY(pxPerM, L);
+    const eyeY = L.groundY - (HEAD_NECK_M + HEAD_EYE_M) * ky;
+    parts.push(drawFieldOfView(v, L, eyeY, ky, d.frameHeightAt));
+    parts.push(drawCameraMarker(L, true, eyeY));
+  } else parts.push(drawCameraMarker(L, false, L.groundY));
 
   if (details) parts.push(drawCurve(d, sx, sy, L));
 
@@ -381,8 +387,37 @@ function drawFlashZone(z: FlashZone, xOf: (m: number) => number, L: Layout): str
   </g>`;
 }
 
-/** Photographer (or close up: a camera) in the left margin, facing the scene, labelled "Kamera". */
-function drawCameraMarker(L: Layout, closeUp: boolean): string {
+/** Head drawing proportions (metres): neck below the chin, eye height above the chin. */
+const HEAD_NECK_M = 0.07;
+const HEAD_EYE_M = 0.132;
+
+/** Vertical px per metre for heads: true proportions while they fit, capped by the graph height. */
+function headScaleY(pxPerM: number, L: Layout): number {
+  return Math.min(pxPerM, (L.groundY - L.plotTop - 8) / 0.3);
+}
+
+/**
+ * Vertical field of view as a grey wedge from the camera: at each visible distance its height is the
+ * scene height in frame there (same vertical scale as the heads, centred on the eyes).
+ */
+function drawFieldOfView(v: XView, L: Layout, eyeY: number, ky: number, frameHeightAt: (m: number) => number): string {
+  const half = (m: number) => (frameHeightAt(Math.max(m, 0.01)) / 2) * ky;
+  const apex = L.left - 6;
+  const h0 = half(v.min);
+  const h1 = half(v.max);
+  const pts = `${apex},${eyeY} ${L.left},${eyeY - h0} ${L.right},${eyeY - h1} ${L.right},${eyeY + h1} ${L.left},${eyeY + h0}`;
+  return `<g class="fov">
+    <defs><clipPath id="fov-clip"><rect x="0" y="${L.plotTop - 4}" width="${L.right}" height="${L.groundY - L.plotTop + 4}"/></clipPath></defs>
+    <g clip-path="url(#fov-clip)">
+      <polygon class="fov-area" points="${pts}"/>
+      <path class="fov-edge" d="M${apex},${eyeY} L${L.left},${eyeY - h0} L${L.right},${eyeY - h1} M${apex},${eyeY} L${L.left},${eyeY + h0} L${L.right},${eyeY + h1}"/>
+    </g>
+    <text class="fov-label" x="${L.right - 4}" y="${Math.max(L.plotTop + 10, eyeY - h1 + 12)}" text-anchor="end">${t.graph.fov}</text>
+  </g>`;
+}
+
+/** Photographer (or close up: a camera at eye level `y`) in the left margin, facing the scene, labelled "Kamera". */
+function drawCameraMarker(L: Layout, closeUp: boolean, y: number): string {
   const x = L.left - 22;
   const figure = closeUp
     ? `<rect class="cam-body" x="-13" y="-30" width="22" height="15" rx="2.5"/>
@@ -393,10 +428,12 @@ function drawCameraMarker(L: Layout, closeUp: boolean): string {
        <path class="ph-line" d="M-3,-32 V-14 M-3,-14 L-9,0 M-3,-14 L3,0 M-3,-27 L5,-35"/>
        <rect class="cam-body" x="2" y="-42" width="10" height="7" rx="1.2"/>
        <rect class="cam-lens" x="12" y="-40.5" width="4" height="4"/>`;
-  return `<g class="camera-marker" transform="translate(${x} ${L.groundY})">
+  // Close up the lens centre (−22.5 in icon units) sits on the eye line; the label stays at the ground.
+  const iconY = closeUp ? y + 22.5 : L.groundY;
+  return `<g class="camera-marker">
     <title>${t.graph.cameraTitle}</title>
-    ${figure}
-    <text class="camera-label" x="0" y="16" text-anchor="middle">${t.graph.camera}</text>
+    <g transform="translate(${x} ${iconY})">${figure}</g>
+    <text class="camera-label" x="${x}" y="${L.groundY + 16}" text-anchor="middle">${t.graph.camera}</text>
   </g>`;
 }
 
@@ -461,8 +498,8 @@ function drawHead(el: DerivedElement, sx: XScale, x0: number, L: Layout, blurAt:
   const X = (dx: number) => sx.toPx(d + dx) - x0;
   const kx = (X(0.1) - X(-0.1)) / 0.2;
   // Keep true proportions as long as possible: the head may grow up into the plot (drawn see-through there).
-  const ky = Math.min(kx, (L.groundY - L.plotTop - 8) / 0.3);
-  const neck = 0.07;
+  const ky = headScaleY(kx, L);
+  const neck = HEAD_NECK_M;
   const Y = (dy: number) => -(neck + dy) * ky; // dy: metres above the chin
   const pts = (list: [number, number][]) => list.map(([dx, dy]) => `${X(dx).toFixed(1)},${Y(dy).toFixed(1)}`).join(' ');
   const filter = (part: string, dx: number) =>
@@ -475,7 +512,7 @@ function drawHead(el: DerivedElement, sx: XScale, x0: number, L: Layout, blurAt:
       <rect x="${X(0.04)}" y="${Y(0.02)}" width="${X(0.11) - X(0.04)}" height="${-Y(0.02)}"/>
       <ellipse cx="${(skullL + skullR) / 2}" cy="${Y(0.13)}" rx="${(skullR - skullL) / 2}" ry="${0.105 * ky}"/>
       <polygon points="${pts([[0.02, 0.21], [-0.006, 0.16], [-0.005, 0.125], [-0.01, 0.07], [-0.014, 0.055], [-0.008, 0.045], [-0.012, 0.032], [-0.003, 0.008], [0.06, 0], [0.06, 0.21]])}"/>
-      <circle class="head-eye" cx="${X(0.008)}" cy="${Y(0.132)}" r="${Math.max(1.5, 0.008 * ky)}"/>
+      <circle class="head-eye" cx="${X(0.008)}" cy="${Y(HEAD_EYE_M)}" r="${Math.max(1.5, 0.008 * ky)}"/>
     </g>
     <g filter="url(#head-${el.id}-ears)">
       <ellipse class="head-ear" cx="${X(FACE_DEPTH_M.ears)}" cy="${Y(0.115)}" rx="${Math.max(2, 0.02 * kx)}" ry="${0.032 * ky}"/>

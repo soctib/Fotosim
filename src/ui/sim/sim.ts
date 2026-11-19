@@ -15,7 +15,8 @@ import type { Store } from '../../state/store';
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
 // Scene composition (metres). Camera is level, so the horizon sits mid-frame.
-const CAMERA_HEIGHT_M = 1.6;
+/** Camera held at eye height (eyes are drawn at 165 cm), so it points straight at the faces. */
+const CAMERA_HEIGHT_M = 1.65;
 const LATERAL_M: Record<ElementId, number> = { person1: -0.35, person2: 0.55, background: 0 };
 /** Closer than this, the photographer aims at the person: the sideways offset shrinks (quadratically). */
 const AIM_DISTANCE_M = 3;

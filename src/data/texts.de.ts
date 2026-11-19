@@ -146,6 +146,7 @@ export const de = {
     dofRange: 'Schärfentiefe {range}',
     infinity: '∞',
     unit: 'm',
+    fov: 'Bildausschnitt',
     camera: 'Kamera',
     cameraTitle: 'Kamera – von hier aus wird die Entfernung gemessen',
     meters: '{value} m',

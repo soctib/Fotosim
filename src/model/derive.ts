@@ -83,6 +83,8 @@ export interface Derived {
   gear: { lensIds: string[]; phoneIds: string[] };
   /** Relative blur at any distance for the current settings (for drawing the sharpness curve). */
   blurAt: (distanceM: number) => number;
+  /** Height of the scene in frame (vertical field of view) at a distance, in metres. */
+  frameHeightAt: (distanceM: number) => number;
   /** Blur disc as a fraction of the image width at any distance (for rendering parts of a figure). */
   blurFractionAt: (distanceM: number) => number;
 }
@@ -159,6 +161,7 @@ export function derive(input: CameraSettings, scene: Scene): Derived {
     elements,
     gear: matchingGear(sensor, f, N, crop),
     blurAt: (distanceM) => relativeBlur(f, N, focus, distanceM, sensor),
+    frameHeightAt: (distanceM) => 1 / frameHeightFraction(f, 1, distanceM, sensor),
     blurFractionAt: (distanceM) => blurFractionOfWidth(f, N, focus, distanceM, sensor),
   };
 }
