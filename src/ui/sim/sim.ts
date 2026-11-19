@@ -8,7 +8,7 @@ import { de as t, fill } from '../../data/texts.de';
 import type { Derived, DerivedElement } from '../../model/derive';
 import { formatAperture, formatShutter } from '../../model/stops';
 import type { ElementId } from '../../model/types';
-import { setAutofocus, setInfo } from '../../state/actions';
+import { focusOn, setAutofocus, setInfo } from '../../state/actions';
 import type { Store } from '../../state/store';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -20,6 +20,8 @@ const LATERAL_M: Record<ElementId, number> = { person1: -0.35, person2: 0.55, ba
 /** CSS blur takes a Gaussian sigma; the blur disc diameter is roughly 2 sigma. */
 const SIGMA_PER_DISC = 0.5;
 const MAX_BLUR_PX = 60;
+/** How long the AF frame stays visible after a one-shot tap-to-focus (matches the CSS animation). */
+const AF_FLASH_MS = 900;
 
 export function mountSim(root: HTMLElement, store: Store): void {
   root.classList.add('sim');
@@ -56,13 +58,20 @@ export function mountSim(root: HTMLElement, store: Store): void {
 
   const afOverlay = root.querySelector<SVGSVGElement>('.af-overlay')!;
 
-  // Tapping a person or the house puts the autofocus on it; anything else explains the image.
+  // Tap-to-focus: tapping a person or the house focuses on it once. Only if focus tracking
+  // was switched on explicitly does the tap move the tracked target. Anything else explains the image.
+  let tapped: { id: ElementId; at: number } | null = null;
   frame.addEventListener('click', (e) => {
     const id = (e.target as Element).closest<SVGElement>('[data-layer]')?.dataset.layer;
-    if (id === 'person1' || id === 'person2' || id === 'background') {
+    if (id !== 'person1' && id !== 'person2' && id !== 'background') return setInfo(store, 'sim');
+    if (store.derived().settings.afTarget !== null) {
       setAutofocus(store, id);
       setInfo(store, 'autofocus');
-    } else setInfo(store, 'sim');
+    } else {
+      tapped = { id, at: performance.now() };
+      focusOn(store, id);
+      setInfo(store, 'focus');
+    }
   });
 
   let width = 0;
@@ -101,8 +110,15 @@ export function mountSim(root: HTMLElement, store: Store): void {
     });
 
     afOverlay.setAttribute('viewBox', `0 0 ${W} ${H}`);
-    const target = d.elements.find((e) => e.id === d.settings.afTarget && e.visible);
-    afOverlay.innerHTML = target ? drawAfFrame(target, W, H) : '';
+    // Tracking: steady frame on the target. One-shot tap: the frame flashes briefly, then fades.
+    const tracked = d.elements.find((e) => e.id === d.settings.afTarget && e.visible);
+    const sinceTap = tapped ? performance.now() - tapped.at : Infinity;
+    const flashed = sinceTap < AF_FLASH_MS ? d.elements.find((e) => e.id === tapped!.id) : undefined;
+    afOverlay.innerHTML = tracked
+      ? drawAfFrame(tracked, W, H)
+      : flashed
+        ? `<g class="af-flash" style="animation-delay:-${sinceTap.toFixed(0)}ms">${drawAfFrame(flashed, W, H)}</g>`
+        : '';
 
     // Quadratic so "low" noise stays nearly clean and "very high" is unmistakable.
     noise.style.opacity = Math.min(0.9, d.noise.amount ** 2 * 1.2).toFixed(3);

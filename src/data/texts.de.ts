@@ -78,10 +78,10 @@ export const de = {
     flash: 'Blitz',
     stabilized: 'Bildstabilisator',
     focus: 'Fokus',
-    autofocus: 'Autofokus',
-    autofocusOff: 'Aus (von Hand)',
-    autofocusHint: 'folgt {target} – zum Verstellen Autofokus ausschalten',
-    autofocusShort: 'AF',
+    autofocus: 'Fokus nachführen',
+    autofocusOff: 'Aus',
+    autofocusHint: 'folgt {target} – zum Verstellen „Fokus nachführen“ ausschalten',
+    autofocusShort: 'AF-C',
     logScale: 'Logarithmisch',
     details: 'Details',
     autoSetHint: 'von der Kamera gesetzt',
@@ -144,7 +144,7 @@ export const de = {
     blurTimes: '{value}×',
     resetView: 'Ansicht zurücksetzen',
     hintLog: 'Personen und Fokuslinie ziehen · Antippen stellt scharf',
-    hintAutofocus: 'Personen ziehen – der Autofokus folgt',
+    hintAutofocus: 'Personen ziehen – der Fokus folgt',
     hintLinear: 'Ziehen verschiebt · Mausrad oder zwei Finger zoomen',
   },
 
@@ -199,7 +199,7 @@ export const de = {
     mode: 'Modus',
     flash: 'Blitz',
     focus: 'Fokus',
-    autofocus: 'Autofokus',
+    autofocus: 'Fokus nachführen',
     exposure: 'Belichtung',
     noise: 'Rauschen',
     graph: 'Schärfekurve',
@@ -235,8 +235,8 @@ export const de = {
     graph:
       'Die Kurve zeigt, wie unscharf etwas in welcher Entfernung wird. Unter der Linie „scharf“ gilt es als scharf. Personen und Hintergrund kannst du verschieben.',
     autofocus:
-      'Der Autofokus hält die Schärfe auf dem gewählten Motiv – auch wenn es sich bewegt. Tippe im Kamerabild auf eine Person oder das Haus oder wähle hier. Zum Scharfstellen von Hand: „Aus“.',
-    sim: 'Tippe auf eine Person oder das Haus, um den Autofokus darauf zu setzen. So ungefähr sähe das Foto aus. Unschärfe, Helligkeit, Rauschen und Bildausschnitt kommen direkt aus den Einstellungen – die Figuren sind Comic, die Rechnung dahinter nicht.',
+      'Beim Nachführen bleibt die Schärfe auf dem gewählten Motiv, auch wenn es sich bewegt – an Kameras heißt das „AF-C“ oder kontinuierlicher Autofokus. Tippst du jetzt im Kamerabild auf etwas anderes, wird das verfolgt. Zum Scharfstellen von Hand: „Aus“.',
+    sim: 'Tippe auf eine Person oder das Haus, um darauf scharfzustellen. So ungefähr sähe das Foto aus. Unschärfe, Helligkeit, Rauschen und Bildausschnitt kommen direkt aus den Einstellungen – die Figuren sind Comic, die Rechnung dahinter nicht.',
     equivalence:
       'Gleiches Bild an verschiedenen Sensoren: Brennweite und Blende mit dem Cropfaktor multiplizieren. f/1.8 an einem Handy von 2019 wirkt in Schärfentiefe und Rauschen etwa wie f/11 an Vollformat.',
   },

@@ -409,6 +409,13 @@ header p {
   z-index: 11;
   pointer-events: none;
 }
+.sim .af-flash {
+  animation: af-flash 0.9s ease-in forwards;
+}
+@keyframes af-flash {
+  0%, 50% { opacity: 1; }
+  100% { opacity: 0; }
+}
 .sim .af-frame {
   fill: none;
   stroke: #ff922b;
