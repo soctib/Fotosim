@@ -69,6 +69,8 @@ export interface Derived {
   shake: { limitS: number; limitIsS: number; cls: ShakeClass; blurFactor: number };
   noise: { indexStops: number; cls: NoiseClass; amount: number; equivalentIso: number };
   elements: DerivedElement[];
+  /** Relative blur at any distance for the current settings (for drawing the sharpness curve). */
+  blurAt: (distanceM: number) => number;
 }
 
 export function derive(input: CameraSettings, scene: Scene): Derived {
@@ -138,5 +140,6 @@ export function derive(input: CameraSettings, scene: Scene): Derived {
       equivalentIso: equivalentIso(iso, crop),
     },
     elements,
+    blurAt: (distanceM) => relativeBlur(f, N, focus, distanceM, sensor),
   };
 }

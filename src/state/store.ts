@@ -1,4 +1,6 @@
+import { SENSORS } from '../data/sensors';
 import { derive, type Derived } from '../model/derive';
+import { focalOptions } from '../model/focal';
 import type { CameraSettings, Scene } from '../model/types';
 
 export interface AppState {
@@ -15,7 +17,8 @@ export interface AppState {
 export const initialState: AppState = {
   camera: {
     sensorId: 'apsc',
-    focalLengthMm: 35,
+    // Start on a slider step (≙ 50 mm KB) so the control and the physics agree.
+    focalLengthMm: focalOptions(SENSORS.apsc).find((o) => o.equivalentMm === 50)!.realMm,
     aperture: 2.8,
     shutterS: 1 / 125,
     iso: 100,

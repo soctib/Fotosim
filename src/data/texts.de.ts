@@ -1,10 +1,11 @@
 // All on-screen text. Code stays English; add texts.en.ts later with `satisfies Texts`.
 
 export const de = {
+  /** BCP 47 locale for number formatting. */
+  locale: 'de-DE',
   appTitle: 'Fotosim',
   appSubtitle: 'Schärfe, Belichtung und Rauschen zum Ausprobieren',
   kb: 'KB',
-  scaffoldNote: 'Gerüst – die Oberfläche folgt. Aktuelles Rechenergebnis:',
 
   sensors: {
     phone2019: 'Handy (2019)',
@@ -122,6 +123,13 @@ export const de = {
     sharpness: 'Unschärfe',
     sharp: 'scharf',
     dof: 'Schärfentiefe',
+    dofRange: 'Schärfentiefe {near} – {far}',
+    infinity: '∞',
+    meters: '{value} m',
+    blurTimes: '{value}×',
+    resetView: 'Ansicht zurücksetzen',
+    hintLog: 'Personen und Fokuslinie ziehen · Antippen stellt scharf',
+    hintLinear: 'Ziehen verschiebt · Mausrad oder zwei Finger zoomen',
   },
 
   lenses: {

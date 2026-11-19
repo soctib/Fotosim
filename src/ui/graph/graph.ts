@@ -1,0 +1,328 @@
+// Sharpness graph: blur curve over distance, depth-of-field band, draggable
+// elements and focus line. Renders only from derive()'s result.
+
+import { de as t, fill } from '../../data/texts.de';
+import type { Derived, DerivedElement } from '../../model/derive';
+import type { ElementId } from '../../model/types';
+import { focusOn, setElementDistance, setFocus, setLogScale } from '../../state/actions';
+import type { Store } from '../../state/store';
+import { formatMeters, formatNumber } from '../distance';
+import {
+  LINEAR_DEFAULT,
+  LOG_VIEW,
+  Y_MAX,
+  Y_MIN,
+  clampLinear,
+  xScale,
+  xTicks,
+  yScale,
+  zoomLinear,
+  type XView,
+} from './scale';
+
+const SVG_NS = 'http://www.w3.org/2000/svg';
+/** Pointer travel (px) below which a press counts as a tap. */
+const TAP_SLOP = 5;
+const Y_TICKS = [0.1, 1, 10, 100];
+
+interface Layout {
+  w: number;
+  h: number;
+  left: number;
+  right: number;
+  plotTop: number;
+  plotBottom: number;
+  groundY: number;
+}
+
+function layoutFor(width: number): Layout {
+  const w = Math.max(280, width);
+  const h = Math.round(Math.min(400, Math.max(300, w * 0.55)));
+  return { w, h, left: 44, right: w - 14, plotTop: 34, plotBottom: h - 92, groundY: h - 24 };
+}
+
+type Gesture =
+  | { kind: 'element'; id: ElementId; startX: number; moved: boolean }
+  | { kind: 'tap-element'; id: ElementId }
+  | { kind: 'focus' }
+  | { kind: 'pan'; startX: number; startView: XView; moved: boolean }
+  | { kind: 'pinch'; startSpanPx: number; startView: XView; anchorM: number };
+
+export function mountGraph(root: HTMLElement, store: Store): void {
+  root.classList.add('graph');
+  root.innerHTML = `
+    <div class="graph-toolbar">
+      <label class="toggle"><input type="checkbox" data-role="log"> ${t.controls.logScale}</label>
+      <button type="button" data-role="reset">${t.graph.resetView}</button>
+    </div>
+    <svg xmlns="${SVG_NS}" role="img" aria-label="${t.graph.sharpness}"></svg>
+    <p class="graph-hint"></p>`;
+  const svg = root.querySelector('svg')!;
+  const logBox = root.querySelector<HTMLInputElement>('[data-role="log"]')!;
+  const resetBtn = root.querySelector<HTMLButtonElement>('[data-role="reset"]')!;
+  const hint = root.querySelector<HTMLParagraphElement>('.graph-hint')!;
+
+  let linearView: XView = LINEAR_DEFAULT;
+  let layout = layoutFor(root.clientWidth);
+  let gesture: Gesture | null = null;
+  const pointers = new Map<number, number>(); // pointerId -> local x
+
+  const view = (): XView => (store.get().ui.logScale ? LOG_VIEW : linearView);
+  const scale = () => xScale(view(), layout.left, layout.right);
+
+  // ---- rendering ---------------------------------------------------------
+
+  let frame = 0;
+  const scheduleRender = () => {
+    if (!frame) frame = requestAnimationFrame(render);
+  };
+
+  function render(): void {
+    frame = 0;
+    const log = store.get().ui.logScale;
+    logBox.checked = log;
+    resetBtn.hidden = log;
+    hint.textContent = log ? t.graph.hintLog : t.graph.hintLinear;
+    svg.style.touchAction = log ? 'pan-y' : 'none';
+    svg.setAttribute('viewBox', `0 0 ${layout.w} ${layout.h}`);
+    svg.setAttribute('height', String(layout.h));
+    svg.innerHTML = draw(store.derived(), view(), layout);
+  }
+
+  store.subscribe(scheduleRender);
+  new ResizeObserver(() => {
+    const next = layoutFor(root.clientWidth);
+    if (next.w !== layout.w) {
+      layout = next;
+      scheduleRender();
+    }
+  }).observe(root);
+
+  // ---- controls ----------------------------------------------------------
+
+  logBox.addEventListener('change', () => setLogScale(store, logBox.checked));
+  resetBtn.addEventListener('click', () => {
+    linearView = LINEAR_DEFAULT;
+    scheduleRender();
+  });
+
+  // ---- pointer interaction -----------------------------------------------
+
+  const localX = (e: PointerEvent | WheelEvent) => {
+    const r = svg.getBoundingClientRect();
+    return ((e.clientX - r.left) / r.width) * layout.w;
+  };
+
+  svg.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return;
+    const x = localX(e);
+    pointers.set(e.pointerId, x);
+    svg.setPointerCapture(e.pointerId);
+
+    if (pointers.size === 2 && !view().log) {
+      const [a, b] = [...pointers.values()];
+      gesture = {
+        kind: 'pinch',
+        startSpanPx: Math.max(20, Math.abs(a - b)),
+        startView: linearView,
+        anchorM: scale().toM((a + b) / 2),
+      };
+      return;
+    }
+    if (pointers.size > 1) return;
+
+    const target = (e.target as Element).closest<SVGElement>('[data-drag]');
+    const kind = target?.dataset.drag;
+    if (kind === 'focus') gesture = { kind: 'focus' };
+    else if (kind === 'element') gesture = { kind: 'element', id: target!.dataset.id as ElementId, startX: x, moved: false };
+    else if (kind === 'offscreen') gesture = { kind: 'tap-element', id: target!.dataset.id as ElementId };
+    else gesture = { kind: 'pan', startX: x, startView: linearView, moved: false };
+    e.preventDefault();
+  });
+
+  svg.addEventListener('pointermove', (e) => {
+    if (!pointers.has(e.pointerId) || !gesture) return;
+    const x = localX(e);
+    pointers.set(e.pointerId, x);
+    const s = scale();
+
+    switch (gesture.kind) {
+      case 'element':
+        if (Math.abs(x - gesture.startX) > TAP_SLOP) gesture.moved = true;
+        if (gesture.moved) setElementDistance(store, gesture.id, s.toM(clampX(x)));
+        break;
+      case 'focus':
+        setFocus(store, s.toM(clampX(x)));
+        break;
+      case 'pan': {
+        if (Math.abs(x - gesture.startX) > TAP_SLOP) gesture.moved = true;
+        if (!gesture.moved || view().log) break;
+        const v = gesture.startView;
+        const dm = ((gesture.startX - x) / (layout.right - layout.left)) * (v.max - v.min);
+        linearView = clampLinear(v.min + dm, v.max + dm);
+        scheduleRender();
+        break;
+      }
+      case 'pinch': {
+        const [a, b] = [...pointers.values()];
+        const factor = gesture.startSpanPx / Math.max(20, Math.abs(a - b));
+        linearView = zoomLinear(gesture.startView, factor, gesture.anchorM);
+        scheduleRender();
+        break;
+      }
+      case 'tap-element':
+        break;
+    }
+  });
+
+  const endPointer = (e: PointerEvent, cancelled: boolean) => {
+    if (!pointers.delete(e.pointerId)) return;
+    const g = gesture;
+    if (pointers.size === 0) gesture = null;
+    else if (g?.kind === 'pinch') gesture = null; // lifting one finger ends the pinch without a tap
+    if (cancelled || !g || pointers.size > 0) return;
+
+    if (g.kind === 'element' && !g.moved) focusOn(store, g.id);
+    else if (g.kind === 'tap-element') focusOn(store, g.id);
+    else if (g.kind === 'pan' && !g.moved) {
+      const x = localX(e);
+      if (x >= layout.left && x <= layout.right) setFocus(store, scale().toM(x));
+    }
+  };
+  svg.addEventListener('pointerup', (e) => endPointer(e, false));
+  svg.addEventListener('pointercancel', (e) => endPointer(e, true));
+
+  svg.addEventListener(
+    'wheel',
+    (e) => {
+      if (view().log) return;
+      e.preventDefault();
+      const anchor = scale().toM(localX(e));
+      linearView = zoomLinear(linearView, Math.exp(e.deltaY * 0.002), anchor);
+      scheduleRender();
+    },
+    { passive: false },
+  );
+
+  const clampX = (x: number) => Math.min(layout.right, Math.max(layout.left, x));
+
+  render();
+}
+
+// ---- SVG markup ------------------------------------------------------------
+
+function draw(d: Derived, v: XView, L: Layout): string {
+  const sx = xScale(v, L.left, L.right);
+  const sy = yScale(L.plotTop, L.plotBottom);
+  const inView = (m: number) => m >= v.min && m <= v.max;
+  const xOf = (m: number) => Math.min(L.right, Math.max(L.left, sx.toPx(m)));
+  const parts: string[] = [];
+
+  parts.push(`<defs>
+    <clipPath id="plot-clip"><rect x="${L.left}" y="${L.plotTop}" width="${L.right - L.left}" height="${L.plotBottom - L.plotTop}"/></clipPath>
+    ${d.elements.map((el) => `<filter id="blur-${el.id}" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="${figureBlurPx(el)}"/></filter>`).join('')}
+  </defs>`);
+
+  // Depth-of-field band (spans plot and scene strip).
+  const near = xOf(d.dof.nearM);
+  const far = Number.isFinite(d.dof.farM) ? xOf(d.dof.farM) : L.right;
+  if (far > near) {
+    parts.push(`<rect class="dof" x="${near}" y="${L.plotTop}" width="${far - near}" height="${L.groundY - L.plotTop}"/>`);
+  }
+  // Label beside the band, just under the "sharp" line, on whichever side has room.
+  const dofLabel = fill(t.graph.dofRange, { near: formatMeters(d.dof.nearM), far: formatMeters(d.dof.farM) });
+  const labelRight = far + 6 + dofLabel.length * 6 < L.right;
+  parts.push(
+    `<text class="dof-label" x="${labelRight ? far + 6 : near - 6}" y="${sy(1) + 16}" text-anchor="${labelRight ? 'start' : 'end'}">${dofLabel}</text>`,
+  );
+
+  // Y axis (log blur) with the "sharp" line at 1.
+  for (const y of Y_TICKS) {
+    const py = sy(y);
+    parts.push(`<line class="grid" x1="${L.left}" x2="${L.right}" y1="${py}" y2="${py}"/>`);
+    parts.push(`<text class="tick" x="${L.left - 6}" y="${py + 4}" text-anchor="end">${fill(t.graph.blurTimes, { value: formatNumber(y) })}</text>`);
+  }
+  const y1 = sy(1);
+  parts.push(`<line class="sharp-line" x1="${L.left}" x2="${L.right}" y1="${y1}" y2="${y1}"/>`);
+  parts.push(`<text class="sharp-label" x="${L.right - 4}" y="${y1 - 5}" text-anchor="end">${t.graph.sharp}</text>`);
+  parts.push(
+    `<text class="axis-title" transform="translate(12 ${(L.plotTop + L.plotBottom) / 2}) rotate(-90)" text-anchor="middle">${t.graph.sharpness}</text>`,
+  );
+
+  // X axis.
+  parts.push(`<line class="axis" x1="${L.left}" x2="${L.right}" y1="${L.plotBottom}" y2="${L.plotBottom}"/>`);
+  for (const m of xTicks(v, L.right - L.left)) {
+    if (!inView(m)) continue;
+    const px = sx.toPx(m);
+    parts.push(`<line class="axis" x1="${px}" x2="${px}" y1="${L.plotBottom}" y2="${L.plotBottom + 4}"/>`);
+    parts.push(`<text class="tick" x="${px}" y="${L.plotBottom + 16}" text-anchor="middle">${formatNumber(m)}</text>`);
+  }
+  parts.push(`<line class="ground" x1="${L.left}" x2="${L.right}" y1="${L.groundY}" y2="${L.groundY}"/>`);
+
+  // Blur curve, sampled every 2 px.
+  const pts: string[] = [];
+  for (let px = L.left; px <= L.right; px += 2) {
+    const m = sx.toM(px);
+    if (m <= 0) continue;
+    pts.push(`${px.toFixed(1)},${sy(d.blurAt(m)).toFixed(1)}`);
+  }
+  parts.push(`<polyline class="curve" clip-path="url(#plot-clip)" points="${pts.join(' ')}"/>`);
+
+  // Elements: marker on the curve + figure in the scene strip.
+  // Draw far to near so nearer figures overlap farther ones.
+  const visible = d.elements.filter((el) => el.visible).sort((a, b) => b.distanceM - a.distanceM);
+  for (const el of visible) {
+    parts.push(inView(el.distanceM) ? drawElement(el, sx.toPx(el.distanceM), sy, L) : drawOffscreen(el, el.distanceM < v.min, L));
+  }
+
+  // Focus line with handle on top.
+  const focus = d.settings.focusDistanceM;
+  if (inView(focus)) {
+    const fx = sx.toPx(focus);
+    const label = `${t.controls.focus} ${formatMeters(focus)}`;
+    const lw = label.length * 6.6 + 16;
+    const lx = Math.min(L.right - lw / 2, Math.max(L.left + lw / 2, fx));
+    parts.push(`<g class="focus" data-drag="focus">
+      <line class="focus-hit" x1="${fx}" x2="${fx}" y1="${L.plotTop - 24}" y2="${L.groundY}"/>
+      <line class="focus-line" x1="${fx}" x2="${fx}" y1="${L.plotTop}" y2="${L.groundY}"/>
+      <rect class="focus-handle" x="${lx - lw / 2}" y="${L.plotTop - 28}" width="${lw}" height="22" rx="11"/>
+      <text class="focus-text" x="${lx}" y="${L.plotTop - 13}" text-anchor="middle">${label}</text>
+    </g>`);
+  }
+
+  return parts.join('');
+}
+
+/** Cartoon cue only: figures get fuzzy once they leave the sharp zone. */
+function figureBlurPx(el: DerivedElement): number {
+  const b = el.relativeBlur;
+  if (!(b > 1)) return 0;
+  return Math.min(3, Math.log2(b) * 0.6);
+}
+
+function drawElement(el: DerivedElement, x: number, sy: (b: number) => number, L: Layout): string {
+  const cy = sy(Math.min(Y_MAX, Math.max(Y_MIN, el.relativeBlur)));
+  const figure =
+    el.id === 'background'
+      ? `<polygon points="-26,0 -8,-34 2,-20 10,-30 28,0"/><circle class="sun" cx="16" cy="-40" r="5"/>`
+      : `<circle cx="0" cy="-38" r="6"/><path d="M0,-32 V-14 M0,-14 L-7,0 M0,-14 L7,0 M-9,-20 L0,-27 L9,-20"/>`;
+  return `<g class="el el-${el.id}">
+    <line class="el-stem" x1="${x}" x2="${x}" y1="${cy}" y2="${L.groundY - 48}"/>
+    <circle class="el-dot" cx="${x}" cy="${cy}" r="5"/>
+    <g data-drag="element" data-id="${el.id}" transform="translate(${x} ${L.groundY})">
+      <rect class="hit" x="-22" y="-54" width="44" height="74"/>
+      <g class="figure" filter="url(#blur-${el.id})">${figure}</g>
+      <text class="el-label" y="16" text-anchor="middle">${formatMeters(el.distanceM)}</text>
+    </g>
+  </g>`;
+}
+
+/** Arrow at the plot edge for an element outside the visible range (linear zoom). */
+function drawOffscreen(el: DerivedElement, leftSide: boolean, L: Layout): string {
+  const x = leftSide ? L.left + 4 : L.right - 4;
+  const anchor = leftSide ? 'start' : 'end';
+  const text = `${leftSide ? '← ' : ''}${t.elements[el.id]} ${formatMeters(el.distanceM)}${leftSide ? '' : ' →'}`;
+  return `<g class="el el-${el.id}" data-drag="offscreen" data-id="${el.id}">
+    <text class="el-offscreen" x="${x}" y="${L.groundY - 20}" text-anchor="${anchor}">${text}</text>
+  </g>`;
+}
