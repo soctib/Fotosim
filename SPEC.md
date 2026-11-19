@@ -57,7 +57,7 @@ Shows the text for the **last clicked/tapped element**, filled with live values 
 | Flash | Checkbox in P/Av/Tv/M; in A the camera switches it on/off itself |
 | Stabiliser | Checkbox |
 | Focus | Slider + focus line + tap-to-focus, all synced |
-| Autofocus | Off (manual) or tracking Person 1 / Person 2 / background; set via dropdown or by tapping the object in the camera image. While on, the focus slider and line are display-only and focus follows the target; tapping a figure in the graph switches the target. Off keeps the last distance. |
+| Autofocus | Off (manual) or tracking Person 1 / Person 2 / background; set via dropdown or by tapping the object in the camera image. While on, the focus slider and line are display-only, focus follows the target, and taps in the graph do nothing (the graph never changes the autofocus). Off keeps the last distance. |
 
 Modes grey out and set the controls they own (`autoFields`).
 

@@ -4,7 +4,7 @@
 import { de as t, fill } from '../../data/texts.de';
 import type { Derived, DerivedElement } from '../../model/derive';
 import type { ElementId } from '../../model/types';
-import { focusOn, setAutofocus, setElementDistance, setFocus, setInfo, setLogScale, setShowDetails } from '../../state/actions';
+import { focusOn, setElementDistance, setFocus, setInfo, setLogScale, setShowDetails } from '../../state/actions';
 import type { Store } from '../../state/store';
 import { formatMeterRange, formatMeters, formatNumber } from '../distance';
 import {
@@ -198,12 +198,12 @@ export function mountGraph(root: HTMLElement, store: Store): void {
     else if (g?.kind === 'pinch') gesture = null; // lifting one finger ends the pinch without a tap
     if (cancelled || !g || pointers.size > 0) return;
 
-    // With autofocus on, tapping a figure moves the AF target; manual focusing is locked.
-    const afOn = store.derived().settings.afTarget !== null;
-    const tapElement = (id: ElementId) => (afOn ? setAutofocus(store, id) : focusOn(store, id));
-    if (g.kind === 'element' && !g.moved) tapElement(g.id);
-    else if (g.kind === 'tap-element') tapElement(g.id);
-    else if (g.kind === 'pan' && !g.moved && !afOn) {
+    // The graph never touches the autofocus (that's the dropdown and the camera image);
+    // while it's on, taps don't refocus at all – figures can only be dragged.
+    if (store.derived().settings.afTarget !== null) return;
+    if (g.kind === 'element' && !g.moved) focusOn(store, g.id);
+    else if (g.kind === 'tap-element') focusOn(store, g.id);
+    else if (g.kind === 'pan' && !g.moved) {
       const x = localX(e);
       if (x >= layout.left && x <= layout.right) setFocus(store, scale().toM(x));
     }

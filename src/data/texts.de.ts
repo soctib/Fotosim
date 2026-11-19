@@ -144,7 +144,7 @@ export const de = {
     blurTimes: '{value}×',
     resetView: 'Ansicht zurücksetzen',
     hintLog: 'Personen und Fokuslinie ziehen · Antippen stellt scharf',
-    hintAutofocus: 'Personen ziehen – der Autofokus folgt · Antippen wechselt das AF-Ziel',
+    hintAutofocus: 'Personen ziehen – der Autofokus folgt',
     hintLinear: 'Ziehen verschiebt · Mausrad oder zwei Finger zoomen',
   },
 
