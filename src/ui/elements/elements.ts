@@ -17,6 +17,8 @@ import type { Store } from '../../state/store';
 
 const IDS: ElementId[] = ['person1', 'person2', 'background'];
 
+const showMeters = (m: number) => String(Math.round(m * 100) / 100);
+
 export function mountElements(root: HTMLElement, store: Store): void {
   root.classList.add('elements');
   root.innerHTML = `
@@ -54,6 +56,11 @@ export function mountElements(root: HTMLElement, store: Store): void {
       const m = distance.valueAsNumber;
       if (Number.isFinite(m) && m > 0) setElementDistance(store, id, m);
     });
+    // On commit (blur/Enter) show what the store kept: clamped, or unchanged after empty/invalid input.
+    distance.addEventListener('change', () => {
+      const el = store.get().scene.elements.find((e) => e.id === id);
+      if (el) distance.value = showMeters(el.distanceM);
+    });
     focus.addEventListener('click', () => {
       focusOn(store, id);
       setInfo(store, 'focus');
@@ -70,8 +77,8 @@ export function mountElements(root: HTMLElement, store: Store): void {
       row.querySelector<HTMLInputElement>('[data-role="visible"]')!.checked = el.visible;
       row.classList.toggle('hidden-el', !el.visible);
       // Don't overwrite what the user is typing.
-      if (document.activeElement !== distance) distance.value = String(Math.round(el.distanceM * 100) / 100);
-      distance.min = String(Math.round(d.minDistanceM * 100) / 100);
+      if (document.activeElement !== distance) distance.value = showMeters(el.distanceM);
+      distance.min = showMeters(d.minDistanceM);
       distance.disabled = !el.visible;
       // Manual focusing is locked while focus tracking is on.
       focus.disabled = !el.visible || tracking;
