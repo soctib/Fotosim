@@ -289,13 +289,9 @@ function draw(d: Derived, v: XView, L: Layout, details: boolean): string {
   // Where distances are measured from: a photographer – or, zoomed in (linear) to face scale, just the camera.
   const pxPerM = (L.right - L.left) / (v.max - v.min);
   const closeUp = !v.log && pxPerM * (FACE_DEPTH_M.backOfHead - FACE_DEPTH_M.noseTip) >= HEAD_MIN_PX;
-  if (closeUp) {
-    // Camera at the heads' eye level; grey wedge = what's in frame vertically at each distance.
-    const ky = headScaleY(pxPerM, L);
-    const eyeY = L.groundY - (HEAD_NECK_M + HEAD_EYE_M) * ky;
-    parts.push(drawFieldOfView(v, L, eyeY, ky, d.frameHeightAt));
-    parts.push(drawCameraMarker(L, true, eyeY));
-  } else parts.push(drawCameraMarker(L, false, L.groundY));
+  // Close up, the camera sits at the heads' eye level.
+  const eyeY = closeUp ? L.groundY - (HEAD_NECK_M + HEAD_EYE_M) * headScaleY(pxPerM, L) : L.groundY;
+  parts.push(drawCameraMarker(L, closeUp, eyeY));
 
   if (details) parts.push(drawCurve(d, sx, sy, L));
 
@@ -394,26 +390,6 @@ const HEAD_EYE_M = 0.132;
 /** Vertical px per metre for heads: true proportions while they fit, capped by the graph height. */
 function headScaleY(pxPerM: number, L: Layout): number {
   return Math.min(pxPerM, (L.groundY - L.plotTop - 8) / 0.3);
-}
-
-/**
- * Vertical field of view as a grey wedge from the camera: at each visible distance its height is the
- * scene height in frame there (same vertical scale as the heads, centred on the eyes).
- */
-function drawFieldOfView(v: XView, L: Layout, eyeY: number, ky: number, frameHeightAt: (m: number) => number): string {
-  const half = (m: number) => (frameHeightAt(Math.max(m, 0.01)) / 2) * ky;
-  const apex = L.left - 6;
-  const h0 = half(v.min);
-  const h1 = half(v.max);
-  const pts = `${apex},${eyeY} ${L.left},${eyeY - h0} ${L.right},${eyeY - h1} ${L.right},${eyeY + h1} ${L.left},${eyeY + h0}`;
-  return `<g class="fov">
-    <defs><clipPath id="fov-clip"><rect x="0" y="${L.plotTop - 4}" width="${L.right}" height="${L.groundY - L.plotTop + 4}"/></clipPath></defs>
-    <g clip-path="url(#fov-clip)">
-      <polygon class="fov-area" points="${pts}"/>
-      <path class="fov-edge" d="M${apex},${eyeY} L${L.left},${eyeY - h0} L${L.right},${eyeY - h1} M${apex},${eyeY} L${L.left},${eyeY + h0} L${L.right},${eyeY + h1}"/>
-    </g>
-    <text class="fov-label" x="${L.right - 4}" y="${Math.max(L.plotTop + 10, eyeY - h1 + 12)}" text-anchor="end">${t.graph.fov}</text>
-  </g>`;
 }
 
 /** Photographer (or close up: a camera at eye level `y`) in the left margin, facing the scene, labelled "Kamera". */

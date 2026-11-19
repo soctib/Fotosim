@@ -282,20 +282,6 @@ header p {
   stroke: var(--muted);
   stroke-width: 1.5;
 }
-.graph .fov-area {
-  fill: var(--muted);
-  opacity: 0.14;
-}
-.graph .fov-edge {
-  fill: none;
-  stroke: var(--muted);
-  stroke-width: 1;
-  stroke-dasharray: 4 3;
-}
-.graph .fov-label {
-  fill: var(--muted);
-  font-size: 10px;
-}
 .graph .camera-label {
   fill: var(--muted);
   font-size: 11px;

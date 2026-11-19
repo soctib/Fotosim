@@ -64,17 +64,3 @@ describe('derive().blurFractionAt', () => {
     expect(d.blurAt(0.8)).toBeGreaterThan(3); // eyes: several times the "sharp" limit
   });
 });
-
-describe('derive().frameHeightAt', () => {
-  it('85 mm on full frame frames about 20 cm vertically at 0.8 m', () => {
-    const cam = { ...initialState.camera, sensorId: 'fullFrame' as const, focalLengthMm: 85 };
-    const h = derive(cam, initialState.scene).frameHeightAt(0.8);
-    expect(h).toBeGreaterThan(0.19);
-    expect(h).toBeLessThan(0.21);
-  });
-
-  it('is the inverse of the per-metre image fraction used for layout', () => {
-    const d = derive(initialState.camera, initialState.scene);
-    for (const el of d.elements) expect(d.frameHeightAt(el.distanceM) * el.heightFractionPerM).toBeCloseTo(1, 10);
-  });
-});

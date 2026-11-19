@@ -14,8 +14,7 @@ Ships as **one self-contained HTML file** (`npm run build` → `dist/index.html`
 ### 1. Sharpness graph (SVG)
 - X: distance (m, unit at the axis arrow). Y: relative blur (blur disc / circle of confusion). Line at 1 = "sharp".
 - Left margin: a photographer labelled "Kamera" (where distances are measured from); zoomed in (linear) to face scale it
-  becomes a camera at the heads' eye level, with a grey wedge showing the vertical field of view (scene height in frame
-  at each distance, `frameHeightAt`, same vertical scale as the heads).
+  becomes a camera at the heads' eye level.
 - **Details** toggle (default off): off shows only the DOF band, focus line and figures in a short graph; on adds the blur curve, "sharp" threshold line and y axis.
 - Toggle **logarithmic** distance scale. Both toggles sit in the hint line under the graph. In linear mode: scroll/pan + zoom (pinch / wheel); in log mode no zoom.
 - **Three draggable elements**: Person 1, Person 2, Background.
