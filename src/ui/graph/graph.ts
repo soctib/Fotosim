@@ -233,10 +233,12 @@ function draw(d: Derived, v: XView, L: Layout): string {
   // Label just under the "sharp" line: right of the band, else left of it, else inside – always within the plot.
   const dofLabel = fill(t.graph.dofRange, { near: formatMeters(d.dof.nearM), far: formatMeters(d.dof.farM) });
   const lw = dofLabel.length * CHAR_W;
+  // The "↓ scharf" label occupies the left end of the same row.
+  const minX = L.left + 6 + (t.graph.sharp.length + 2) * CHAR_W + 12;
   let lx: number;
-  if (far + 6 + lw <= L.right) lx = far + 6;
-  else if (near - 6 - lw >= L.left) lx = near - 6 - lw;
-  else lx = Math.min(L.right - lw - 4, Math.max(L.left + 4, (near + far) / 2 - lw / 2));
+  if (far + 6 + lw <= L.right && far + 6 >= minX) lx = far + 6;
+  else if (near - 6 - lw >= minX) lx = near - 6 - lw;
+  else lx = Math.min(L.right - lw - 4, Math.max(minX, (near + far) / 2 - lw / 2));
   parts.push(`<text class="dof-label" x="${lx}" y="${sy(1) + 16}">${dofLabel}</text>`);
 
   // Y axis: sharp zone 0…1 below the dashed line, increasingly blurry above it.
