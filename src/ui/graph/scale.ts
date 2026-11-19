@@ -65,7 +65,11 @@ export function clampLinear(min: number, max: number): XView {
 
 /** Zoom a linear view by `factor` (>1 = zoom out) keeping `anchorM` under the same pixel. */
 export function zoomLinear(view: XView, factor: number, anchorM: number): XView {
-  return clampLinear(anchorM - (anchorM - view.min) * factor, anchorM + (view.max - anchorM) * factor);
+  const span = view.max - view.min;
+  // Keep the span in bounds here: if clampLinear had to widen it, it would grow from `min` to the right
+  // and the anchor would slide away from under the pointer.
+  const f = Math.min(LINEAR_MAX / span, Math.max(LINEAR_MIN_SPAN / span, factor));
+  return clampLinear(anchorM - (anchorM - view.min) * f, anchorM + (view.max - anchorM) * f);
 }
 
 const LOG_TICKS = [0.2, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000];
