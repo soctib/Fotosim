@@ -57,6 +57,7 @@ Shows the text for the **last clicked/tapped element**, filled with live values 
 | Flash | Checkbox in P/Av/Tv/M; in A the camera switches it on/off itself |
 | Stabiliser | Checkbox |
 | Focus | Slider + focus line + tap-to-focus, all synced |
+| Autofocus | Off (manual) or tracking Person 1 / Person 2 / background; set via dropdown or by tapping the object in the camera image. While on, the focus slider and line are display-only and focus follows the target; tapping a figure in the graph switches the target. Off keeps the last distance. |
 
 Modes grey out and set the controls they own (`autoFields`).
 
@@ -78,6 +79,7 @@ All formulas use mm for focal length/sensor, m for distances, s for shutter.
 - **Modes** (`modes.ts`): brute-force search over the discrete value lists, minimising
   `10·|subject offset| + shake penalties + aperture preference (P) + ISO preference (auto ISO)`.
   Auto mode fires the flash if it'd otherwise be ≥ 1 stop under, slower than the plain handheld limit, or need ISO ≥ 1600.
+- **Autofocus** (`autofocus.ts`): applied before mode resolution (auto modes and flash use the focus distance).
 - **derive.ts**: one function `(settings, scene) → Derived`. Everything the UI renders comes from here.
 
 ## Architecture

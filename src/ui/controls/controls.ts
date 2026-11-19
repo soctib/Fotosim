@@ -1,4 +1,4 @@
-// Basic camera controls: sensor, lens, focal length, aperture, focus.
+// Basic camera controls: sensor, lens, focal length, aperture, autofocus, focus.
 // DOM is built once; render() only syncs values so sliders aren't replaced mid-drag.
 
 import { LENS_ORDER } from '../../data/cameraLenses';
@@ -7,10 +7,12 @@ import { de as t, fill } from '../../data/texts.de';
 import type { Derived } from '../../model/derive';
 import { focalOptions, formatFocal } from '../../model/focal';
 import { APERTURES, formatAperture } from '../../model/stops';
-import type { LensId, SensorId } from '../../model/types';
-import { MAX_DISTANCE_M, MIN_DISTANCE_M, setCamera, setFocus, setInfo } from '../../state/actions';
+import type { ElementId, LensId, SensorId } from '../../model/types';
+import { MAX_DISTANCE_M, MIN_DISTANCE_M, setAutofocus, setCamera, setFocus, setInfo } from '../../state/actions';
 import type { InfoKey, Store } from '../../state/store';
 import { formatMeters } from '../distance';
+
+const AF_TARGETS: ElementId[] = ['person1', 'person2', 'background'];
 
 /** Focus slider resolution; positions map logarithmically onto the distance range. */
 const FOCUS_STEPS = 1000;
@@ -50,14 +52,23 @@ export function mountControls(root: HTMLElement, store: Store): void {
       <input id="c-aperture" type="range" min="0" max="${APERTURES.length - 1}" step="1">
       <small class="hint" id="h-aperture"></small>
     </div>
+    <div class="control" data-info="autofocus">
+      <label for="c-af">${t.controls.autofocus}</label>
+      <select id="c-af">
+        <option value="">${t.controls.autofocusOff}</option>
+        ${AF_TARGETS.map((id) => `<option value="${id}">${t.elements[id]}</option>`).join('')}
+      </select>
+    </div>
     <div class="control" data-info="focus">
       <label for="c-focus">${t.controls.focus} <output id="o-focus"></output></label>
       <input id="c-focus" type="range" min="0" max="${FOCUS_STEPS}" step="1">
+      <small class="hint" id="h-focus"></small>
     </div>`;
 
   const $ = <T extends HTMLElement>(id: string) => root.querySelector<T>(`#${id}`)!;
   const sensor = $<HTMLSelectElement>('c-sensor');
   const lens = $<HTMLSelectElement>('c-lens');
+  const af = $<HTMLSelectElement>('c-af');
   const focal = $<HTMLInputElement>('c-focal');
   const aperture = $<HTMLInputElement>('c-aperture');
   const focus = $<HTMLInputElement>('c-focus');
@@ -83,6 +94,7 @@ export function mountControls(root: HTMLElement, store: Store): void {
     setCamera(store, { focalLengthMm: opts[Number(focal.value)].realMm });
   });
   aperture.addEventListener('input', () => setCamera(store, { aperture: APERTURES[Number(aperture.value)] }));
+  af.addEventListener('change', () => setAutofocus(store, (af.value || null) as ElementId | null));
   focus.addEventListener('input', () => setFocus(store, posToFocus(Number(focus.value))));
 
   store.subscribe((state, d: Derived) => {
@@ -112,8 +124,12 @@ export function mountControls(root: HTMLElement, store: Store): void {
         ? fill(t.controls.lensLimitHint, { aperture: formatAperture(d.maxAperture) })
         : '';
 
+    // With autofocus on, the focus slider only displays where the camera focused.
+    af.value = s.afTarget ?? '';
+    focus.disabled = s.afTarget !== null;
     focus.value = String(focusToPos(s.focusDistanceM));
     $('o-focus').textContent = formatMeters(s.focusDistanceM);
+    $('h-focus').textContent = s.afTarget ? fill(t.controls.autofocusHint, { target: t.elements[s.afTarget] }) : '';
   });
 }
 

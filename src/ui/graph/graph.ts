@@ -4,7 +4,7 @@
 import { de as t, fill } from '../../data/texts.de';
 import type { Derived, DerivedElement } from '../../model/derive';
 import type { ElementId } from '../../model/types';
-import { focusOn, setElementDistance, setFocus, setInfo, setLogScale, setShowDetails } from '../../state/actions';
+import { focusOn, setAutofocus, setElementDistance, setFocus, setInfo, setLogScale, setShowDetails } from '../../state/actions';
 import type { Store } from '../../state/store';
 import { formatMeterRange, formatMeters, formatNumber } from '../distance';
 import {
@@ -92,7 +92,8 @@ export function mountGraph(root: HTMLElement, store: Store): void {
     logBox.checked = log;
     detailsBox.checked = details();
     resetBtn.hidden = log;
-    hint.textContent = log ? t.graph.hintLog : t.graph.hintLinear;
+    const afOn = store.derived().settings.afTarget !== null;
+    hint.textContent = !log ? t.graph.hintLinear : afOn ? t.graph.hintAutofocus : t.graph.hintLog;
     svg.style.touchAction = log ? 'pan-y' : 'none';
     svg.setAttribute('viewBox', `0 0 ${layout.w} ${layout.h}`);
     svg.setAttribute('height', String(layout.h));
@@ -150,7 +151,8 @@ export function mountGraph(root: HTMLElement, store: Store): void {
     else if (kind === 'element') gesture = { kind: 'element', id: target!.dataset.id as ElementId, startX: x, moved: false };
     else if (kind === 'offscreen') gesture = { kind: 'tap-element', id: target!.dataset.id as ElementId };
     else gesture = { kind: 'pan', startX: x, startView: linearView, moved: false };
-    setInfo(store, kind ? 'focus' : 'graph');
+    const afOn = store.derived().settings.afTarget !== null;
+    setInfo(store, kind ? (afOn ? 'autofocus' : 'focus') : 'graph');
     e.preventDefault();
   });
 
@@ -196,9 +198,12 @@ export function mountGraph(root: HTMLElement, store: Store): void {
     else if (g?.kind === 'pinch') gesture = null; // lifting one finger ends the pinch without a tap
     if (cancelled || !g || pointers.size > 0) return;
 
-    if (g.kind === 'element' && !g.moved) focusOn(store, g.id);
-    else if (g.kind === 'tap-element') focusOn(store, g.id);
-    else if (g.kind === 'pan' && !g.moved) {
+    // With autofocus on, tapping a figure moves the AF target; manual focusing is locked.
+    const afOn = store.derived().settings.afTarget !== null;
+    const tapElement = (id: ElementId) => (afOn ? setAutofocus(store, id) : focusOn(store, id));
+    if (g.kind === 'element' && !g.moved) tapElement(g.id);
+    else if (g.kind === 'tap-element') tapElement(g.id);
+    else if (g.kind === 'pan' && !g.moved && !afOn) {
       const x = localX(e);
       if (x >= layout.left && x <= layout.right) setFocus(store, scale().toM(x));
     }
@@ -287,10 +292,12 @@ function draw(d: Derived, v: XView, L: Layout, details: boolean): string {
   const focus = d.settings.focusDistanceM;
   if (inView(focus)) {
     const fx = sx.toPx(focus);
-    const label = `${t.controls.focus} ${formatMeters(focus)}`;
+    const af = d.settings.afTarget !== null;
+    const label = `${af ? t.controls.autofocusShort : t.controls.focus} ${formatMeters(focus)}`;
     const lw = label.length * 6.6 + 16;
     const lx = Math.min(L.right - lw / 2, Math.max(L.left + lw / 2, fx));
-    parts.push(`<g class="focus" data-drag="focus">
+    // Under autofocus the line is display-only: no drag handle.
+    parts.push(`<g class="focus${af ? ' af' : ''}"${af ? '' : ' data-drag="focus"'}>
       <!-- Grab area stops at the axis so figures in the scene strip below stay tappable/draggable. -->
       <line class="focus-hit" x1="${fx}" x2="${fx}" y1="${L.plotTop - 24}" y2="${L.plotBottom}"/>
       <line class="focus-line" x1="${fx}" x2="${fx}" y1="${L.plotTop}" y2="${L.groundY}"/>

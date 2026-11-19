@@ -59,7 +59,10 @@ export interface CameraSettings {
   /** Manual flash switch (ignored in 'auto', where the camera decides). */
   flashOn: boolean;
   stabilized: boolean;
+  /** Manual focus distance; overridden while autofocus tracks an element. */
   focusDistanceM: number;
+  /** Continuous autofocus target, or null for manual focus. */
+  afTarget: ElementId | null;
 }
 
 export interface Scene {

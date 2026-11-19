@@ -5,6 +5,7 @@ import { matchingLenses } from '../data/lensPrices';
 import { lightPreset } from '../data/lightPresets';
 import { PHONE_CLASSES } from '../data/phones';
 import { SENSORS } from '../data/sensors';
+import { applyAutofocus } from './autofocus';
 import { classifyExposure, exposureOffsetStops, type ExposureClass } from './exposure';
 import {
   flashFullOffsetStops,
@@ -84,7 +85,7 @@ export interface Derived {
 export function derive(input: CameraSettings, scene: Scene): Derived {
   const sensor = SENSORS[input.sensorId];
   const sceneEv100 = lightPreset(scene.lightPresetId).ev100;
-  const { settings, autoFields } = resolveMode(input, sensor, sceneEv100);
+  const { settings, autoFields } = resolveMode(applyAutofocus(input, scene), sensor, sceneEv100);
   const { focalLengthMm: f, aperture: N, shutterS: t, iso, focusDistanceM: focus } = settings;
   const crop = cropFactor(sensor);
 

@@ -33,6 +33,7 @@ export const initialState: AppState = {
     flashOn: false,
     stabilized: true,
     focusDistanceM: 3,
+    afTarget: null,
   },
   scene: {
     lightPresetId: 'cloudy',

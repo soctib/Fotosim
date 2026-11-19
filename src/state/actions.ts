@@ -46,3 +46,12 @@ export function setShowDetails(store: Store, showDetails: boolean): void {
 export function setInfo(store: Store, infoKey: InfoKey): void {
   if (store.get().ui.infoKey !== infoKey) store.update((s) => ({ ...s, ui: { ...s.ui, infoKey } }));
 }
+
+/**
+ * Switch continuous autofocus to an element, or off (null). Turning it off keeps the
+ * distance the camera was focused at, so the manual focus doesn't jump.
+ */
+export function setAutofocus(store: Store, target: ElementId | null): void {
+  const focus = store.derived().settings.focusDistanceM;
+  setCamera(store, target ? { afTarget: target } : { afTarget: null, focusDistanceM: focus });
+}

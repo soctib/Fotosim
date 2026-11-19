@@ -8,7 +8,7 @@ import { de as t, fill } from '../../data/texts.de';
 import type { Derived, DerivedElement } from '../../model/derive';
 import { formatAperture, formatShutter } from '../../model/stops';
 import type { ElementId } from '../../model/types';
-import { setInfo } from '../../state/actions';
+import { setAutofocus, setInfo } from '../../state/actions';
 import type { Store } from '../../state/store';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -41,6 +41,7 @@ export function mountSim(root: HTMLElement, store: Store): void {
         </filter>
         <rect width="100%" height="100%" filter="url(#sim-noise)"/>
       </svg>
+      <svg class="af-overlay" xmlns="${SVG_NS}" aria-hidden="true"></svg>
     </div>
     <svg width="0" height="0" aria-hidden="true" style="position:absolute">
       <filter id="sim-shake" x="-10%" width="120%"><feGaussianBlur stdDeviation="0 0"/></filter>
@@ -53,7 +54,16 @@ export function mountSim(root: HTMLElement, store: Store): void {
   const caption = root.querySelector<HTMLElement>('.sim-caption')!;
   const layer = (id: ElementId | 'sky') => root.querySelector<SVGSVGElement>(`[data-layer="${id}"]`)!;
 
-  frame.addEventListener('click', () => setInfo(store, 'sim'));
+  const afOverlay = root.querySelector<SVGSVGElement>('.af-overlay')!;
+
+  // Tapping a person or the house puts the autofocus on it; anything else explains the image.
+  frame.addEventListener('click', (e) => {
+    const id = (e.target as Element).closest<SVGElement>('[data-layer]')?.dataset.layer;
+    if (id === 'person1' || id === 'person2' || id === 'background') {
+      setAutofocus(store, id);
+      setInfo(store, 'autofocus');
+    } else setInfo(store, 'sim');
+  });
 
   let width = 0;
   let last: Derived | null = null;
@@ -89,6 +99,10 @@ export function mountSim(root: HTMLElement, store: Store): void {
       svg.innerHTML = el.id === 'background' ? drawScenery(el, W, H) : drawPerson(el, W, H);
       svg.style.filter = filterFor(el);
     });
+
+    afOverlay.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    const target = d.elements.find((e) => e.id === d.settings.afTarget && e.visible);
+    afOverlay.innerHTML = target ? drawAfFrame(target, W, H) : '';
 
     // Quadratic so "low" noise stays nearly clean and "very high" is unmistakable.
     noise.style.opacity = Math.min(0.9, d.noise.amount ** 2 * 1.2).toFixed(3);
@@ -182,6 +196,23 @@ function drawScenery(el: DerivedElement, W: number, H: number): string {
     ${win(hx - px(2.8))}${win(hx + px(1.4))}
     <rect class="door" x="${hx - px(0.6)}" y="${groundY - px(2.2)}" width="${px(1.2)}" height="${px(2.2)}"/>`;
   return `<defs>${defs}</defs>${trees.map(tree).join('')}${house}`;
+}
+
+/** Camera-style AF frame (corner brackets) around the face, or the house. */
+function drawAfFrame(el: DerivedElement, W: number, H: number): string {
+  const { perM, groundY, cx } = projection(el, W, H);
+  const isPerson = el.id !== 'background';
+  const x = isPerson ? cx : W / 2 + 1.5 * perM; // house centre, see drawScenery
+  const y = isPerson ? groundY - 1.63 * perM : groundY - 4.5 * perM;
+  const size = Math.min(H * 0.6, Math.max(18, (isPerson ? 0.45 : 7) * perM));
+  // Keep the frame inside the image even when the target is huge or at the edge.
+  const half = size / 2;
+  const fx = Math.min(W - half - 2, Math.max(half + 2, x));
+  const fy = Math.min(H - half - 2, Math.max(half + 2, y));
+  const c = size * 0.28;
+  const l = fx - half, r = fx + half, t = fy - half, b = fy + half;
+  return `<path class="af-frame" d="M${l},${t + c} V${t} H${l + c} M${r - c},${t} H${r} V${t + c}
+    M${r},${b - c} V${b} H${r - c} M${l + c},${b} H${l} V${b - c}"/>`;
 }
 
 function drawPerson(el: DerivedElement, W: number, H: number): string {
