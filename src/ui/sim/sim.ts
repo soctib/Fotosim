@@ -1,5 +1,6 @@
-// Simulated camera image: background, person 2, person 1 as separate layers,
-// each with its own blur and brightness from derive(). Noise overlay and
+// Simulated camera image: sky/ground, background scenery and the persons as
+// separate layers, each with its own blur and brightness from derive().
+// Scenery and persons are stacked by distance, so nearer things cover farther ones. Noise overlay and
 // directional shake blur on top. Layout uses each element's projected scale
 // (heightFractionPerM), so framing follows focal length and sensor.
 
@@ -24,6 +25,7 @@ export function mountSim(root: HTMLElement, store: Store): void {
   root.classList.add('sim');
   root.innerHTML = `
     <div class="sim-frame" role="img" aria-label="${t.sim.title}">
+      <svg class="layer" data-layer="sky" xmlns="${SVG_NS}"></svg>
       <svg class="layer" data-layer="background" xmlns="${SVG_NS}"></svg>
       <svg class="layer" data-layer="person2" xmlns="${SVG_NS}"></svg>
       <svg class="layer" data-layer="person1" xmlns="${SVG_NS}"></svg>
@@ -49,7 +51,7 @@ export function mountSim(root: HTMLElement, store: Store): void {
   const noise = root.querySelector<SVGSVGElement>('.noise')!;
   const shake = root.querySelector<SVGFEGaussianBlurElement>('#sim-shake feGaussianBlur')!;
   const caption = root.querySelector<HTMLElement>('.sim-caption')!;
-  const layer = (id: ElementId) => root.querySelector<SVGSVGElement>(`[data-layer="${id}"]`)!;
+  const layer = (id: ElementId | 'sky') => root.querySelector<SVGSVGElement>(`[data-layer="${id}"]`)!;
 
   frame.addEventListener('click', () => setInfo(store, 'sim'));
 
@@ -63,15 +65,30 @@ export function mountSim(root: HTMLElement, store: Store): void {
     const H = (W * d.sensor.heightMm) / d.sensor.widthMm;
     if (!W) return;
 
-    for (const el of d.elements) {
+    const filterFor = (el: DerivedElement) => {
+      const blur = Math.min(MAX_BLUR_PX, el.blurFractionOfWidth * W * SIGMA_PER_DISC);
+      const bright = Math.min(8, Math.max(0.03, 2 ** el.exposureOffsetStops));
+      return `blur(${blur.toFixed(2)}px) brightness(${bright.toFixed(3)})`;
+    };
+
+    // Sky and open ground are always furthest back; they share the background's blur and light.
+    const bg = d.elements.find((e) => e.id === 'background')!;
+    const sky = layer('sky');
+    sky.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    sky.innerHTML = drawSky(bg, W, H);
+    sky.style.filter = filterFor(bg);
+    sky.style.zIndex = '0';
+
+    // Far to near: a person behind the house disappears behind it.
+    const byDistance = [...d.elements].sort((a, b) => b.distanceM - a.distanceM);
+    byDistance.forEach((el, i) => {
       const svg = layer(el.id);
       svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
       svg.style.display = el.visible ? '' : 'none';
-      svg.innerHTML = el.id === 'background' ? drawBackground(el, W, H) : drawPerson(el, W, H);
-      const blur = Math.min(MAX_BLUR_PX, el.blurFractionOfWidth * W * SIGMA_PER_DISC);
-      const bright = Math.min(8, Math.max(0.03, 2 ** el.exposureOffsetStops));
-      svg.style.filter = `blur(${blur.toFixed(2)}px) brightness(${bright.toFixed(3)})`;
-    }
+      svg.style.zIndex = String(i + 1);
+      svg.innerHTML = el.id === 'background' ? drawScenery(el, W, H) : drawPerson(el, W, H);
+      svg.style.filter = filterFor(el);
+    });
 
     // Quadratic so "low" noise stays nearly clean and "very high" is unmistakable.
     noise.style.opacity = Math.min(0.9, d.noise.amount ** 2 * 1.2).toFixed(3);
@@ -108,31 +125,63 @@ function projection(el: DerivedElement, W: number, H: number) {
   return { perM, groundY: H / 2 + CAMERA_HEIGHT_M * perM, cx: W / 2 + LATERAL_M[el.id] * perM };
 }
 
-function drawBackground(el: DerivedElement, W: number, H: number): string {
-  const { perM, groundY } = projection(el, W, H);
-  const x = (m: number) => W / 2 + m * perM;
-  // Trees (height, lateral position) and a house, all standing at the background distance.
-  const trees: [number, number][] = [
-    [11, -14], [9, -9.5], [12, -5.5], [10, 9], [13, 13.5], [8, 18], [12, -20], [10, 23],
-  ];
-  const tree = ([h, lat]: [number, number]) =>
-    `<rect class="trunk" x="${x(lat) - 0.25 * perM}" y="${groundY - h * 0.35 * perM}" width="${0.5 * perM}" height="${h * 0.35 * perM}"/>
-     <ellipse class="crown" cx="${x(lat)}" cy="${groundY - h * 0.62 * perM}" rx="${h * 0.24 * perM}" ry="${h * 0.38 * perM}"/>`;
-  const hx = x(1.5);
-  const house = `
-    <rect class="house" x="${hx - 4 * perM}" y="${groundY - 5 * perM}" width="${8 * perM}" height="${5 * perM}"/>
-    <polygon class="roof" points="${hx - 4.6 * perM},${groundY - 5 * perM} ${hx},${groundY - 8.5 * perM} ${hx + 4.6 * perM},${groundY - 5 * perM}"/>
-    <rect class="window" x="${hx - 2.8 * perM}" y="${groundY - 3.8 * perM}" width="${1.4 * perM}" height="${1.4 * perM}"/>
-    <rect class="window" x="${hx + 1.4 * perM}" y="${groundY - 3.8 * perM}" width="${1.4 * perM}" height="${1.4 * perM}"/>
-    <rect class="door" x="${hx - 0.6 * perM}" y="${groundY - 2.2 * perM}" width="${1.2 * perM}" height="${2.2 * perM}"/>`;
+function drawSky(bg: DerivedElement, W: number, H: number): string {
+  const { groundY } = projection(bg, W, H);
   return `
     <defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" class="sky-top"/><stop offset="1" class="sky-bottom"/></linearGradient></defs>
     <rect width="${W}" height="${H / 2 + 1}" fill="url(#sky)"/>
     <circle class="sun" cx="${W * 0.82}" cy="${H * 0.16}" r="${H * 0.06}"/>
     <rect class="far-ground" y="${H / 2}" width="${W}" height="${Math.max(0, groundY - H / 2)}"/>
-    <rect class="near-ground" y="${groundY}" width="${W}" height="${Math.max(0, H - groundY)}"/>
-    ${trees.map(tree).join('')}${house}`;
+    <rect class="near-ground" y="${groundY}" width="${W}" height="${Math.max(0, H - groundY)}"/>`;
+}
+
+/** Below this many pixels per brick course the texture would be sub-pixel noise (and slow); draw flat. */
+const MIN_TEXTURE_PX = 1.5;
+
+function drawScenery(el: DerivedElement, W: number, H: number): string {
+  const { perM, groundY } = projection(el, W, H);
+  const x = (m: number) => W / 2 + m * perM;
+  const px = (m: number) => m * perM;
+  // Trees (height, lateral position) and a brick house, all standing at the background distance.
+  const trees: [number, number][] = [
+    [11, -14], [9, -9.5], [12, -5.5], [10, 9], [13, 13.5], [8, 18], [12, -20], [10, 23],
+  ];
+  const tree = ([h, lat]: [number, number]) =>
+    `<rect class="trunk" x="${x(lat) - px(0.25)}" y="${groundY - px(h * 0.35)}" width="${px(0.5)}" height="${px(h * 0.35)}"/>
+     <ellipse class="crown" cx="${x(lat)}" cy="${groundY - px(h * 0.62)}" rx="${px(h * 0.24)}" ry="${px(h * 0.38)}"/>`;
+
+  const hx = x(1.5);
+  const wallX = hx - px(4);
+  const wallY = groundY - px(5);
+  const roofTop = groundY - px(8.5);
+  // Real-world brick: 24 cm long, 7.5 cm per course incl. 1 cm mortar. Roof tiles: 30 cm rows.
+  const course = px(0.075);
+  const textured = course >= MIN_TEXTURE_PX;
+  const mortar = Math.max(0.5, px(0.012));
+  const brickW = px(0.24);
+  const defs = textured
+    ? `<pattern id="bricks" patternUnits="userSpaceOnUse" x="${wallX}" y="${groundY}" width="${brickW}" height="${2 * course}">
+         <path class="mortar" stroke-width="${mortar}" d="M0,0 H${brickW} M0,${course} H${brickW} M0,0 V${course} M${brickW / 2},${course} V${2 * course}"/>
+       </pattern>
+       <pattern id="tiles" patternUnits="userSpaceOnUse" x="${wallX}" y="${roofTop}" width="${px(0.3)}" height="${px(0.3)}">
+         <path class="tile-line" stroke-width="${mortar * 1.5}" d="M0,${px(0.3)} H${px(0.3)} M${px(0.15)},0 V${px(0.3)}"/>
+       </pattern>`
+    : '';
+  const roofPts = `${hx - px(4.6)},${wallY} ${hx},${roofTop} ${hx + px(4.6)},${wallY}`;
+  const win = (wx: number) => {
+    const s = px(1.4);
+    return `<rect class="window" x="${wx}" y="${groundY - px(3.8)}" width="${s}" height="${s}"/>
+      <path class="frame" stroke-width="${Math.max(0.5, px(0.06))}" d="M${wx},${groundY - px(3.8)} h${s} v${s} h${-s} Z M${wx + s / 2},${groundY - px(3.8)} v${s} M${wx},${groundY - px(3.8) + s / 2} h${s}"/>`;
+  };
+  const house = `
+    <rect class="house" x="${wallX}" y="${wallY}" width="${px(8)}" height="${px(5)}"/>
+    ${textured ? `<rect fill="url(#bricks)" x="${wallX}" y="${wallY}" width="${px(8)}" height="${px(5)}"/>` : ''}
+    <polygon class="roof" points="${roofPts}"/>
+    ${textured ? `<polygon fill="url(#tiles)" points="${roofPts}"/>` : ''}
+    ${win(hx - px(2.8))}${win(hx + px(1.4))}
+    <rect class="door" x="${hx - px(0.6)}" y="${groundY - px(2.2)}" width="${px(1.2)}" height="${px(2.2)}"/>`;
+  return `<defs>${defs}</defs>${trees.map(tree).join('')}${house}`;
 }
 
 function drawPerson(el: DerivedElement, W: number, H: number): string {

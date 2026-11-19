@@ -193,6 +193,7 @@ header p {
   stroke-width: 24;
 }
 .graph .focus-line {
+  pointer-events: none;
   stroke: var(--accent);
   stroke-width: 2;
 }
@@ -329,6 +330,7 @@ header p {
 }
 
 .sim-frame .noise {
+  z-index: 10;
   mix-blend-mode: overlay;
   pointer-events: none;
 }
@@ -348,9 +350,12 @@ header p {
 .sim .near-ground { fill: #74a854; }
 .sim .trunk { fill: #7a5230; }
 .sim .crown { fill: #3f7d3a; }
-.sim .house { fill: #e9d8b4; }
-.sim .roof { fill: #b5482f; }
+.sim .house { fill: #b5603a; }
+.sim .mortar { stroke: #e6d9c6; fill: none; }
+.sim .roof { fill: #5a4a48; }
+.sim .tile-line { stroke: #3a2f2e; fill: none; }
 .sim .window { fill: #6fa3c9; }
+.sim .frame { stroke: #f4f1ea; fill: none; }
 .sim .door { fill: #7a5230; }
 .sim .legs { fill: #34405a; }
 .sim .skin { fill: #f1c27d; }

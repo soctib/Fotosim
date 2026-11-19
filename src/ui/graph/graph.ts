@@ -306,7 +306,8 @@ function draw(d: Derived, v: XView, L: Layout): string {
     const lw = label.length * 6.6 + 16;
     const lx = Math.min(L.right - lw / 2, Math.max(L.left + lw / 2, fx));
     parts.push(`<g class="focus" data-drag="focus">
-      <line class="focus-hit" x1="${fx}" x2="${fx}" y1="${L.plotTop - 24}" y2="${L.groundY}"/>
+      <!-- Grab area stops at the axis so figures in the scene strip below stay tappable/draggable. -->
+      <line class="focus-hit" x1="${fx}" x2="${fx}" y1="${L.plotTop - 24}" y2="${L.plotBottom}"/>
       <line class="focus-line" x1="${fx}" x2="${fx}" y1="${L.plotTop}" y2="${L.groundY}"/>
       <rect class="focus-handle" x="${lx - lw / 2}" y="${L.plotTop - 28}" width="${lw}" height="22" rx="11"/>
       <text class="focus-text" x="${lx}" y="${L.plotTop - 13}" text-anchor="middle">${label}</text>
