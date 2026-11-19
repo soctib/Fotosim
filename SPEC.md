@@ -54,7 +54,7 @@ dropdown. Light and element distances live in the scene panel.
 | Focal length | Steps are common full-frame-equivalent focal lengths; shown as **real + equivalent**, e.g. "50 mm (≙ 76 mm KB)". Phones: native lenses vs. digital crop marked. |
 | Lens | Kit zoom f/3.5–5.6 (default), pro zoom f/2.8, fast prime f/1.4 – limits the widest aperture (phones: built in, control locked) |
 | Aperture | 1.4 … 22, limited by the lens (phones: fixed, control locked) |
-| Shutter | 30 s … 1/4000, with markers **"hand"** (1/(f·crop)) and **"hand + IS"** (+3 stops) that move with focal length |
+| Shutter | 30 s … 1/4000 (mechanical; phones 1/16000 electronic), with markers **"hand"** (1/(f·crop)) and **"hand + IS"** (+3 stops) that move with focal length |
 | ISO | 100 … 12800 in ⅓ stops, optional auto ISO (P/Av/Tv). Film: fixed by the loaded film in every mode, no auto ISO |
 | Light | Sun 15, cloudy 13, shade 12, dusk 9, office 8, living room 6, night street 4, candle 3 (EV100) |
 | Mode | **A** (full auto), **P**, **Av** (Nikon/Sony: A), **Tv** (Nikon/Sony: S), **M** – each with a short explanation |

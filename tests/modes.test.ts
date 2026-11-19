@@ -49,6 +49,17 @@ describe('modes', () => {
     expect(r.settings.shutterS).toBeCloseTo(FLASH_SYNC_S, 6);
   });
 
+  it('phones reach 1/10000 s in bright sun (electronic shutter); cameras stop at 1/4000 s', () => {
+    const phone = resolveMode({ ...base, sensorId: 'phone2019', mode: 'auto' }, SENSORS.phone2019, 15);
+    expect(phone.settings.shutterS).toBeLessThan(1 / 4000);
+    const offset = 15 - Math.log2((1.8 * 1.8) / phone.settings.shutterS) + Math.log2(phone.settings.iso / 100);
+    expect(Math.abs(offset)).toBeLessThan(0.2);
+    // A camera in M can't be set faster than its mechanical shutter.
+    const cam = resolveMode({ ...base, mode: 'M', shutterS: 1 / 16000 }, ff, 15);
+    expect(cam.settings.shutterS).toBeCloseTo(1 / 4000, 8);
+    expect(resolveMode({ ...base, mode: 'Av', aperture: 1.4 }, ff, 15).settings.shutterS).toBeGreaterThanOrEqual(1 / 4000);
+  });
+
   it('film never changes the ISO by itself, not even in auto mode', () => {
     const film = SENSORS.film35;
     for (const mode of ['auto', 'P', 'Av', 'Tv'] as const) {

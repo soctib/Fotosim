@@ -15,6 +15,7 @@ import {
   type FlashZone,
 } from './flash';
 import { maxApertureFor, resolveMode } from './modes';
+import { fastestShutterS } from './stops';
 import { classifyNoise, equivalentIso, noiseAmount, noiseIndexStops, type NoiseClass } from './noise';
 import {
   blurFractionOfWidth,
@@ -58,6 +59,8 @@ export interface Derived {
   settings: CameraSettings;
   autoFields: Set<AutoField>;
   sensor: Sensor;
+  /** Fastest shutter speed this camera type offers. */
+  fastestShutterS: number;
   /** Widest aperture the current lens (or phone) allows at this focal length. */
   maxAperture: number;
   crop: number;
@@ -126,6 +129,7 @@ export function derive(input: CameraSettings, scene: Scene): Derived {
     autoFields,
     sensor,
     maxAperture: maxApertureFor(settings, sensor),
+    fastestShutterS: fastestShutterS(sensor),
     crop,
     cocMm: circleOfConfusionMm(sensor),
     equivalentFocalMm: equivalentFocalLengthMm(f, sensor),

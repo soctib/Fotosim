@@ -1,11 +1,12 @@
 import type { Sensor, SensorId } from '../model/types';
 
+// Approximate dimensions. Phones have a fixed aperture, so bright light needs their electronic shutter.
 // Approximate dimensions. Display names live in data/texts.*.ts.
 export const SENSORS: Record<SensorId, Sensor> = {
   // ~1/2.55" class, e.g. iPhone 11 / Galaxy S10 main camera
-  phone2019: { id: 'phone2019', widthMm: 5.6, heightMm: 4.2, fixedAperture: 1.8, flashGuideNumber: 2 },
+  phone2019: { id: 'phone2019', widthMm: 5.6, heightMm: 4.2, fixedAperture: 1.8, fastestShutterS: 1 / 16000, flashGuideNumber: 2 },
   // ~1/1.28" class, e.g. iPhone 15 Pro main camera
-  phoneModern: { id: 'phoneModern', widthMm: 9.8, heightMm: 7.3, fixedAperture: 1.8, flashGuideNumber: 2 },
+  phoneModern: { id: 'phoneModern', widthMm: 9.8, heightMm: 7.3, fixedAperture: 1.8, fastestShutterS: 1 / 16000, flashGuideNumber: 2 },
   oneInch: { id: 'oneInch', widthMm: 13.2, heightMm: 8.8, flashGuideNumber: 6 },
   mft: { id: 'mft', widthMm: 17.3, heightMm: 13, flashGuideNumber: 10 },
   apsc: { id: 'apsc', widthMm: 23.5, heightMm: 15.6, flashGuideNumber: 12 },

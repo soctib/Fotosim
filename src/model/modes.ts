@@ -11,6 +11,7 @@ import {
   FLASH_SYNC_S,
   ISOS,
   SHUTTER_SPEEDS_S,
+  fastestShutterS,
 } from './stops';
 import type { AutoField, CameraSettings, Sensor } from './types';
 
@@ -86,7 +87,10 @@ function solve(
     : auto.has('aperture')
       ? APERTURES.filter((n) => n >= widest)
       : [Math.max(s.aperture, widest)];
-  let shutters = auto.has('shutterS') ? [...SHUTTER_SPEEDS_S] : [s.shutterS];
+  const fastest = fastestShutterS(sensor) - 1e-12;
+  let shutters = auto.has('shutterS')
+    ? SHUTTER_SPEEDS_S.filter((t) => t >= fastest)
+    : [Math.max(s.shutterS, fastestShutterS(sensor))];
   if (flashOn && auto.has('shutterS')) {
     shutters = shutters.filter((t) => t <= FLASH_SLOWEST_S + 1e-9 && t >= FLASH_SYNC_S - 1e-9);
   }

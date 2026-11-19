@@ -19,6 +19,8 @@ export interface Sensor {
   heightMm: number;
   /** Phones have a fixed aperture; the aperture control is locked. */
   fixedAperture?: number;
+  /** Fastest shutter speed; default is a mechanical 1/4000 s. Phones use an electronic shutter. */
+  fastestShutterS?: number;
   /** Typical flash guide number at ISO 100 in metres (pop-up ≈ 12, phone LED ≈ 2). */
   flashGuideNumber: number;
   /** Film: the ISO is the loaded film's speed – no camera mode can change it. */

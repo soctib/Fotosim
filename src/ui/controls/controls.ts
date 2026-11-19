@@ -30,10 +30,9 @@ const FOCUS_STEPS = 1000;
 const focusToPos = (m: number) => Math.round((Math.log(m / MIN_DISTANCE_M) / Math.log(MAX_DISTANCE_M / MIN_DISTANCE_M)) * FOCUS_STEPS);
 const posToFocus = (p: number) => MIN_DISTANCE_M * (MAX_DISTANCE_M / MIN_DISTANCE_M) ** (p / FOCUS_STEPS);
 
-/** Position (0…1) of a shutter time on the shutter slider, which runs slow → fast in even ⅓ stops. */
+/** Position (0…1) of a shutter time on the shutter slider, which runs slow → `fastest` in even ⅓ stops. */
 const SLOWEST = SHUTTER_SPEEDS_S[0];
-const FASTEST = SHUTTER_SPEEDS_S[SHUTTER_SPEEDS_S.length - 1];
-const shutterPos = (s: number) => Math.log(SLOWEST / s) / Math.log(SLOWEST / FASTEST);
+const shutterPos = (s: number, fastest: number) => Math.log(SLOWEST / s) / Math.log(SLOWEST / fastest);
 
 function nearestIndex(values: readonly number[], target: number): number {
   let best = 0;
@@ -203,11 +202,14 @@ export function mountControls(root: HTMLElement, store: Store): void {
     );
 
     // Shutter, with handheld markers that move with focal length.
+    // The slider ends at this camera's fastest shutter (phones go further: electronic shutter).
+    const fastestIdx = nearestIndex(SHUTTER_SPEEDS_S, d.fastestShutterS);
+    shutter.max = String(fastestIdx);
     shutter.disabled = auto.has('shutterS');
     shutter.value = String(nearestIndex(SHUTTER_SPEEDS_S, s.shutterS));
     $('o-shutter').textContent = formatShutter(s.shutterS);
-    placeMarker($('m-hand'), shutterPos(d.shake.limitS));
-    placeMarker($('m-is'), shutterPos(d.shake.limitIsS));
+    placeMarker($('m-hand'), shutterPos(d.shake.limitS, SHUTTER_SPEEDS_S[fastestIdx]));
+    placeMarker($('m-is'), shutterPos(d.shake.limitIsS, SHUTTER_SPEEDS_S[fastestIdx]));
     $('m-is').classList.toggle('off', !s.stabilized);
     hint('shutter', [autoHint('shutterS'), d.shake.cls !== 'safe' ? t.shake[d.shake.cls] : ''].filter(Boolean).join(' · '));
 
