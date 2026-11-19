@@ -11,10 +11,17 @@ function nf(digits: number): Intl.NumberFormat {
 }
 
 /** "0,45 m", "3,2 m", "50 m", "∞" – precision shrinks with distance. */
-export function formatMeters(m: number): string {
+export function formatMeters(m: number, digits = m < 1 ? 2 : m < 10 ? 1 : 0): string {
   if (!Number.isFinite(m)) return t.graph.infinity;
-  const digits = m < 1 ? 2 : m < 10 ? 1 : 0;
   return fill(t.graph.meters, { value: nf(digits).format(m) });
+}
+
+/** "2,6 m – 3,5 m"; adds decimals for shallow ranges so the ends never read the same ("2,95 m – 3,05 m"). */
+export function formatMeterRange(near: number, far: number): string {
+  if (!Number.isFinite(far)) return `${formatMeters(near)} – ${formatMeters(far)}`;
+  let digits = near < 1 ? 2 : near < 10 ? 1 : 0;
+  while (digits < 3 && formatMeters(near, digits) === formatMeters(far, digits)) digits++;
+  return `${formatMeters(near, digits)} – ${formatMeters(far, digits)}`;
 }
 
 /** Plain number in the UI locale, for axis ticks. Default precision: one decimal below 1. */

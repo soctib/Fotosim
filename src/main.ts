@@ -1,8 +1,12 @@
 import './style.css';
 import { de as t } from './data/texts.de';
 import { createStore } from './state/store';
+import { mountBars } from './ui/bars/bars';
 import { mountControls } from './ui/controls/controls';
+import { mountGear } from './ui/gear/gear';
 import { mountGraph } from './ui/graph/graph';
+import { mountInfobox } from './ui/infobox/infobox';
+import { mountSim } from './ui/sim/sim';
 
 const app = document.querySelector<HTMLDivElement>('#app')!;
 app.innerHTML = `
@@ -11,10 +15,25 @@ app.innerHTML = `
     <p>${t.appSubtitle}</p>
   </header>
   <main class="layout">
-    <section id="graph"></section>
-    <aside id="controls"></aside>
+    <div class="stage">
+      <div class="top">
+        <section id="sim"></section>
+        <section id="bars"></section>
+      </div>
+      <section id="graph"></section>
+    </div>
+    <aside class="side">
+      <div id="controls"></div>
+      <section id="infobox"></section>
+      <details id="gear"></details>
+    </aside>
   </main>`;
 
+const $ = <T extends HTMLElement>(sel: string) => app.querySelector<T>(sel)!;
 const store = createStore();
-mountGraph(app.querySelector('#graph')!, store);
-mountControls(app.querySelector('#controls')!, store);
+mountSim($('#sim'), store);
+mountBars($('#bars'), store);
+mountGraph($('#graph'), store);
+mountControls($('#controls'), store);
+mountInfobox($('#infobox'), store);
+mountGear($<HTMLDetailsElement>('#gear'), store);

@@ -16,6 +16,8 @@
   --p2: #7048e8;
   --scenery: #5c7c5a;
   --sun: #f59f00;
+  --warn: #e8590c;
+  --bad: #c92a2a;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -64,17 +66,33 @@ header p {
   max-width: 1200px;
 }
 
+.stage,
+.side {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.top {
+  display: grid;
+  grid-template-columns: minmax(0, 560px) auto;
+  gap: 12px;
+  align-items: stretch;
+}
+
 @media (max-width: 760px) {
   .layout {
     grid-template-columns: minmax(0, 1fr);
   }
-  /* Keep the graph in view while moving sliders on a phone. */
-  #graph {
+  /* Keep the camera image and bars in view while moving sliders on a phone. */
+  .top {
     position: sticky;
     top: 0;
-    z-index: 1;
+    z-index: 2;
     background: var(--bg);
-    padding-top: 4px;
+    padding: 6px 0;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
   }
 }
 
@@ -283,5 +301,269 @@ header p {
   min-height: 1em;
 }
 .control .hint:empty {
+  display: none;
+}
+
+/* ---- camera image ---- */
+
+.sim {
+  margin: 0;
+  min-width: 0;
+}
+
+.sim-frame {
+  position: relative;
+  overflow: hidden;
+  border-radius: 6px;
+  background: #9cc3e6;
+  cursor: help;
+  box-shadow: 0 0 0 1px var(--line);
+}
+
+.sim-frame .layer,
+.sim-frame .noise {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.sim-frame .noise {
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+.sim-caption {
+  margin: 4px 0 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Scene colours are the "real world" – the same in light and dark mode. */
+.sim .sky-top { stop-color: #5b9bd5; }
+.sim .sky-bottom { stop-color: #cfe5f5; }
+.sim .sun { fill: #ffe066; }
+.sim .far-ground { fill: #8fbf6a; }
+.sim .near-ground { fill: #74a854; }
+.sim .trunk { fill: #7a5230; }
+.sim .crown { fill: #3f7d3a; }
+.sim .house { fill: #e9d8b4; }
+.sim .roof { fill: #b5482f; }
+.sim .window { fill: #6fa3c9; }
+.sim .door { fill: #7a5230; }
+.sim .legs { fill: #34405a; }
+.sim .skin { fill: #f1c27d; }
+.sim .hair { fill: #4a3222; }
+.sim .eye { fill: #222; }
+.sim .mouth,
+.sim .arm {
+  fill: none;
+  stroke-linecap: round;
+}
+.sim .mouth { stroke: #8a3b2a; stroke-width: 1.4; }
+.sim .arm { stroke-width: 10; }
+.sim .person-person1 .shirt { fill: #c2255c; }
+.sim .person-person1 .arm { stroke: #c2255c; }
+.sim .person-person2 .shirt { fill: #7048e8; }
+.sim .person-person2 .arm { stroke: #7048e8; }
+
+/* ---- bars ---- */
+
+.bars {
+  display: flex;
+  gap: 8px;
+}
+
+.bar {
+  all: unset;
+  display: grid;
+  grid-template-rows: auto 1fr auto auto;
+  justify-items: center;
+  gap: 4px;
+  width: 76px;
+  padding: 6px 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  cursor: help;
+  font-size: 0.72rem;
+  text-align: center;
+}
+
+.bar:focus-visible {
+  outline: 2px solid var(--accent);
+}
+
+.bar-title {
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+.bar-track {
+  position: relative;
+  width: 14px;
+  min-height: 90px;
+  height: 100%;
+  border-radius: 7px;
+  background: var(--line);
+}
+
+.bar-exposure .bar-track {
+  margin-right: 22px;
+  background: linear-gradient(
+    to top,
+    #1b1b1b 0%,
+    #555 16.7%,
+    var(--sharp) 33.3%,
+    var(--sharp) 66.7%,
+    #d0d0c8 83.3%,
+    #fff 100%
+  );
+}
+
+.bar-tick {
+  position: absolute;
+  left: 100%;
+  width: 6px;
+  height: 1px;
+  background: var(--muted);
+}
+.bar-tick span {
+  position: absolute;
+  left: 9px;
+  top: -0.55em;
+  line-height: 1;
+  color: var(--muted);
+  font-size: 0.65rem;
+  font-variant-numeric: tabular-nums;
+}
+.bar-tick.zero {
+  width: 10px;
+  background: var(--fg);
+}
+
+.bar-marker {
+  position: absolute;
+  left: -5px;
+  right: -5px;
+  height: 4px;
+  margin-bottom: -2px;
+  border-radius: 2px;
+  background: var(--accent);
+  box-shadow: 0 0 0 1.5px var(--panel);
+  transition: bottom 0.12s;
+}
+.bar-marker.beyond {
+  animation: blink 1s infinite;
+}
+@keyframes blink {
+  50% { opacity: 0.3; }
+}
+
+.bar-fill {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 7px;
+  background: var(--sharp);
+  transition: height 0.12s;
+}
+.bar-noise[data-cls='medium'] .bar-fill { background: var(--sun); }
+.bar-noise[data-cls='high'] .bar-fill { background: var(--warn); }
+.bar-noise[data-cls='veryHigh'] .bar-fill { background: var(--bad); }
+
+.bar-value {
+  color: var(--muted);
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+.bar-class {
+  font-weight: 600;
+  line-height: 1.2;
+}
+.bar-exposure[data-cls='slightUnder'] .bar-class,
+.bar-exposure[data-cls='slightOver'] .bar-class { color: var(--warn); }
+.bar-exposure[data-cls='strongUnder'] .bar-class,
+.bar-exposure[data-cls='strongOver'] .bar-class { color: var(--bad); }
+
+@media (max-width: 760px) {
+  .bar {
+    width: 64px;
+    font-size: 0.65rem;
+  }
+  .bar-value {
+    display: none;
+  }
+}
+
+/* ---- infobox ---- */
+
+.infobox {
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--accent);
+  border-radius: 8px;
+  background: var(--panel);
+}
+.infobox h2 {
+  margin: 0 0 4px;
+  font-size: 1rem;
+}
+.infobox p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+/* ---- lenses & phones ---- */
+
+.gear {
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  font-size: 0.85rem;
+}
+.gear summary {
+  font-weight: 600;
+  cursor: pointer;
+}
+.gear h3 {
+  margin: 12px 0 4px;
+  font-size: 0.85rem;
+}
+.gear ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.gear li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 3px 6px;
+  border-radius: 4px;
+}
+.gear li small {
+  display: block;
+  color: var(--muted);
+}
+.gear li.match {
+  background: var(--dof);
+  font-weight: 600;
+  box-shadow: inset 3px 0 0 var(--sharp);
+}
+.gear .price {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+.gear-note {
+  margin: 4px 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.gear-note:empty {
   display: none;
 }

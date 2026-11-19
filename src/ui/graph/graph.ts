@@ -4,9 +4,9 @@
 import { de as t, fill } from '../../data/texts.de';
 import type { Derived, DerivedElement } from '../../model/derive';
 import type { ElementId } from '../../model/types';
-import { focusOn, setElementDistance, setFocus, setLogScale } from '../../state/actions';
+import { focusOn, setElementDistance, setFocus, setInfo, setLogScale } from '../../state/actions';
 import type { Store } from '../../state/store';
-import { formatMeters, formatNumber } from '../distance';
+import { formatMeterRange, formatMeters, formatNumber } from '../distance';
 import {
   LINEAR_DEFAULT,
   LOG_VIEW,
@@ -101,7 +101,10 @@ export function mountGraph(root: HTMLElement, store: Store): void {
 
   // ---- controls ----------------------------------------------------------
 
-  logBox.addEventListener('change', () => setLogScale(store, logBox.checked));
+  logBox.addEventListener('change', () => {
+    setLogScale(store, logBox.checked);
+    setInfo(store, 'graph');
+  });
   resetBtn.addEventListener('click', () => {
     linearView = LINEAR_DEFAULT;
     scheduleRender();
@@ -138,6 +141,7 @@ export function mountGraph(root: HTMLElement, store: Store): void {
     else if (kind === 'element') gesture = { kind: 'element', id: target!.dataset.id as ElementId, startX: x, moved: false };
     else if (kind === 'offscreen') gesture = { kind: 'tap-element', id: target!.dataset.id as ElementId };
     else gesture = { kind: 'pan', startX: x, startView: linearView, moved: false };
+    setInfo(store, kind ? 'focus' : 'graph');
     e.preventDefault();
   });
 
@@ -231,7 +235,7 @@ function draw(d: Derived, v: XView, L: Layout): string {
     parts.push(`<rect class="dof" x="${near}" y="${L.plotTop}" width="${far - near}" height="${L.groundY - L.plotTop}"/>`);
   }
   // Label just under the "sharp" line: right of the band, else left of it, else inside – always within the plot.
-  const dofLabel = fill(t.graph.dofRange, { near: formatMeters(d.dof.nearM), far: formatMeters(d.dof.farM) });
+  const dofLabel = fill(t.graph.dofRange, { range: formatMeterRange(d.dof.nearM, d.dof.farM) });
   const lw = dofLabel.length * CHAR_W;
   // The "↓ scharf" label occupies the left end of the same row.
   const minX = L.left + 6 + (t.graph.sharp.length + 2) * CHAR_W + 12;

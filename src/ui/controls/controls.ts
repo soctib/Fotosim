@@ -7,8 +7,8 @@ import type { Derived } from '../../model/derive';
 import { focalOptions, formatFocal } from '../../model/focal';
 import { APERTURES, formatAperture } from '../../model/stops';
 import type { SensorId } from '../../model/types';
-import { MAX_DISTANCE_M, MIN_DISTANCE_M, setCamera, setFocus } from '../../state/actions';
-import type { Store } from '../../state/store';
+import { MAX_DISTANCE_M, MIN_DISTANCE_M, setCamera, setFocus, setInfo } from '../../state/actions';
+import type { InfoKey, Store } from '../../state/store';
 import { formatMeters } from '../distance';
 
 /** Focus slider resolution; positions map logarithmically onto the distance range. */
@@ -27,23 +27,23 @@ function nearestIndex(values: readonly number[], target: number): number {
 export function mountControls(root: HTMLElement, store: Store): void {
   root.classList.add('controls');
   root.innerHTML = `
-    <div class="control">
+    <div class="control" data-info="sensor">
       <label for="c-sensor">${t.controls.sensor}</label>
       <select id="c-sensor">
         ${SENSOR_ORDER.map((id) => `<option value="${id}">${t.sensors[id]}</option>`).join('')}
       </select>
     </div>
-    <div class="control">
+    <div class="control" data-info="focalLength">
       <label for="c-focal">${t.controls.focalLength} <output id="o-focal"></output></label>
       <input id="c-focal" type="range" min="0" step="1">
       <small class="hint" id="h-focal"></small>
     </div>
-    <div class="control">
+    <div class="control" data-info="aperture">
       <label for="c-aperture">${t.controls.aperture} <output id="o-aperture"></output></label>
       <input id="c-aperture" type="range" min="0" max="${APERTURES.length - 1}" step="1">
       <small class="hint" id="h-aperture"></small>
     </div>
-    <div class="control">
+    <div class="control" data-info="focus">
       <label for="c-focus">${t.controls.focus} <output id="o-focus"></output></label>
       <input id="c-focus" type="range" min="0" max="${FOCUS_STEPS}" step="1">
     </div>`;
@@ -53,6 +53,14 @@ export function mountControls(root: HTMLElement, store: Store): void {
   const focal = $<HTMLInputElement>('c-focal');
   const aperture = $<HTMLInputElement>('c-aperture');
   const focus = $<HTMLInputElement>('c-focus');
+
+  // Touching a control shows its explanation in the infobox.
+  const showInfo = (e: Event) => {
+    const key = (e.target as Element).closest<HTMLElement>('[data-info]')?.dataset.info;
+    if (key) setInfo(store, key as InfoKey);
+  };
+  root.addEventListener('pointerdown', showInfo);
+  root.addEventListener('focusin', showInfo);
 
   sensor.addEventListener('change', () => {
     // Keep the angle of view: pick the new sensor's step closest to the current equivalent focal length.

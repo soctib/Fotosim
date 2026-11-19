@@ -1,7 +1,9 @@
 // One pure function from (settings, scene) to everything the UI renders.
 // Graph, bars and simulation all read from this result, so they never disagree.
 
+import { matchingLenses } from '../data/lensPrices';
 import { lightPreset } from '../data/lightPresets';
+import { PHONE_CLASSES } from '../data/phones';
 import { SENSORS } from '../data/sensors';
 import { classifyExposure, exposureOffsetStops, type ExposureClass } from './exposure';
 import {
@@ -47,6 +49,8 @@ export interface DerivedElement {
   exposureOffsetStops: number;
   /** Fraction of the frame height a person at this distance fills (persons only). */
   frameHeightFraction: number;
+  /** Image-height fraction per metre of object size at this distance (for laying out the simulated image). */
+  heightFractionPerM: number;
 }
 
 export interface Derived {
@@ -69,6 +73,8 @@ export interface Derived {
   shake: { limitS: number; limitIsS: number; cls: ShakeClass; blurFactor: number };
   noise: { indexStops: number; cls: NoiseClass; amount: number; equivalentIso: number };
   elements: DerivedElement[];
+  /** Gear that can take this picture: lens classes (interchangeable-lens cameras) and phone classes. */
+  gear: { lensIds: string[]; phoneIds: string[] };
   /** Relative blur at any distance for the current settings (for drawing the sharpness curve). */
   blurAt: (distanceM: number) => number;
 }
@@ -106,6 +112,7 @@ export function derive(input: CameraSettings, scene: Scene): Derived {
       exposureOffsetStops: exp,
       frameHeightFraction:
         el.id === 'background' ? NaN : frameHeightFraction(f, PERSON_HEIGHT_M, el.distanceM, sensor),
+      heightFractionPerM: frameHeightFraction(f, 1, el.distanceM, sensor),
     };
   });
 
@@ -140,6 +147,20 @@ export function derive(input: CameraSettings, scene: Scene): Derived {
       equivalentIso: equivalentIso(iso, crop),
     },
     elements,
+    gear: matchingGear(sensor, f, N, crop),
     blurAt: (distanceM) => relativeBlur(f, N, focus, distanceM, sensor),
   };
+}
+
+/** Phones: classes with a native lens near this framing. Cameras: lens classes for this focal length and aperture. */
+function matchingGear(sensor: Sensor, focalMm: number, aperture: number, crop: number): Derived['gear'] {
+  if (sensor.fixedAperture !== undefined) {
+    const eq = focalMm * crop;
+    // 9 %: 24 vs 26 mm main cameras count as the same framing, 70 vs 77 mm teles don't.
+    const phoneIds = PHONE_CLASSES.filter(
+      (p) => p.sensorId === sensor.id && p.lensesEqMm.some((l) => Math.abs(Math.log(l / eq)) < 0.09),
+    ).map((p) => p.id);
+    return { lensIds: [], phoneIds };
+  }
+  return { lensIds: matchingLenses(focalMm, aperture).map((l) => l.id), phoneIds: [] };
 }

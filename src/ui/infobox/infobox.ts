@@ -1,0 +1,26 @@
+// Explanation for the last touched element, filled with live values.
+
+import { de as t, fill } from '../../data/texts.de';
+import { formatAperture, formatShutter } from '../../model/stops';
+import type { Store } from '../../state/store';
+import { formatMeterRange } from '../distance';
+
+export function mountInfobox(root: HTMLElement, store: Store): void {
+  root.classList.add('infobox');
+  root.setAttribute('aria-live', 'polite');
+  root.innerHTML = `<h2></h2><p></p>`;
+  const title = root.querySelector('h2')!;
+  const text = root.querySelector('p')!;
+
+  store.subscribe((state, d) => {
+    const key = state.ui.infoKey;
+    title.textContent = t.infoTitles[key];
+    text.textContent = fill(t.info[key], {
+      aperture: formatAperture(d.settings.aperture),
+      eqAperture: formatAperture(d.equivalentAperture),
+      handLimit: formatShutter(d.shake.limitS),
+      isLimit: formatShutter(d.shake.limitIsS),
+      dof: formatMeterRange(d.dof.nearM, d.dof.farM),
+    });
+  });
+}

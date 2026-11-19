@@ -1,7 +1,7 @@
 // Small, named state mutations so UI modules don't each spell out the spread boilerplate.
 
 import type { CameraSettings, ElementId } from '../model/types';
-import type { Store } from './store';
+import type { InfoKey, Store } from './store';
 
 /** Range for element and focus distances (UI limits, not physics). */
 export const MIN_DISTANCE_M = 0.3;
@@ -36,4 +36,9 @@ export function focusOn(store: Store, id: ElementId): void {
 
 export function setLogScale(store: Store, logScale: boolean): void {
   store.update((s) => ({ ...s, ui: { ...s.ui, logScale } }));
+}
+
+/** Show the infobox text for the element the user just touched. */
+export function setInfo(store: Store, infoKey: InfoKey): void {
+  if (store.get().ui.infoKey !== infoKey) store.update((s) => ({ ...s, ui: { ...s.ui, infoKey } }));
 }

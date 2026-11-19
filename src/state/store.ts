@@ -1,7 +1,10 @@
 import { SENSORS } from '../data/sensors';
+import type { Texts } from '../data/texts.de';
 import { derive, type Derived } from '../model/derive';
 import { focalOptions } from '../model/focal';
 import type { CameraSettings, Scene } from '../model/types';
+
+export type InfoKey = keyof Texts['info'];
 
 export interface AppState {
   camera: CameraSettings;
@@ -10,7 +13,7 @@ export interface AppState {
   ui: {
     logScale: boolean;
     /** Key into texts.info for the infobox (last clicked element). */
-    infoKey: string;
+    infoKey: InfoKey;
   };
 }
 

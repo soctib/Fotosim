@@ -93,6 +93,7 @@ export const de = {
     ok: 'passt',
     slightOver: 'leicht überbelichtet',
     strongOver: 'stark überbelichtet',
+    stops: '{value} Blendenstufen',
   },
 
   noise: {
@@ -124,13 +125,30 @@ export const de = {
     sharp: 'scharf',
     unsharp: 'unscharf',
     dof: 'Schärfentiefe',
-    dofRange: 'Schärfentiefe {near} – {far}',
+    dofRange: 'Schärfentiefe {range}',
     infinity: '∞',
     meters: '{value} m',
     blurTimes: '{value}×',
     resetView: 'Ansicht zurücksetzen',
     hintLog: 'Personen und Fokuslinie ziehen · Antippen stellt scharf',
     hintLinear: 'Ziehen verschiebt · Mausrad oder zwei Finger zoomen',
+  },
+
+  sim: {
+    title: 'Kamerabild',
+    caption: '{shutter} · {aperture} · ISO {iso}',
+  },
+
+  gear: {
+    title: 'Objektive & Handys',
+    lenses: 'Objektive (grobe Neupreise)',
+    phones: 'Handys',
+    price: '{min} – {max} €',
+    phoneLenses: 'Brennweiten (≙ KB): {list} mm',
+    matches: 'passt zu den aktuellen Einstellungen',
+    noLensMatch: 'Für diese Brennweite und Blende passt keine der typischen Klassen – oft heißt das: teuer oder gar nicht erhältlich.',
+    phoneHasNoLenses: 'Beim Handy gibt es keine Wechselobjektive – hier zählen die eingebauten Kameras.',
+    noPhoneMatch: 'Diese Brennweite hat kein Handy dieser Klasse als echtes Objektiv – das wäre Digitalzoom.',
   },
 
   lenses: {
@@ -152,6 +170,24 @@ export const de = {
     currentPro: 'Aktuelles Pro-Handy (z.B. iPhone 15 Pro)',
     currentZoom: 'Zoom-Flaggschiff (z.B. Galaxy S24 Ultra, Pixel 9 Pro)',
     portraitModeNote: 'Unscharfer Hintergrund beim Handy ist meist Software („Porträtmodus“), nicht Optik.',
+  },
+
+  // Infobox titles, keyed like `info`.
+  infoTitles: {
+    sensor: 'Sensor / Film',
+    focalLength: 'Brennweite',
+    aperture: 'Blende',
+    shutter: 'Belichtungszeit',
+    iso: 'ISO',
+    light: 'Lichtsituation',
+    mode: 'Modus',
+    flash: 'Blitz',
+    focus: 'Fokus',
+    exposure: 'Belichtung',
+    noise: 'Rauschen',
+    graph: 'Schärfekurve',
+    sim: 'Kamerabild',
+    equivalence: 'Äquivalenz',
   },
 
   // Infobox: shown for the last clicked/tapped element. {placeholders} get live values.
@@ -177,6 +213,7 @@ export const de = {
       'Rauschen hängt von ISO und Sensorgröße ab. Ein kleiner Sensor rauscht bei ISO 100 etwa so wie Vollformat bei viel höherer ISO.',
     graph:
       'Die Kurve zeigt, wie unscharf etwas in welcher Entfernung wird. Unter der Linie „scharf“ gilt es als scharf. Personen und Hintergrund kannst du verschieben.',
+    sim: 'So ungefähr sähe das Foto aus. Unschärfe, Helligkeit, Rauschen und Bildausschnitt kommen direkt aus den Einstellungen – die Figuren sind Comic, die Rechnung dahinter nicht.',
     equivalence:
       'Gleiches Bild an verschiedenen Sensoren: Brennweite und Blende mit dem Cropfaktor multiplizieren. f/1.8 an einem Handy von 2019 wirkt in Schärfentiefe und Rauschen etwa wie f/11 an Vollformat.',
   },

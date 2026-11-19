@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { SENSORS } from '../src/data/sensors';
-import { derive } from '../src/model/derive';
-import { relativeBlur } from '../src/model/optics';
+import { PERSON_HEIGHT_M, derive } from '../src/model/derive';
+import { cropFactor, relativeBlur } from '../src/model/optics';
 import { initialState } from '../src/state/store';
 
 describe('derive().blurAt', () => {
@@ -22,5 +22,30 @@ describe('derive().blurAt', () => {
   it('crosses 1 at the depth-of-field limits', () => {
     expect(d.blurAt(d.dof.nearM)).toBeCloseTo(1, 2);
     if (Number.isFinite(d.dof.farM)) expect(d.blurAt(d.dof.farM)).toBeCloseTo(1, 2);
+  });
+});
+
+describe('derive() layout and gear', () => {
+  it('heightFractionPerM scales a person to frameHeightFraction', () => {
+    const d = derive(initialState.camera, initialState.scene);
+    const p1 = d.elements.find((e) => e.id === 'person1')!;
+    expect(p1.heightFractionPerM * PERSON_HEIGHT_M).toBeCloseTo(p1.frameHeightFraction, 10);
+    const bg = d.elements.find((e) => e.id === 'background')!;
+    expect(bg.heightFractionPerM).toBeGreaterThan(0);
+    expect(bg.heightFractionPerM).toBeLessThan(p1.heightFractionPerM);
+  });
+
+  it('suggests a fast 50 mm-class prime for f/1.8 at 50 mm, not the kit zoom', () => {
+    const d = derive({ ...initialState.camera, sensorId: 'fullFrame', focalLengthMm: 50, aperture: 1.8 }, initialState.scene);
+    expect(d.gear.lensIds).toContain('nifty50');
+    expect(d.gear.lensIds).not.toContain('kitZoom');
+    expect(d.gear.phoneIds).toEqual([]);
+  });
+
+  it('lists phone classes with a native lens at the current framing', () => {
+    const crop = cropFactor(SENSORS.phoneModern);
+    const d = derive({ ...initialState.camera, sensorId: 'phoneModern', focalLengthMm: 77 / crop }, initialState.scene);
+    expect(d.gear.phoneIds).toEqual(['currentPro']);
+    expect(d.gear.lensIds).toEqual([]);
   });
 });
