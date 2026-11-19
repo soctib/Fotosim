@@ -28,6 +28,11 @@ export function mountGear(root: HTMLDetailsElement, store: Store): void {
     </ul>
     <p class="gear-note">${t.phones.portraitModeNote}</p>`;
 
+  // Open by default where it has its own column; collapsed where it would push things down.
+  const wide = window.matchMedia('(min-width: 1400px)');
+  root.open = wide.matches;
+  wide.addEventListener('change', () => (root.open = wide.matches));
+
   const lensNote = root.querySelector<HTMLElement>('[data-role="lens-note"]')!;
   const phoneNote = root.querySelector<HTMLElement>('[data-role="phone-note"]')!;
 

@@ -61,9 +61,33 @@ header p {
 .layout {
   display: grid;
   gap: 16px;
-  grid-template-columns: minmax(0, 1fr) 300px;
   align-items: start;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+    'stage side'
+    'stage gear';
   max-width: 1200px;
+}
+
+/* Wide screens: the lens/phone list gets its own column. */
+@media (min-width: 1400px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr) 300px 340px;
+    grid-template-rows: auto;
+    grid-template-areas: 'stage side gear';
+    max-width: 1720px;
+  }
+}
+
+.stage {
+  grid-area: stage;
+}
+.side {
+  grid-area: side;
+}
+#gear {
+  grid-area: gear;
 }
 
 .stage,
@@ -73,7 +97,7 @@ header p {
   min-width: 0;
 }
 
-.top {
+.preview {
   display: grid;
   grid-template-columns: minmax(0, 560px) auto;
   gap: 12px;
@@ -83,9 +107,21 @@ header p {
 @media (max-width: 760px) {
   .layout {
     grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-template-areas: none;
+  }
+  /* Flatten the stage so the preview's sticky range is the whole page, not just its column. */
+  .stage {
+    display: contents;
+  }
+  .stage > *,
+  .side,
+  #gear {
+    grid-area: auto;
+    min-width: 0;
   }
   /* Keep the camera image and bars in view while moving sliders on a phone. */
-  .top {
+  .preview {
     position: sticky;
     top: 0;
     z-index: 2;

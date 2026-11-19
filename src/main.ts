@@ -16,17 +16,17 @@ app.innerHTML = `
   </header>
   <main class="layout">
     <div class="stage">
-      <div class="top">
+      <section id="graph"></section>
+      <div class="preview">
         <section id="sim"></section>
         <section id="bars"></section>
       </div>
-      <section id="graph"></section>
     </div>
     <aside class="side">
       <div id="controls"></div>
       <section id="infobox"></section>
-      <details id="gear"></details>
     </aside>
+    <details id="gear"></details>
   </main>`;
 
 const $ = <T extends HTMLElement>(sel: string) => app.querySelector<T>(sel)!;

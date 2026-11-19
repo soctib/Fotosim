@@ -92,8 +92,9 @@ Unidirectional: input → `store.update()` → `resolveMode()` → `derive()` �
 
 ## Layout
 
-- **Desktop**: simulation top left, graph below, bars beside; controls in a right column; infobox and lens list collapsible.
-- **Mobile**: simulation + bars pinned at top, graph below, element panels under the graph, controls in tabs (Kamera / Licht / Modus), lens list as bottom sheet.
+- **Desktop**: graph top left, simulation + bars below it; controls and infobox in a right column.
+  Lens/phone list: own third column (open) on wide screens (≥ 1400 px), otherwise collapsible under the infobox.
+- **Mobile**: graph first, then simulation + bars (pinned at the top while scrolling the rest), element panels, controls in tabs (Kamera / Licht / Modus), lens list collapsible.
 - Pointer Events everywhere (mouse + touch identical).
 
 ## Milestones
