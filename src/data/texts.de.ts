@@ -78,6 +78,10 @@ export const de = {
     flash: 'Blitz',
     stabilized: 'Bildstabilisator',
     focus: 'Fokus',
+    sectionScene: 'Szene',
+    sectionCamera: 'Kamera',
+    sectionExposure: 'Belichtung',
+    sectionFocus: 'Schärfe',
     autofocus: 'Fokus nachführen',
     autofocusOff: 'Aus',
     autofocusHint: 'folgt {target} – zum Verstellen „Fokus nachführen“ ausschalten',
@@ -200,6 +204,7 @@ export const de = {
     flash: 'Blitz',
     focus: 'Fokus',
     autofocus: 'Fokus nachführen',
+    stabilized: 'Bildstabilisator',
     exposure: 'Belichtung',
     noise: 'Rauschen',
     graph: 'Schärfekurve',
@@ -222,6 +227,8 @@ export const de = {
     iso: 'Verstärkung des Signals. Höhere ISO = heller, aber mehr Rauschen.',
     light: 'Wie hell die Szene ist. Sonne ist rund 500-mal heller als ein Wohnzimmer am Abend.',
     mode: 'Der Modus legt fest, was du einstellst und was die Kamera übernimmt.',
+    stabilized:
+      'Der Stabilisator gleicht kleine Wackler der Hand aus – etwa drei Blendenstufen längere Zeiten werden möglich. Gegen Bewegung der Personen hilft er nicht.',
     flash:
       'Der Blitz reicht nur ein paar Meter. Was weiter weg ist, bleibt dunkel. Im Graph siehst du die Reichweite.',
     focus:

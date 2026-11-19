@@ -1,6 +1,6 @@
 // Small, named state mutations so UI modules don't each spell out the spread boilerplate.
 
-import type { CameraSettings, ElementId } from '../model/types';
+import type { CameraSettings, ElementId, Mode } from '../model/types';
 import type { InfoKey, Store } from './store';
 
 /** Range for element and focus distances (UI limits, not physics). */
@@ -54,4 +54,13 @@ export function setInfo(store: Store, infoKey: InfoKey): void {
 export function setAutofocus(store: Store, target: ElementId | null): void {
   const focus = store.derived().settings.focusDistanceM;
   setCamera(store, target ? { afTarget: target } : { afTarget: null, focusDistanceM: focus });
+}
+
+/**
+ * Switch the exposure mode, carrying over what the camera currently uses – so e.g.
+ * going from Av to M starts from a correct exposure instead of stale manual values.
+ */
+export function setMode(store: Store, mode: Mode): void {
+  const { aperture, shutterS, iso, flashOn } = store.derived().settings;
+  setCamera(store, { mode, aperture, shutterS, iso, flashOn });
 }

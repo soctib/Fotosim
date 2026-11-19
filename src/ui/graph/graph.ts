@@ -3,6 +3,7 @@
 
 import { de as t, fill } from '../../data/texts.de';
 import type { Derived, DerivedElement } from '../../model/derive';
+import type { FlashZone } from '../../model/flash';
 import type { ElementId } from '../../model/types';
 import { focusOn, setElementDistance, setFocus, setInfo, setLogScale, setShowDetails } from '../../state/actions';
 import type { Store } from '../../state/store';
@@ -262,6 +263,7 @@ function draw(d: Derived, v: XView, L: Layout, details: boolean): string {
   parts.push(`<text class="dof-label" x="${lx}" y="${labelY}">${dofLabel}</text>`);
 
   if (details) parts.push(drawYAxis(sy, L));
+  if (d.flash) parts.push(drawFlashZone(d.flash.zone, xOf, L));
 
   // X axis.
   parts.push(`<line class="axis" x1="${L.left}" x2="${L.right}" y1="${L.plotBottom}" y2="${L.plotBottom}"/>`);
@@ -343,6 +345,27 @@ function drawCurve(d: Derived, sx: XScale, sy: (b: number) => number, L: Layout)
     pts.push(`${px.toFixed(1)},${sy(d.blurAt(m)).toFixed(1)}`);
   }
   return `<polyline class="curve" clip-path="url(#plot-clip)" points="${pts.join(' ')}"/>`;
+}
+
+/** Strip along the bottom of the plot: too close / in range / fading out, nothing beyond. */
+function drawFlashZone(z: FlashZone, xOf: (m: number) => number, L: Layout): string {
+  const h = 12;
+  const y = L.plotBottom - h - 2;
+  const close = xOf(z.tooCloseM);
+  const range = xOf(z.maxRangeM);
+  const weakEnd = xOf(z.strongUnderM);
+  const label = (x0: number, x1: number, text: string) =>
+    x1 - x0 > text.length * 5.6 + 6
+      ? `<text class="flash-label" x="${(x0 + x1) / 2}" y="${y + h - 3}" text-anchor="middle">${text}</text>`
+      : '';
+  return `<g class="flash-zone">
+    <defs><linearGradient id="flash-fade" gradientUnits="userSpaceOnUse" x1="${range}" x2="${weakEnd}">
+      <stop offset="0" class="flash-stop"/><stop offset="1" class="flash-stop" style="stop-opacity:0"/></linearGradient></defs>
+    <rect class="flash-close" x="${L.left}" y="${y}" width="${Math.max(0, close - L.left)}" height="${h}"/>
+    <rect class="flash-range" x="${close}" y="${y}" width="${Math.max(0, range - close)}" height="${h}"/>
+    <rect fill="url(#flash-fade)" x="${range}" y="${y}" width="${Math.max(0, weakEnd - range)}" height="${h}"/>
+    ${label(L.left, close, t.flash.zoneTooClose)}${label(close, range, t.flash.zoneRange)}${label(range, weakEnd, t.flash.zoneWeak)}
+  </g>`;
 }
 
 /** Cartoon cue only: figures get fuzzy once they leave the sharp zone. */
