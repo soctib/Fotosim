@@ -161,17 +161,22 @@ header p {
     grid-area: auto;
     min-width: 0;
   }
-  /* Keep the camera image and bars in view while moving sliders on a phone (only when unfolded). */
+  .preview-body {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+  }
+}
+/*
+ * Keep the camera image and bars in view while moving sliders on a phone (only when unfolded).
+ * Not on landscape phones: there the preview alone is taller than the viewport and would hide the controls.
+ */
+@media (max-width: 760px) and (min-height: 560px) {
   .preview[open] {
     position: sticky;
     top: 0;
     z-index: 2;
     background: var(--bg);
     padding: 6px 0;
-  }
-  .preview-body {
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 8px;
   }
 }
 
