@@ -1,6 +1,7 @@
 import './style.css';
 import { de as t } from './data/texts.de';
 import { applySimple, setSimple } from './state/actions';
+import { loadState, persist, rememberFold } from './state/persist';
 import { createStore, initialState } from './state/store';
 import { mountBars } from './ui/bars/bars';
 import { mountControls } from './ui/controls/controls';
@@ -40,8 +41,9 @@ app.innerHTML = `
   </main>`;
 
 const $ = <T extends HTMLElement>(sel: string) => app.querySelector<T>(sel)!;
-// Opens in simplified mode: beginners see the reduced UI first.
-const store = createStore(applySimple(initialState));
+// First visit opens in simplified mode (beginners see the reduced UI first); later visits restore the last state.
+const store = createStore(loadState(initialState) ?? applySimple(initialState));
+persist(store);
 mountSim($('#sim'), store);
 mountBars($('#bars'), store);
 mountGraph($('#graph'), store);
@@ -64,6 +66,11 @@ function placeLensPanel(): void {
 gear.addEventListener('toggle', placeLensPanel);
 wide.addEventListener('change', placeLensPanel);
 
+// Panels stay folded the way the user left them. Simplified mode forces the camera image open
+// (its heading is hidden), which must not overwrite the user's choice for the full view.
+rememberFold($<HTMLDetailsElement>('#infobox'), () => 'infobox', () => true);
+const previewFold = rememberFold($<HTMLDetailsElement>('.preview'), () => 'preview', () => true, () => !store.get().ui.simple);
+
 // Simplified mode: CSS hides everything but the graph, the camera image and three sliders.
 const allSettings = $<HTMLInputElement>('#c-all-settings');
 const preview = $<HTMLDetailsElement>('.preview');
@@ -76,5 +83,6 @@ store.subscribe((s) => {
   document.body.classList.toggle('simple', s.ui.simple);
   // Its fold heading is hidden in simplified mode, so the camera image must not stay folded.
   if (s.ui.simple) preview.open = true;
+  else previewFold.restore();
   placeLensPanel();
 });

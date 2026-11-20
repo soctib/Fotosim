@@ -3,6 +3,7 @@
 import { LENS_CLASSES } from '../../data/lensPrices';
 import { PHONE_CLASSES } from '../../data/phones';
 import { de as t, fill } from '../../data/texts.de';
+import { rememberFold } from '../../state/persist';
 import type { Store } from '../../state/store';
 import { formatNumber } from '../distance';
 
@@ -29,9 +30,10 @@ export function mountGear(root: HTMLDetailsElement, store: Store): void {
     <p class="gear-note">${t.phones.portraitModeNote}</p>`;
 
   // Open by default where it has its own column; collapsed where it would push things down.
+  // The user's choice is remembered per layout, since the two place it so differently.
   const wide = window.matchMedia('(min-width: 1400px)');
-  root.open = wide.matches;
-  wide.addEventListener('change', () => (root.open = wide.matches));
+  const fold = rememberFold(root, () => (wide.matches ? 'gear.wide' : 'gear.narrow'), () => wide.matches);
+  wide.addEventListener('change', fold.restore);
 
   const lensNote = root.querySelector<HTMLElement>('[data-role="lens-note"]')!;
   const phoneNote = root.querySelector<HTMLElement>('[data-role="phone-note"]')!;
