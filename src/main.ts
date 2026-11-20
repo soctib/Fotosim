@@ -5,8 +5,8 @@ import { loadState, persist, rememberFold } from './state/persist';
 import { createStore, initialState } from './state/store';
 import { mountBars } from './ui/bars/bars';
 import { mountControls } from './ui/controls/controls';
+import { mountCosts } from './ui/costs/costs';
 import { mountElements } from './ui/elements/elements';
-import { mountGear } from './ui/gear/gear';
 import { mountGraph } from './ui/graph/graph';
 import { mountInfobox } from './ui/infobox/infobox';
 import { mountPreviewSummary } from './ui/previewSummary';
@@ -36,7 +36,7 @@ app.innerHTML = `
     <aside id="controls"></aside>
     <div class="col-info">
       <details id="infobox" open></details>
-      <details id="gear"></details>
+      <details id="costs"></details>
     </div>
   </main>`;
 
@@ -51,19 +51,19 @@ mountPreviewSummary($<HTMLDetailsElement>('.preview'), store);
 mountElements($('#elements'), store);
 mountControls($('#controls'), store);
 mountInfobox($<HTMLDetailsElement>('#infobox'), store);
-mountGear($<HTMLDetailsElement>('#gear'), store);
+mountCosts($<HTMLDetailsElement>('#costs'), store);
 
-// Wide layout: while the lens/phone list is folded, the third column has room – move the
+// Wide layout: while the cost list is folded, the third column has room – move the
 // lens panel there (under the infobox). Otherwise it stays under the camera panel.
 const wide = window.matchMedia('(min-width: 1400px)');
-const gear = $<HTMLDetailsElement>('#gear');
+const costsBox = $<HTMLDetailsElement>('#costs');
 const lensPanel = $<HTMLElement>('#lens-panel');
 function placeLensPanel(): void {
   // Simplified mode hides the third column's content, so the lens panel stays with the controls.
-  if (wide.matches && !gear.open && !store.get().ui.simple) gear.before(lensPanel);
+  if (wide.matches && !costsBox.open && !store.get().ui.simple) costsBox.before(lensPanel);
   else $('#controls').append(lensPanel);
 }
-gear.addEventListener('toggle', placeLensPanel);
+costsBox.addEventListener('toggle', placeLensPanel);
 wide.addEventListener('change', placeLensPanel);
 
 // Panels stay folded the way the user left them. Simplified mode forces the camera image open

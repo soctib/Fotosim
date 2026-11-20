@@ -49,11 +49,15 @@ Directional blur for camera shake when `shake.blurFactor > 1`; each layer also s
 Shows the text for the **last clicked/tapped element**, filled with live values (`texts.info`, `fill()`).
 Foldable in both modes (folded, the summary just reads "Hilfe"). Folded, it sinks below every open box in its column.
 
-### 6. Lens & phone list (side panel / bottom sheet on mobile)
-- Rough lens prices (orders of magnitude), highlighting classes that match the current framing (full-frame-equivalent
-  focal length) + aperture, so a "50 mm f/1.8" is the normal prime of any system. Medium format gets a note that its
-  lenses are another price league.
-- Phone classes (2019 basic/tele, current basic/pro/zoom flagship) and what they can do. Note that phone background blur is mostly software.
+### 6. Costs (side panel / bottom sheet on mobile)
+Rough price ranges (orders of magnitude) for the gear in use, from `derive().costs` (`model/costs.ts`, data in `data/prices.ts`):
+- **Camera or phone** per camera type, with examples. Old phones and film cameras are marked as used.
+- **Lens**: the lens type plus the full-frame-equivalent focal length pick a concrete lens (kit at 200 mm → budget
+  70–300 mm; pro zoom at 135 mm → 70–200 f/2.8; prime beyond 135 mm → 300 mm f/2.8, beyond 330 mm → 400 mm f/2.8, as f/1.4 doesn't exist there).
+  Full-frame new prices × a per-system factor (MFT/APS-C 0.6, film 35 mm used 0.3, digital MF 2, MF film used 0.6–0.8).
+  Phones and the 1" compact have the lens built in.
+- **Tripod** when the photographer's movement is "tripod or leaning" (phone: a small one).
+- **Sum** of the minima and maxima. Notes: used prices, film running cost per roll and frame, MF film has hardly any zooms/fast lenses.
 
 ## Inputs
 
@@ -63,11 +67,11 @@ dropdown. Light and element distances live in the scene panel.
 
 | Control | Values |
 |---|---|
-| Camera type (= sensor/film size) | iPhone XR, iPhone 15 Pro Max, Fairphone 5, 1" compact, MFT, APS-C, full frame digital, 35 mm film, MF digital 44×33, MF 645, 6×6, 6×7 (film) |
+| Camera type (= sensor/film size) | iPhone XR, iPhone 15 Pro Max, Fairphone 5, 1" compact, MFT, APS-C, full frame digital mid-range and high-end (same sensor; high-end has a 1/8000 s shutter and costs more), 35 mm film, MF digital 44×33, MF 645, 6×6, 6×7 (film) |
 | Focal length | Steps are common full-frame-equivalent focal lengths; shown as **real + equivalent**, e.g. "50 mm (≙ 76 mm KB)". Phones: only their built-in back cameras (XR: 26 mm; 15 Pro Max: 13/24/120 mm; Fairphone 5: 13/25 mm), each with its own sensor size and fixed aperture – the focal length picks the camera (`activeSensor()`). |
 | Lens | Kit zoom f/3.5–5.6 (default), pro zoom f/2.8, fast prime f/1.4 – limits the widest aperture (phones: built in, control locked) |
 | Aperture | 1.4 … 22 in ⅓ stops, limited by the lens (phones: fixed, control locked) |
-| Shutter | 30 s … 1/4000 (mechanical; phones 1/16000 electronic), with markers **"hand"** (1/(2·f·crop)) and **"hand + IS"** (+2 stops) that move with focal length |
+| Shutter | 30 s … 1/4000 (mechanical, high-end full frame 1/8000; phones 1/16000 electronic), with markers **"hand"** (1/(2·f·crop)) and **"hand + IS"** (+2 stops) that move with focal length |
 | ISO | 100 … 12800 in ⅓ stops, optional auto ISO (P/Av/Tv). Film: fixed by the loaded film in every mode, no auto ISO |
 | Light | Sun 15, cloudy 13, shade 12, dusk 9, office 8, living room 6, night street 4, candle 3 (EV100) |
 | Mode | **A** (full auto), **P**, **Av** (Nikon/Sony: A), **Tv** (Nikon/Sony: S), **M** – each with a short explanation |
@@ -128,7 +132,7 @@ All formulas use mm for focal length/sensor, m for distances, s for shutter.
 
 ```
 src/model    pure physics + mode logic (no DOM)
-src/data     sensors, light presets, lens prices, phones, texts.de.ts
+src/data     sensors, light presets, prices, texts.de.ts
 src/state    store: state → derive() → listeners
 src/ui       graph/, bars/, controls/, sim/, infobox/   (to do)
 src/assets   SVGs, imported with ?raw and inlined
@@ -139,10 +143,10 @@ Unidirectional: input → `store.update()` → `resolveMode()` → `derive()` �
 ## Layout
 
 - **Desktop**: graph top left, simulation + bars below it, then the scene panel (light situation + one row per element);
-  camera controls in the next column. Wide screens (≥ 1400 px): third column with the infobox on top and the lens/phone
+  camera controls in the next column. Wide screens (≥ 1400 px): third column with the infobox on top and the cost
   list (open) below; while the list is folded, the lens panel moves into the third column under the infobox.
-  Narrower: infobox above the controls, lens list collapsible below them.
-- **Mobile**: graph, simulation + bars (pinned at the top while scrolling the rest), scene panel, controls, infobox, lens list (collapsible).
+  Narrower: infobox above the controls, cost list collapsible below them.
+- **Mobile**: graph, simulation + bars (pinned at the top while scrolling the rest), scene panel, controls, infobox, cost list (collapsible).
 - Pointer Events everywhere (mouse + touch identical).
 
 ## Milestones
@@ -151,7 +155,7 @@ Unidirectional: input → `store.update()` → `resolveMode()` → `derive()` �
 2. ✅ Graph: scales (lin/log), drag elements, focus line, DOF band, flash zone, profile heads when zoomed in
 3. ✅ Controls, modes, element panels, bars, lens choice, focus tracking
 4. ✅ Camera image simulation
-5. Infobox ✅, lens/phone list ✅, mobile polish (control tabs on phones: open)
+5. Infobox ✅, cost list ✅, mobile polish (control tabs on phones: open)
 6. English texts
 
 ## Open questions

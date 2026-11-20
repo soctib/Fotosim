@@ -36,34 +36,29 @@ describe('derive() layout and gear', () => {
     expect(bg.heightFractionPerM).toBeLessThan(p1.heightFractionPerM);
   });
 
-  it('suggests a fast 50 mm-class prime for f/1.8 at 50 mm, not the kit zoom', () => {
-    const d = derive({ ...initialState.camera, sensorId: 'fullFrame', lensId: 'prime', focalLengthMm: 50, aperture: 1.8 }, initialState.scene);
-    expect(d.gear.lensIds).toContain('nifty50');
-    expect(d.gear.lensIds).not.toContain('kitZoom');
-    expect(d.gear.phoneIds).toEqual([]);
-  });
-
-  it('matches lens classes by framing, so a normal lens is a normal lens on every sensor', () => {
-    for (const sensorId of ['mft', 'apsc', 'mf67'] as const) {
+  it('prices the lens by framing, so a normal prime is a normal prime on every sensor', () => {
+    for (const sensorId of ['mft', 'apsc', 'fullFrame', 'mf67'] as const) {
       const crop = cropFactor(SENSORS[sensorId]);
-      const d = derive({ ...initialState.camera, sensorId, lensId: 'prime', focalLengthMm: 50 / crop, aperture: 1.8 }, initialState.scene);
-      expect(d.gear.lensIds, sensorId).toContain('nifty50');
-      expect(d.gear.lensIds, sensorId).not.toContain('wideZoom');
-      expect(d.gear.lensIds, sensorId).not.toContain('teleZoom28');
+      const d = derive({ ...initialState.camera, sensorId, lensId: 'prime', focalLengthMm: 50 / crop }, initialState.scene);
+      expect(d.costs.lens?.kind, sensorId).toBe('prime50');
     }
   });
 
-  it('lists phone classes with a native lens at the current framing', () => {
+  it('uses the phone camera picked by the focal length; phones have no lens price', () => {
     const tele = focalOptions(SENSORS.iphone15ProMax)[2];
     const d = derive({ ...initialState.camera, sensorId: 'iphone15ProMax', focalLengthMm: tele.realMm }, initialState.scene);
     expect(d.equivalentFocalMm).toBeCloseTo(120, 6);
     expect(d.maxAperture).toBe(2.8); // the tele camera, not the main one
-    expect(d.gear.phoneIds).toEqual(['currentZoom']);
-    // Fairphone 5 main camera (25 mm): any current phone class has a native lens there.
+    expect(d.costs.phone).toBe(true);
+    expect(d.costs.lens).toBeNull();
     const fp = derive({ ...initialState.camera, sensorId: 'fairphone5', focalLengthMm: focalOptions(SENSORS.fairphone5)[1].realMm }, initialState.scene);
     expect(fp.maxAperture).toBe(1.9);
-    expect(fp.gear.phoneIds).toEqual(['currentBasic', 'currentPro', 'currentZoom']);
-    expect(d.gear.lensIds).toEqual([]);
+  });
+
+  it('adds a tripod only when the photographer is on one', () => {
+    const cam = { ...initialState.camera, sensorId: 'fullFrame' as const };
+    expect(derive({ ...cam, motion: 'still' }, initialState.scene).costs.tripod).toBeNull();
+    expect(derive({ ...cam, motion: 'frozen' }, initialState.scene).costs.tripod).not.toBeNull();
   });
 });
 

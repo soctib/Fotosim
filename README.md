@@ -6,7 +6,7 @@ Interaktiver Foto-Simulator für Einsteiger: Was passiert mit **Schärfe**, **Be
 - Belichtungs- und Rauschbalken
 - Vereinfachtes Kamerabild, das Unschärfe, Ausschnitt, Helligkeit und Rauschen zeigt
 - Kameramodi A, P, Av, Tv, M mit kurzer Erklärung, Blitz mit Reichweite
-- Vom Handy bis Mittelformat, dazu grobe Objektivpreise und was Handys können
+- Vom Handy bis Mittelformat, dazu grobe Kosten für Kamera, Objektiv und Stativ
 - Startet vereinfacht: Sonne, Vollformat, nur Lichtsituation, Blende, Belichtungszeit und Brennweite – „Alle Einstellungen“ zeigt den Rest
 
 Das Ergebnis ist **eine einzige HTML-Datei**. Sie läuft offline im Browser, auf Desktop und Handy.

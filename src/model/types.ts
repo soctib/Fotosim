@@ -8,6 +8,7 @@ export type SensorId =
   | 'mft'
   | 'apsc'
   | 'fullFrame'
+  | 'fullFramePro'
   | 'film35'
   | 'mf4433'
   | 'mf645'

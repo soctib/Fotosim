@@ -80,7 +80,7 @@ header {
   grid-template-areas:
     'stage info'
     'stage side'
-    'stage gear';
+    'stage costs';
   max-width: 1200px;
 }
 
@@ -95,12 +95,12 @@ header {
 #infobox {
   grid-area: info;
 }
-#gear {
-  grid-area: gear;
+#costs {
+  grid-area: costs;
 }
 
 /*
- * Wide screens: third column with the infobox on top and the lens/phone list below.
+ * Wide screens: third column with the infobox on top and the cost list below.
  * While the list is folded, main.ts moves the lens panel into this column as well.
  */
 @media (min-width: 1400px) {
@@ -121,7 +121,7 @@ header {
   }
   /* Inside the column, stack in DOM order (the area names belong to the two-column layout). */
   .col-info > #infobox,
-  .col-info > #gear,
+  .col-info > #costs,
   .col-info > #lens-panel {
     grid-area: auto;
   }
@@ -134,21 +134,21 @@ header {
 #infobox:not([open]) {
   order: 1;
 }
-#gear:not([open]) {
+#costs:not([open]) {
   order: 2;
 }
 @media (min-width: 761px) and (max-width: 1399px) {
   .layout:has(#infobox:not([open])) {
     grid-template-areas:
       'stage side'
-      'stage gear'
+      'stage costs'
       'stage info';
   }
-  .layout:has(#infobox:not([open])):has(#gear:not([open])) {
+  .layout:has(#infobox:not([open])):has(#costs:not([open])) {
     grid-template-areas:
       'stage side'
       'stage info'
-      'stage gear';
+      'stage costs';
   }
 }
 
@@ -198,7 +198,7 @@ header {
   .stage > *,
   #controls,
   #infobox,
-  #gear {
+  #costs {
     grid-area: auto;
     min-width: 0;
   }
@@ -1143,55 +1143,53 @@ header {
   font-size: 0.9rem;
 }
 
-/* ---- lenses & phones ---- */
+/* ---- costs ---- */
 
-.gear {
+.costs {
   padding: 8px 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--panel);
   font-size: 0.85rem;
 }
-.gear summary {
+.costs summary {
   font-weight: 600;
   cursor: pointer;
 }
-.gear h3 {
-  margin: 12px 0 4px;
-  font-size: 0.85rem;
-}
-.gear ul {
+.costs ul {
   list-style: none;
-  margin: 0;
+  margin: 4px 0;
   padding: 0;
 }
-.gear li {
+.costs li {
   display: flex;
   justify-content: space-between;
   gap: 8px;
-  padding: 3px 6px;
-  border-radius: 4px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--line);
 }
-.gear li small {
+.costs li small {
   display: block;
   color: var(--muted);
 }
-.gear li.match {
-  background: var(--dof);
+.costs li.total {
+  border-bottom: none;
   font-weight: 600;
-  box-shadow: inset 3px 0 0 var(--sharp);
 }
-.gear .price {
+.costs .price {
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.costs li:not(.total) .price {
   color: var(--muted);
 }
-.gear-note {
+.costs-note {
   margin: 4px 0;
   color: var(--muted);
   font-size: 0.8rem;
 }
-.gear-note:empty {
+.costs-note:empty {
   display: none;
 }
 
@@ -1328,7 +1326,7 @@ header {
 
 .simple #bars,
 .simple #elements,
-.simple #gear,
+.simple #costs,
 .simple .preview > summary,
 /* The lens-limit hint names a lens that isn't shown; the slider's track already starts there. */
 .simple #h-aperture,

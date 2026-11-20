@@ -55,7 +55,11 @@ export const SENSORS: Record<SensorId, Sensor> = {
   oneInch: { id: 'oneInch', widthMm: 13.2, heightMm: 8.8, flashGuideNumber: 6 },
   mft: { id: 'mft', widthMm: 17.3, heightMm: 13, flashGuideNumber: 10 },
   apsc: { id: 'apsc', widthMm: 23.5, heightMm: 15.6, flashGuideNumber: 12 },
+  // Mid-range full frame (Sony A7 IV, Nikon Z6III, Canon R6 II).
   fullFrame: { id: 'fullFrame', widthMm: 36, heightMm: 24, flashGuideNumber: 12 },
+  // High-end full frame (Nikon Z8/Z9, Canon R5 II, Sony A1 II): same sensor size, the optics don't
+  // change; their faster mechanical shutter is the difference that shows here.
+  fullFramePro: { id: 'fullFramePro', widthMm: 36, heightMm: 24, flashGuideNumber: 12, fastestShutterS: 1 / 8000 },
   // Same format on 35 mm film
   film35: { id: 'film35', widthMm: 36, heightMm: 24, flashGuideNumber: 12, isFilm: true },
   mf4433: { id: 'mf4433', widthMm: 43.8, heightMm: 32.9, flashGuideNumber: 12 },
@@ -72,6 +76,7 @@ export const SENSOR_ORDER: SensorId[] = [
   'mft',
   'apsc',
   'fullFrame',
+  'fullFramePro',
   'film35',
   'mf4433',
   'mf645',
