@@ -5,6 +5,8 @@ export const de = {
   locale: 'de-DE',
   appTitle: 'Fotosim',
   appSubtitle: 'Schärfe, Belichtung und Rauschen zum Ausprobieren',
+  /** Header switch: off = simplified mode (sun, full frame, Av; only aperture, shutter and focal length). */
+  allSettings: 'Alle Einstellungen',
   kb: 'KB',
 
   sensors: {

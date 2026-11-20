@@ -1,6 +1,8 @@
 // Small, named state mutations so UI modules don't each spell out the spread boilerplate.
 
-import { MAX_DISTANCE_M, minDistanceM } from '../model/optics';
+import { SENSORS } from '../data/sensors';
+import { focalOptions } from '../model/focal';
+import { cropFactor, MAX_DISTANCE_M, minDistanceM } from '../model/optics';
 import type { CameraSettings, ElementId, Mode, Scene } from '../model/types';
 import type { AppState, InfoKey, Store } from './store';
 
@@ -103,4 +105,42 @@ export function setAutofocus(store: Store, target: ElementId | null): void {
 export function setMode(store: Store, mode: Mode): void {
   const { aperture, shutterS, iso, flashOn } = store.derived().settings;
   setCamera(store, { mode, aperture, shutterS, iso, flashOn });
+}
+
+/**
+ * The setup simplified mode stands for: sun, one person and the background, a full-frame body
+ * with the pro zoom in Av, auto ISO, no flash, stabiliser on, no focus tracking. Keeps the angle
+ * of view (nearest full-frame step) and the aperture; focuses on person 1.
+ */
+export function applySimple(s: AppState): AppState {
+  const sensor = SENSORS.fullFrame;
+  const eqMm = s.camera.focalLengthMm * cropFactor(SENSORS[s.camera.sensorId]);
+  const opts = focalOptions(sensor);
+  const focalLengthMm = opts.reduce((a, b) => (Math.abs(b.equivalentMm - eqMm) < Math.abs(a.equivalentMm - eqMm) ? b : a)).realMm;
+  const elements = s.scene.elements.map((el) => ({ ...el, visible: el.id !== 'person2' }));
+  const scene = { ...s.scene, lightPresetId: 'sun', elements };
+  const clamped = { ...scene, elements: clampElements(scene, focalLengthMm) };
+  const person1 = clamped.elements.find((el) => el.id === 'person1')!;
+  return {
+    ...s,
+    camera: {
+      ...s.camera,
+      sensorId: sensor.id,
+      lensId: 'fastZoom',
+      focalLengthMm,
+      mode: 'Av',
+      autoIso: true,
+      flashOn: false,
+      stabilized: true,
+      afTarget: null,
+      focusDistanceM: person1.distanceM,
+    },
+    scene: clamped,
+    ui: { ...s.ui, simple: true },
+  };
+}
+
+/** Enter simplified mode (applies its setup) or leave it (the setup stays, everything is shown again). */
+export function setSimple(store: Store, simple: boolean): void {
+  store.update((s) => (simple ? applySimple(s) : { ...s, ui: { ...s.ui, simple: false } }));
 }

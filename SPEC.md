@@ -74,6 +74,16 @@ dropdown. Light and element distances live in the scene panel.
 
 Modes grey out and set the controls they own (`autoFields`).
 
+## Simplified mode
+
+The app opens in a simplified mode for beginners; the header switch "Alle Einstellungen" leaves it.
+Entering applies a fixed setup (`applySimple` in `src/state/actions.ts`): sun, person 1 and the background
+(person 2 hidden), full frame with the pro zoom, Av, auto ISO, no flash, stabiliser on, no focus tracking,
+focus on person 1. The angle of view (nearest full-frame step) and the aperture carry over.
+Only the graph, the camera image (no fold heading) and three sliders remain: aperture, shutter (set by the
+camera, shown as an indicator of the handheld ranges) and focal length. Leaving keeps the setup and shows
+everything again.
+
 ## Model (src/model, pure functions, unit-tested)
 
 All formulas use mm for focal length/sensor, m for distances, s for shutter.

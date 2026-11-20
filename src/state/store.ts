@@ -16,6 +16,8 @@ export interface AppState {
     showDetails: boolean;
     /** Key into texts.info for the infobox (last clicked element). */
     infoKey: InfoKey;
+    /** Simplified mode: fixed beginner setup, only aperture, shutter (as indicator) and focal length shown. */
+    simple: boolean;
   };
 }
 
@@ -43,7 +45,7 @@ export const initialState: AppState = {
       { id: 'background', distanceM: 50, visible: true },
     ],
   },
-  ui: { logScale: true, showDetails: false, infoKey: 'graph' },
+  ui: { logScale: true, showDetails: false, infoKey: 'graph', simple: false },
 };
 
 type Listener = (state: AppState, derived: Derived) => void;

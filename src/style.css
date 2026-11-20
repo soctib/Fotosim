@@ -58,6 +58,19 @@ header p {
   color: var(--muted);
 }
 
+header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0 16px;
+  max-width: 1200px;
+}
+.all-settings {
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
 .layout {
   display: grid;
   gap: 16px;
@@ -95,6 +108,9 @@ header p {
     grid-template-columns: minmax(0, 1fr) 300px 340px;
     grid-template-rows: auto;
     grid-template-areas: 'stage side info';
+    max-width: 1720px;
+  }
+  header {
     max-width: 1720px;
   }
   .col-info {
@@ -1084,4 +1100,30 @@ header p {
   overflow: hidden;
   clip: rect(0 0 0 0);
   white-space: nowrap;
+}
+
+/* ---- simplified mode: graph, camera image and three sliders only ---- */
+
+.simple #bars,
+.simple #elements,
+.simple .col-info,
+.simple .preview > summary,
+/* The lens-limit hint names a lens that isn't shown; the slider's track already starts there. */
+.simple #h-aperture,
+.simple .panel .control:not([data-info='aperture'], [data-info='shutter'], [data-info='focalLength']) {
+  display: none;
+}
+.simple .preview-body {
+  grid-template-columns: minmax(0, 560px);
+}
+@media (min-width: 1400px) {
+  /* The third column would be empty. */
+  .simple .layout {
+    grid-template-columns: minmax(0, 1fr) 300px;
+    grid-template-areas: 'stage side';
+    max-width: 1200px;
+  }
+  body.simple header {
+    max-width: 1200px;
+  }
 }

@@ -8,6 +8,8 @@ import {
   setElementDistance,
   setElementVisible,
   setFocus,
+  setLight,
+  setSimple,
 } from '../src/state/actions';
 import { createStore } from '../src/state/store';
 
@@ -75,5 +77,42 @@ describe('focus tracking and hidden elements', () => {
     expect(store.derived().settings.focusDistanceM).toBe(50);
     setAutofocus(store, null);
     expect(store.get().camera.focusDistanceM).toBe(50);
+  });
+});
+
+describe('simplified mode', () => {
+  it('applies the beginner setup and keeps the angle of view', () => {
+    const store = createStore();
+    setCamera(store, { sensorId: 'mft', focalLengthMm: realMm('mft', 85), flashOn: true, mode: 'M', afTarget: 'person2' });
+    setLight(store, 'candle');
+    setSimple(store, true);
+    const { camera, scene, ui } = store.get();
+    expect(ui.simple).toBe(true);
+    expect(camera).toMatchObject({
+      sensorId: 'fullFrame',
+      lensId: 'fastZoom',
+      mode: 'Av',
+      autoIso: true,
+      flashOn: false,
+      stabilized: true,
+      afTarget: null,
+    });
+    expect(camera.focalLengthMm).toBe(realMm('fullFrame', 85));
+    expect(scene.lightPresetId).toBe('sun');
+    expect(scene.elements.map((el) => [el.id, el.visible])).toEqual([
+      ['person1', true],
+      ['person2', false],
+      ['background', true],
+    ]);
+    expect(camera.focusDistanceM).toBe(scene.elements[0].distanceM);
+  });
+
+  it('keeps the setup when leaving', () => {
+    const store = createStore();
+    setSimple(store, true);
+    const camera = store.get().camera;
+    setSimple(store, false);
+    expect(store.get().ui.simple).toBe(false);
+    expect(store.get().camera).toEqual(camera);
   });
 });
