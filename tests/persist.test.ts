@@ -47,3 +47,21 @@ describe('parseState', () => {
     expect(parseState(JSON.stringify(simple), initialState)).toEqual(simple);
   });
 });
+
+describe('parseState with older saves', () => {
+  it('fills in movement missing from states saved before it existed', () => {
+    const old = JSON.parse(JSON.stringify(changed));
+    delete old.camera.motion;
+    for (const e of old.scene.elements) delete e.motion;
+    expect(parseState(JSON.stringify(old), initialState)).toEqual({
+      ...changed,
+      camera: { ...changed.camera, motion: initialState.camera.motion },
+      scene: { ...changed.scene, elements: initialState.scene.elements.map((d, i) => ({ ...changed.scene.elements[i], motion: d.motion })) },
+    });
+  });
+
+  it('rejects an unknown movement', () => {
+    const bad = { ...changed, camera: { ...changed.camera, motion: 'fly' } };
+    expect(parseState(JSON.stringify(bad), initialState)!.camera).toEqual(initialState.camera);
+  });
+});

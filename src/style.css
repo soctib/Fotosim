@@ -582,6 +582,9 @@ header {
   margin-top: 5px; /* gap between the thumb's tip and the band */
   pointer-events: none;
 }
+.shake-zones.tripod {
+  visibility: hidden; /* no handheld limits on a tripod */
+}
 .shake-zones .zone {
   position: absolute;
   top: 0;
@@ -796,10 +799,6 @@ header {
   .sim-footer .light-stepper {
     flex-basis: 100%;
   }
-  /* Full UI on a phone: the bars sit beside the image, so the caption is narrow and can need three lines. */
-  body:not(.simple) .sim-caption {
-    min-height: calc(3em * 1.4);
-  }
 }
 .sim-caption {
   margin: 0;
@@ -945,6 +944,7 @@ header {
 
 .bar-tick {
   position: absolute;
+  bottom: var(--pos);
   left: 100%;
   width: 6px;
   height: 1px;
@@ -966,6 +966,7 @@ header {
 
 .bar-marker {
   position: absolute;
+  bottom: var(--pos);
   left: -5px;
   right: -5px;
   height: 4px;
@@ -973,7 +974,7 @@ header {
   border-radius: 2px;
   background: var(--accent);
   box-shadow: 0 0 0 1.5px var(--panel);
-  transition: bottom 0.12s;
+  transition: bottom 0.12s, left 0.12s;
 }
 .bar-marker.beyond {
   animation: blink 1s infinite;
@@ -987,13 +988,30 @@ header {
   left: 0;
   right: 0;
   bottom: 0;
+  height: var(--fill);
   border-radius: 7px;
   background: var(--sharp);
-  transition: height 0.12s;
+  transition: height 0.12s, width 0.12s;
 }
 .bar-noise[data-cls='medium'] .bar-fill { background: var(--sun); }
 .bar-noise[data-cls='high'] .bar-fill { background: var(--warn); }
 .bar-noise[data-cls='veryHigh'] .bar-fill { background: var(--bad); }
+.bar-movement[data-cls='slight'] .bar-fill { background: var(--sun); }
+.bar-movement[data-cls='visible'] .bar-fill { background: var(--warn); }
+.bar-movement[data-cls='strong'] .bar-fill { background: var(--bad); }
+.bar-movement[data-cls='slight'] .bar-class,
+.bar-movement[data-cls='visible'] .bar-class { color: var(--warn); }
+.bar-movement[data-cls='strong'] .bar-class { color: var(--bad); }
+/* Sharpness limit: above this line the subject no longer counts as sharp. */
+.bar-limit {
+  position: absolute;
+  bottom: var(--pos);
+  left: -4px;
+  right: -4px;
+  height: 2px;
+  margin-bottom: -1px;
+  background: var(--fg);
+}
 
 .bar-value {
   color: var(--muted);
@@ -1019,6 +1037,66 @@ header {
   }
   .bar-value {
     display: none;
+  }
+}
+
+/* Phones: three upright bars would squeeze the camera image, so they lie flat in a strip below it. */
+@media (max-width: 520px) {
+  .preview-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .bars {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .bar {
+    width: auto;
+    grid-template-rows: auto auto auto;
+    gap: 3px;
+    padding: 4px 6px;
+  }
+  .bar-track,
+  .bar-exposure .bar-track {
+    width: 100%;
+    height: 8px;
+    min-height: 0;
+    margin: 3px 0;
+    border-radius: 4px;
+  }
+  .bar-exposure .bar-track {
+    background: linear-gradient(to right, #1b1b1b 0%, #555 16.7%, var(--sharp) 33.3%, var(--sharp) 66.7%, #d0d0c8 83.3%, #fff 100%);
+  }
+  .bar-tick {
+    display: none;
+  }
+  .bar-marker,
+  .bar-limit {
+    bottom: auto;
+    left: var(--pos);
+    right: auto;
+    top: -3px;
+    width: 4px;
+    height: auto;
+    margin: 0 0 0 -2px;
+  }
+  .bar-marker {
+    bottom: -3px;
+  }
+  .bar-limit {
+    bottom: -3px;
+    width: 2px;
+    margin-left: -1px;
+  }
+  .bar-fill {
+    top: 0;
+    right: auto;
+    height: auto;
+    width: var(--fill);
+    border-radius: 4px;
+  }
+  .bar-class {
+    min-height: 0;
   }
 }
 
@@ -1154,7 +1232,7 @@ header {
 }
 .el-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
   align-items: center;
   gap: 10px;
   padding: 2px 0;
@@ -1198,7 +1276,13 @@ header {
   color: var(--fg);
   cursor: pointer;
 }
+.el-motion {
+  font: inherit;
+  font-size: 0.8rem;
+  padding: 2px 2px;
+}
 .el-row button:disabled,
+.el-motion:disabled,
 .el-distance input:disabled {
   opacity: 0.45;
   cursor: not-allowed;
@@ -1208,7 +1292,18 @@ header {
 }
 @media (max-width: 520px) {
   .el-row {
-    gap: 6px;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 2px 6px;
+  }
+  /* Movement drops to a second line under the name, so the name keeps its room. */
+  .el-row .el-motion {
+    grid-column: 1;
+    grid-row: 2;
+    justify-self: start;
+    margin-left: 22px;
+  }
+  .el-row > span:empty {
+    display: none;
   }
   .el-row .long {
     display: none;

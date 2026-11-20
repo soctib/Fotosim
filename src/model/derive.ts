@@ -5,7 +5,7 @@ import { matchingLenses } from '../data/lensPrices';
 import { lightPreset } from '../data/lightPresets';
 import { PHONE_CLASSES } from '../data/phones';
 import { SENSORS } from '../data/sensors';
-import { applyAutofocus } from './autofocus';
+import { applyAutofocus, focusedElement } from './autofocus';
 import { activeSensor } from './focal';
 import { classifyExposure, exposureOffsetStops, type ExposureClass } from './exposure';
 import {
@@ -33,9 +33,17 @@ import {
   type DepthOfField,
 } from './optics';
 import {
+  classifyMovement,
+  movementBlurFractionOfWidth,
+  relativeMovementBlur,
+  relativeSpeedMs,
+  type MovementClass,
+} from './motion';
+import {
   classifyShake,
   handheldLimitS,
   handheldLimitWithIsS,
+  motionHandheldLimitS,
   shakeBlurFactor,
   type ShakeClass,
 } from './shake';
@@ -55,6 +63,12 @@ export interface DerivedElement {
   frameHeightFraction: number;
   /** Image-height fraction per metre of object size at this distance (for laying out the simulated image). */
   heightFractionPerM: number;
+  /** Speed across the frame relative to the photographer (m/s). */
+  relativeSpeedMs: number;
+  /** Sideways smear from movement, relative to the circle of confusion (≤ 1 = sharp). */
+  movementBlur: number;
+  /** The same smear as a fraction of the image width (for rendering). */
+  movementBlurFractionOfWidth: number;
 }
 
 export interface Derived {
@@ -84,7 +98,12 @@ export interface Derived {
   autoIsoCapped: number | null;
   /** Flash on: its zone (null while the ambient light alone is enough) and the TTL power reduction. */
   flash: { zone: FlashZone | null; powerReductionStops: number } | null;
+  /** Handheld limits for the photographer's movement (Infinity on a tripod). */
   shake: { limitS: number; limitIsS: number; cls: ShakeClass; blurFactor: number };
+  /** Visible persons smeared visibly by movement (movementBlur > 1), nearest first. */
+  movementBlurred: ElementId[];
+  /** The element in focus (tracked, or nearest to the focus distance) and its movement smear; null if nothing is visible. */
+  subject: { id: ElementId; relativeSpeedMs: number; movementBlur: number; movementCls: MovementClass } | null;
   noise: { indexStops: number; cls: NoiseClass; amount: number; equivalentIso: number };
   elements: DerivedElement[];
   /** Gear that can take this picture: lens classes (interchangeable-lens cameras) and phone classes. */
@@ -119,6 +138,7 @@ export function derive(input: CameraSettings, scene: Scene): Derived {
       const full = flashFullOffsetStops(sensor.flashGuideNumber, N, iso, el.distanceM);
       exp = litOffsetStops(ambient, full, flash.powerReductionStops);
     }
+    const speed = relativeSpeedMs(el.motion, settings.motion);
     return {
       id: el.id,
       distanceM: el.distanceM,
@@ -129,8 +149,19 @@ export function derive(input: CameraSettings, scene: Scene): Derived {
       frameHeightFraction:
         el.id === 'background' ? NaN : frameHeightFraction(f, PERSON_HEIGHT_M, el.distanceM, sensor),
       heightFractionPerM: frameHeightFraction(f, 1, el.distanceM, sensor),
+      relativeSpeedMs: speed,
+      movementBlur: relativeMovementBlur(speed, t, f, el.distanceM, sensor),
+      movementBlurFractionOfWidth: movementBlurFractionOfWidth(speed, t, f, el.distanceM, sensor),
     };
   });
+
+  const focused = focusedElement(elements, focus, settings.afTarget);
+  const subjectInfo: Derived['subject'] = focused && {
+    id: focused.id,
+    relativeSpeedMs: focused.relativeSpeedMs,
+    movementBlur: focused.movementBlur,
+    movementCls: classifyMovement(focused.movementBlur),
+  };
 
   const multiFrame = sensor.multiFrameStops ?? 0;
   const noiseIdx = noiseIndexStops(iso, crop, subject, multiFrame);
@@ -159,11 +190,16 @@ export function derive(input: CameraSettings, scene: Scene): Derived {
         : null,
     flash,
     shake: {
-      limitS: handheldLimitS(f, crop),
-      limitIsS: handheldLimitWithIsS(f, crop),
-      cls: classifyShake(t, f, crop, settings.stabilized),
-      blurFactor: shakeBlurFactor(t, f, crop, settings.stabilized),
+      limitS: motionHandheldLimitS(handheldLimitS(f, crop), settings.motion),
+      limitIsS: motionHandheldLimitS(handheldLimitWithIsS(f, crop), settings.motion),
+      cls: classifyShake(t, f, crop, settings.stabilized, settings.motion),
+      blurFactor: shakeBlurFactor(t, f, crop, settings.stabilized, settings.motion),
     },
+    movementBlurred: elements
+      .filter((e) => e.id !== 'background' && e.visible && e.movementBlur > 1)
+      .sort((a, b) => a.distanceM - b.distanceM)
+      .map((e) => e.id),
+    subject: subjectInfo,
     noise: {
       indexStops: noiseIdx,
       cls: classifyNoise(noiseIdx),

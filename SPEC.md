@@ -27,11 +27,14 @@ Ships as **one self-contained HTML file** (`npm run build` → `dist/index.html`
   so ambient light extends the range; hidden while the ambient light alone is enough (the flash then does nothing).
 
 ### 2. Scene panel
-Light situation, plus one compact row per element: visible toggle, distance as number (read + edit), "focus here" button.
+Light situation, plus one compact row per element: visible toggle, movement (persons only), distance as number (read + edit), "focus here" button.
 
-### 3. Bars (vertical)
+### 3. Bars (vertical; on phones ≤ 520 px a flat strip below the image)
 - **Exposure**: offset in stops, markers at ±1 (slight) and ±2 (strong) under/over.
 - **Noise**: noise index, with "≙ ISO X on full frame".
+- **Movement**: smear of the subject in focus (tracked target, else the visible element nearest the focus distance),
+  log scale ¼×–16× the sharpness limit with a line at 1×; sharp ≤ 1, slight ≤ 2, visible ≤ 4, else strong.
+  Shows the relative speed in km/h. Hand shake is not included – the shutter slider's ranges show that.
 
 ### 4. Camera image simulation ("killer feature")
 Shown together with the bars as one foldable group.
@@ -40,7 +43,7 @@ persons blur per part (nose, face/body, ears at their own distances, SVG filters
 nose can be sharp and the eyes not. Close persons drift to the image centre (the photographer aims at them).
 On top: `brightness()` per layer from its exposure offset (flash lights only near layers),
 SVG `feTurbulence` overlay for noise (opacity from `noise.amount`); sizes and positions from a real perspective projection (`heightFractionPerM`).
-Optional: directional blur for camera shake when `shake.blurFactor > 1`.
+Directional blur for camera shake when `shake.blurFactor > 1`; each layer also smears sideways by its own movement blur.
 
 ### 5. Infobox
 Shows the text for the **last clicked/tapped element**, filled with live values (`texts.info`, `fill()`).
@@ -55,7 +58,7 @@ Foldable in both modes (folded, the summary just reads "Hilfe"). Folded, it sink
 ## Inputs
 
 Grouped like the real thing: a **camera** panel (type, mode, aperture, shutter, ISO, flash – modern bodies set the
-aperture) and a **lens** panel (type, focal length, stabiliser, focus tracking, focus), each starting with its type
+aperture) and a **lens** panel (type, focal length, stabiliser, photographer's movement, focus tracking, focus), each starting with its type
 dropdown. Light and element distances live in the scene panel.
 
 | Control | Values |
@@ -101,6 +104,13 @@ All formulas use mm for focal length/sensor, m for distances, s for shutter.
   Verdict for normal viewing size: low < 4 (≈ ISO 1600 full frame), medium < 6, high < 8, else very high; the overlay
   starts at index 2 (≈ ISO 400 full frame).
 - **Shake**: handheld limit `1/(2·f·crop)` (the classic 1/f rule is too lax for modern sensors), IS adds 2 stops (rated 4–5, reliable 2–3).
+  The photographer's movement shifts it: walking/driving −2 stops, running −4, tripod/leaning = no limit.
+- **Movement** (`motion.ts`): photographer and persons each frozen / standing / walking (1.4 m/s) / running (4) / driving (14).
+  Everything moves sideways in the same direction, so a person's speed counts relative to the photographer's
+  (walking alongside = sharp; the static background smears with the photographer's speed). A standing person
+  adds 0.03 m/s of sway that nothing cancels. Smear on the sensor = `v·t·f/(d−f)`; relative to the CoC like
+  defocus (> 1 = visibly smeared, named in the shutter hint). The modes ignore movement on purpose:
+  real cameras can't see it either.
 - **Flash**: guide number model, full power correct at `GN·√(ISO/100)/N`, −2 stops per doubled distance.
   TTL: camera throttles power (0…7 stops) so the focused subject is correct; other elements get the same power.
   Built-in flash syncs at max 1/250 s (and ≥ 1/60 s in auto-shutter modes); a phone LED has no such limits.
@@ -146,4 +156,4 @@ Unidirectional: input → `store.update()` → `resolveMode()` → `derive()` �
 
 ## Open questions
 
-- Subject motion (people moving) as an extra warning separate from camera shake?
+- Show movement blur in the graph too (it falls with 1/distance)?

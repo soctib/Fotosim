@@ -1,7 +1,8 @@
 // Simulated camera image: sky/ground, background scenery and the persons as
 // separate layers, each with its own blur and brightness from derive(). The backdrop and
 // scenery follow the light situation (see scenery.ts), so dusk looks like dusk.
-// Scenery and persons are stacked by distance, so nearer things cover farther ones. Noise overlay and
+// Scenery and persons are stacked by distance, so nearer things cover farther ones. Movement smears
+// each layer sideways on its own (persons relative to the photographer); noise overlay and
 // directional shake blur on top. Layout uses each element's projected scale
 // (heightFractionPerM), so framing follows focal length and sensor.
 
@@ -20,6 +21,8 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 
 /** CSS blur takes a Gaussian sigma; the blur disc diameter is roughly 2 sigma. */
 const SIGMA_PER_DISC = 0.5;
+/** A sideways smear of length L as a Gaussian: sigma ≈ L/√12 for a box, a bit more so it reads as motion. */
+const SIGMA_PER_SMEAR = 0.35;
 const MAX_BLUR_PX = 60;
 /** How long the AF frame stays visible after a one-shot tap-to-focus (matches the CSS animation). */
 const AF_FLASH_MS = 900;
@@ -48,6 +51,7 @@ export function mountSim(root: HTMLElement, store: Store): void {
     </div>
     <svg width="0" height="0" aria-hidden="true" style="position:absolute">
       <filter id="sim-shake" x="-10%" width="120%"><feGaussianBlur stdDeviation="0 0"/></filter>
+      <filter id="sim-move-background" x="-10%" width="120%"><feGaussianBlur stdDeviation="0 0"/></filter>
     </svg>
     <div class="sim-footer">
       <p class="sim-caption"></p>
@@ -57,6 +61,7 @@ export function mountSim(root: HTMLElement, store: Store): void {
   const frame = root.querySelector<HTMLElement>('.sim-frame')!;
   const noise = root.querySelector<SVGSVGElement>('.noise')!;
   const shake = root.querySelector<SVGFEGaussianBlurElement>('#sim-shake feGaussianBlur')!;
+  const moveBackground = root.querySelector<SVGFEGaussianBlurElement>('#sim-move-background feGaussianBlur')!;
   const caption = root.querySelector<HTMLElement>('.sim-caption')!;
   // Shown in simplified mode only (CSS), where the scene panel is hidden.
   mountLightStepper(root.querySelector<HTMLElement>('[data-role="light-stepper"]')!, store);
@@ -93,11 +98,15 @@ export function mountSim(root: HTMLElement, store: Store): void {
     const sigmaAt = (m: number) => Math.min(MAX_BLUR_PX, d.blurFractionAt(m) * W * SIGMA_PER_DISC);
     const brightness = (el: DerivedElement) =>
       `brightness(${Math.min(8, Math.max(0.03, 2 ** el.exposureOffsetStops)).toFixed(3)})`;
-    const filterFor = (el: DerivedElement) =>
-      `blur(${Math.min(MAX_BLUR_PX, el.blurFractionOfWidth * W * SIGMA_PER_DISC).toFixed(2)}px) ${brightness(el)}`;
+    const moveSigma = (el: DerivedElement) => Math.min(MAX_BLUR_PX, el.movementBlurFractionOfWidth * W * SIGMA_PER_SMEAR);
 
-    // Sky (or wall) and open ground are always furthest back; they share the background's blur and light.
+    // Sky (or wall) and open ground are always furthest back; they share the background's blur, smear and light.
     const bg = d.elements.find((e) => e.id === 'background')!;
+    const bgMove = moveSigma(bg);
+    moveBackground.setAttribute('stdDeviation', `${bgMove.toFixed(2)} 0`);
+    const filterFor = (el: DerivedElement) =>
+      `blur(${Math.min(MAX_BLUR_PX, el.blurFractionOfWidth * W * SIGMA_PER_DISC).toFixed(2)}px) ` +
+      `${bgMove > 0.1 ? 'url(#sim-move-background) ' : ''}${brightness(el)}`;
     const sky = layer('sky');
     sky.setAttribute('viewBox', `0 0 ${W} ${H}`);
     sky.innerHTML = scenery.backdrop(bg, W, H);
@@ -117,7 +126,12 @@ export function mountSim(root: HTMLElement, store: Store): void {
         svg.style.filter = filterFor(el);
       } else {
         // Persons blur per part (nose, face, ears sit at different distances), so the layer only gets the light.
-        svg.innerHTML = drawPerson(el, W, H, (dm) => sigmaAt(el.distanceM + dm));
+        // Movement adds a sideways smear on top of each part's defocus.
+        const move = moveSigma(el);
+        svg.innerHTML = drawPerson(el, W, H, (dm) => {
+          const sigma = sigmaAt(el.distanceM + dm);
+          return `${Math.min(MAX_BLUR_PX, Math.hypot(sigma, move)).toFixed(2)} ${sigma.toFixed(2)}`;
+        });
         svg.style.filter = brightness(el);
       }
     });
@@ -227,13 +241,13 @@ function drawNose(perM: number): string {
 /**
  * Person facing the camera. Distance = eyes. Nose, face/body and ears each get their own
  * blur from their own distance – with a shallow enough depth of field the nose tip can be
- * sharp while the eyes are not. `sigma(dm)` gives the blur for an offset from the eye plane.
+ * sharp while the eyes are not. `stdDeviation(dm)` gives the blur ("x y" in px) for an offset from the eye plane.
  */
-function drawPerson(el: DerivedElement, W: number, H: number, sigma: (dm: number) => number): string {
+function drawPerson(el: DerivedElement, W: number, H: number, stdDeviation: (dm: number) => string): string {
   const { perM, groundY, cx } = projection(el, W, H);
   const filter = (part: string, dm: number) =>
     `<filter id="${el.id}-${part}" filterUnits="userSpaceOnUse" x="0" y="0" width="${W}" height="${H}">
-       <feGaussianBlur stdDeviation="${sigma(dm).toFixed(2)}"/></filter>`;
+       <feGaussianBlur stdDeviation="${stdDeviation(dm)}"/></filter>`;
   // Drawn in centimetres with the origin at the feet; 175 cm tall. The transform sits on an inner
   // group so each filter works in pixel units.
   const part = (name: string, body: string) =>

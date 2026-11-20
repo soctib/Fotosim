@@ -6,7 +6,8 @@ import { CAMERA_LENSES } from '../data/cameraLenses';
 import { LIGHT_PRESETS } from '../data/lightPresets';
 import { SENSORS } from '../data/sensors';
 import { de } from '../data/texts.de';
-import type { CameraSettings, ElementId, Mode, Scene } from '../model/types';
+import { MOTIONS } from '../model/motion';
+import type { CameraSettings, ElementId, Mode, Motion, Scene } from '../model/types';
 import type { AppState, Store } from './store';
 
 const KEY = 'fotosim.state.v1';
@@ -17,10 +18,16 @@ const isObj = (v: unknown): v is Obj => typeof v === 'object' && v !== null && !
 const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
 const isPos = (v: unknown): v is number => isNum(v) && v > 0;
 const isBool = (v: unknown): v is boolean => typeof v === 'boolean';
+const isMotion = (v: unknown): v is Motion => MOTIONS.includes(v as Motion);
 const has = (o: object, k: unknown) => typeof k === 'string' && Object.prototype.hasOwnProperty.call(o, k);
 
-function parseCamera(v: unknown, elementIds: ElementId[]): CameraSettings | null {
+/** Fields added after the first saved version: a missing one takes its default, a wrong one invalidates. */
+const optional = <T>(v: unknown, ok: (v: unknown) => v is T, fallback: T): T | null =>
+  v === undefined ? fallback : ok(v) ? v : null;
+
+function parseCamera(v: unknown, elementIds: ElementId[], defaults: CameraSettings): CameraSettings | null {
   if (!isObj(v)) return null;
+  const motion = optional(v.motion, isMotion, defaults.motion);
   const ok =
     has(SENSORS, v.sensorId) &&
     has(CAMERA_LENSES, v.lensId) &&
@@ -34,10 +41,10 @@ function parseCamera(v: unknown, elementIds: ElementId[]): CameraSettings | null
     isBool(v.stabilized) &&
     isPos(v.focusDistanceM) &&
     (v.afTarget === null || elementIds.includes(v.afTarget as ElementId));
-  if (!ok) return null;
+  if (!ok || motion === null) return null;
   const { sensorId, lensId, focalLengthMm, aperture, shutterS, iso, autoIso, mode, flashOn, stabilized, focusDistanceM, afTarget } =
     v as unknown as CameraSettings;
-  return { sensorId, lensId, focalLengthMm, aperture, shutterS, iso, autoIso, mode, flashOn, stabilized, focusDistanceM, afTarget };
+  return { sensorId, lensId, focalLengthMm, aperture, shutterS, iso, autoIso, mode, flashOn, stabilized, motion, focusDistanceM, afTarget };
 }
 
 /** The elements must be exactly the default ones (same ids, same order). */
@@ -47,9 +54,10 @@ function parseScene(v: unknown, defaults: Scene): Scene | null {
   if (!Array.isArray(els) || els.length !== defaults.elements.length) return null;
   const elements = defaults.elements.map((d, i) => {
     const e: unknown = els[i];
-    return isObj(e) && e.id === d.id && isPos(e.distanceM) && isBool(e.visible)
-      ? { id: d.id, distanceM: e.distanceM, visible: e.visible }
-      : null;
+    if (!isObj(e) || e.id !== d.id || !isPos(e.distanceM) || !isBool(e.visible)) return null;
+    // The background never moves.
+    const motion = d.id === 'background' ? d.motion : optional(e.motion, isMotion, d.motion);
+    return motion === null ? null : { id: d.id, distanceM: e.distanceM, visible: e.visible, motion };
   });
   if (elements.some((e) => e === null)) return null;
   return { lightPresetId: v.lightPresetId as string, elements: elements as Scene['elements'] };
@@ -77,7 +85,7 @@ export function parseState(json: string | null, defaults: AppState): AppState | 
   }
   if (!isObj(raw)) return null;
   const scene = parseScene(raw.scene, defaults.scene);
-  const camera = parseCamera(raw.camera, defaults.scene.elements.map((e) => e.id));
+  const camera = parseCamera(raw.camera, defaults.scene.elements.map((e) => e.id), defaults.camera);
   const ui = parseUi(raw.ui);
   if (!scene && !camera && !ui) return null;
   // Camera and scene belong together (focus tracking, near limit): restore both or neither.

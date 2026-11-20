@@ -1,14 +1,16 @@
 // Scene panel – what's in front of the camera: the light situation, and one compact row
-// per element (show/hide, distance read + edit, focus on it).
+// per element (show/hide, movement for persons, distance read + edit, focus on it).
 
 import { LIGHT_PRESETS } from '../../data/lightPresets';
 import { de as t } from '../../data/texts.de';
-import type { ElementId } from '../../model/types';
+import { MOTIONS } from '../../model/motion';
+import type { ElementId, Motion } from '../../model/types';
 import {
   MAX_DISTANCE_M,
   MIN_DISTANCE_M,
   focusOn,
   setElementDistance,
+  setElementMotion,
   setElementVisible,
   setInfo,
   setLight,
@@ -32,6 +34,13 @@ export function mountElements(root: HTMLElement, store: Store): void {
     <div class="el-row el-${id}" data-id="${id}">
       <label class="toggle el-name"><input type="checkbox" data-role="visible" aria-label="${t.elements.visible}">
         <span class="swatch"></span>${t.elements[id]}</label>
+      ${
+        id === 'background'
+          ? '<span></span>'
+          : `<select class="el-motion" data-role="motion" data-info="motion" aria-label="${t.elements.motion}">
+          ${MOTIONS.map((m) => `<option value="${m}">${t.motion.subject[m]}</option>`).join('')}
+        </select>`
+      }
       <label class="el-distance"><span class="sr-only">${t.elements.distance}</span>
         <input type="number" data-role="distance" min="${MIN_DISTANCE_M}" max="${MAX_DISTANCE_M}" step="0.1" inputmode="decimal"> m</label>
       <button type="button" data-role="focus" aria-label="${t.elements.focusHere}">
@@ -51,6 +60,12 @@ export function mountElements(root: HTMLElement, store: Store): void {
     const focus = row.querySelector<HTMLButtonElement>('[data-role="focus"]')!;
 
     visible.addEventListener('change', () => setElementVisible(store, id, visible.checked));
+    const motion = row.querySelector<HTMLSelectElement>('[data-role="motion"]');
+    if (motion) {
+      motion.addEventListener('change', () => setElementMotion(store, id, motion.value as Motion));
+      motion.addEventListener('pointerdown', () => setInfo(store, 'motion'));
+      motion.addEventListener('focus', () => setInfo(store, 'motion'));
+    }
     // Apply while typing as soon as the number is valid; out-of-range values are clamped by the action.
     distance.addEventListener('input', () => {
       const m = distance.valueAsNumber;
@@ -75,6 +90,11 @@ export function mountElements(root: HTMLElement, store: Store): void {
       const distance = row.querySelector<HTMLInputElement>('[data-role="distance"]')!;
       const focus = row.querySelector<HTMLButtonElement>('[data-role="focus"]')!;
       row.querySelector<HTMLInputElement>('[data-role="visible"]')!.checked = el.visible;
+      const motion = row.querySelector<HTMLSelectElement>('[data-role="motion"]');
+      if (motion) {
+        motion.value = el.motion;
+        motion.disabled = !el.visible;
+      }
       row.classList.toggle('hidden-el', !el.visible);
       // Don't overwrite what the user is typing.
       if (document.activeElement !== distance) distance.value = showMeters(el.distanceM);

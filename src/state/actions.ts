@@ -3,7 +3,7 @@
 import { SENSORS } from '../data/sensors';
 import { activeSensor, focalOptions } from '../model/focal';
 import { cropFactor, MAX_DISTANCE_M, minDistanceM } from '../model/optics';
-import type { CameraSettings, ElementId, Mode, Scene } from '../model/types';
+import type { CameraSettings, ElementId, Mode, Motion, Scene } from '../model/types';
 import type { AppState, InfoKey, Store } from './store';
 
 export { MAX_DISTANCE_M, MIN_DISTANCE_M } from '../model/optics';
@@ -48,6 +48,13 @@ export function setElementDistance(store: Store, id: ElementId, distanceM: numbe
       },
     };
   });
+}
+
+export function setElementMotion(store: Store, id: ElementId, motion: Motion): void {
+  store.update((s) => ({
+    ...s,
+    scene: { ...s.scene, elements: s.scene.elements.map((el) => (el.id === id ? { ...el, motion } : el)) },
+  }));
 }
 
 export function setLight(store: Store, lightPresetId: string): void {
@@ -108,8 +115,8 @@ export function setMode(store: Store, mode: Mode): void {
 }
 
 /**
- * The setup simplified mode stands for: sun, one person and the background, a full-frame body
- * with the pro zoom in Av, auto ISO, no flash, stabiliser on, no focus tracking. Keeps the angle
+ * The setup simplified mode stands for: sun, one person standing and the background, a full-frame
+ * body with the pro zoom in Av, auto ISO, no flash, stabiliser on, photographer standing, no focus tracking. Keeps the angle
  * of view (nearest full-frame step) and the aperture; focuses on person 1.
  */
 export function applySimple(s: AppState): AppState {
@@ -117,7 +124,11 @@ export function applySimple(s: AppState): AppState {
   const eqMm = s.camera.focalLengthMm * cropFactor(activeSensor(SENSORS[s.camera.sensorId], s.camera.focalLengthMm));
   const opts = focalOptions(sensor);
   const focalLengthMm = opts.reduce((a, b) => (Math.abs(b.equivalentMm - eqMm) < Math.abs(a.equivalentMm - eqMm) ? b : a)).realMm;
-  const elements = s.scene.elements.map((el) => ({ ...el, visible: el.id !== 'person2' }));
+  const elements = s.scene.elements.map((el) => ({
+    ...el,
+    visible: el.id !== 'person2',
+    motion: el.id === 'background' ? el.motion : ('still' as const),
+  }));
   const scene = { ...s.scene, lightPresetId: 'sun', elements };
   const clamped = { ...scene, elements: clampElements(scene, focalLengthMm) };
   const person1 = clamped.elements.find((el) => el.id === 'person1')!;
@@ -132,6 +143,7 @@ export function applySimple(s: AppState): AppState {
       autoIso: true,
       flashOn: false,
       stabilized: true,
+      motion: 'still',
       afTarget: null,
       focusDistanceM: person1.distanceM,
     },

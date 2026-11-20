@@ -8,8 +8,9 @@ import { SENSORS, SENSOR_ORDER } from '../../data/sensors';
 import { de as t, fill } from '../../data/texts.de';
 import type { Derived } from '../../model/derive';
 import { focalOptions, formatFocal } from '../../model/focal';
+import { MOTIONS } from '../../model/motion';
 import { APERTURES, ISOS, SHUTTER_SPEEDS_S, formatAperture, formatShutter } from '../../model/stops';
-import type { AutoField, ElementId, LensId, Mode, SensorId } from '../../model/types';
+import type { AutoField, ElementId, LensId, Mode, Motion, SensorId } from '../../model/types';
 import {
   MAX_DISTANCE_M,
   MIN_DISTANCE_M,
@@ -21,6 +22,7 @@ import {
 } from '../../state/actions';
 import type { InfoKey, Store } from '../../state/store';
 import { formatMeters } from '../distance';
+import { movementBlurredText } from '../motionText';
 
 const AF_TARGETS: ElementId[] = ['person1', 'person2', 'background'];
 /** Shutter ranges for handheld shooting, slow → fast as on the slider. */
@@ -111,6 +113,12 @@ export function mountControls(root: HTMLElement, store: Store): void {
       </div>
       ${range('focal', t.controls.focalLength, 0, 'focalLength')}
       ${checkbox('stabilized', t.controls.stabilized, 'stabilized')}
+      <div class="control" data-info="cameraMotion">
+        <label for="c-motion">${t.controls.cameraMotion}</label>
+        <select id="c-motion">
+          ${MOTIONS.map((m) => `<option value="${m}">${t.motion.camera[m]}</option>`).join('')}
+        </select>
+      </div>
       <div class="control" data-info="autofocus">
         <label for="c-af">${t.controls.autofocus}</label>
         <select id="c-af">
@@ -126,6 +134,7 @@ export function mountControls(root: HTMLElement, store: Store): void {
   const lens = $<HTMLSelectElement>('c-lens');
   const focal = $<HTMLInputElement>('c-focal');
   const stabilized = $<HTMLInputElement>('c-stabilized');
+  const cameraMotion = $<HTMLSelectElement>('c-motion');
   const modeButtons = [...root.querySelectorAll<HTMLButtonElement>('[data-mode]')];
   const aperture = $<HTMLInputElement>('c-aperture');
   const shutter = $<HTMLInputElement>('c-shutter');
@@ -158,6 +167,7 @@ export function mountControls(root: HTMLElement, store: Store): void {
     setCamera(store, { focalLengthMm: opts[Number(focal.value)].realMm });
   });
   stabilized.addEventListener('change', () => setCamera(store, { stabilized: stabilized.checked }));
+  cameraMotion.addEventListener('change', () => setCamera(store, { motion: cameraMotion.value as Motion }));
   modeButtons.forEach((b) => b.addEventListener('click', () => setMode(store, b.dataset.mode as Mode)));
   aperture.addEventListener('input', () => setCamera(store, { aperture: APERTURES[Number(aperture.value)] }));
   shutter.addEventListener('input', () => setCamera(store, { shutterS: SHUTTER_SPEEDS_S[Number(shutter.value)] }));
@@ -193,6 +203,7 @@ export function mountControls(root: HTMLElement, store: Store): void {
     lens.hidden = fixed;
     hint('lens', fixed ? t.controls.phoneLensHint : '');
     stabilized.checked = s.stabilized;
+    cameraMotion.value = s.motion;
 
     for (const b of modeButtons) {
       const on = b.dataset.mode === s.mode;
@@ -228,10 +239,22 @@ export function mountControls(root: HTMLElement, store: Store): void {
     shutter.value = String(nearestIndex(SHUTTER_SPEEDS_S, s.shutterS));
     $('o-shutter').textContent = formatShutter(s.shutterS, t.locale);
     const fastest = SHUTTER_SPEEDS_S[fastestIdx];
-    shakeZones.update(shutterPos(d.shake.limitIsS, fastest), shutterPos(d.shake.limitS, fastest), s.stabilized);
+    // On a tripod there are no handheld limits: the band is hidden (keeping its space).
+    const tripod = !Number.isFinite(d.shake.limitS);
+    $('shake-zones').classList.toggle('tripod', tripod);
+    shakeZones.update(
+      tripod ? 1 : shutterPos(d.shake.limitIsS, fastest),
+      tripod ? 1 : shutterPos(d.shake.limitS, fastest),
+      s.stabilized,
+    );
     // The knob takes the colour of the range it sits in (stays coloured while the camera sets the time).
     shutter.dataset.zone = d.shake.cls;
-    hint('shutter', [autoHint('shutterS'), d.shake.cls !== 'safe' ? t.shake[d.shake.cls] : ''].filter(Boolean).join(' · '));
+    hint(
+      'shutter',
+      [autoHint('shutterS'), d.shake.cls !== 'safe' ? t.shake[d.shake.cls] : '', movementBlurredText(d)]
+        .filter(Boolean)
+        .join(' · '),
+    );
 
     // ISO: always automatic in A; auto ISO is a choice in P/Av/Tv; M is fully manual.
     iso.disabled = auto.has('iso');

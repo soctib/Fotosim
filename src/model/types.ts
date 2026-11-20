@@ -65,10 +65,15 @@ export type Mode = 'auto' | 'P' | 'Av' | 'Tv' | 'M';
 
 export type ElementId = 'person1' | 'person2' | 'background';
 
+/** How a person (or the photographer) moves: tripod/motionless, standing, walking, running, driving. */
+export type Motion = 'frozen' | 'still' | 'walk' | 'run' | 'drive';
+
 export interface SceneElement {
   id: ElementId;
   distanceM: number;
   visible: boolean;
+  /** Persons only; the background is always 'frozen'. */
+  motion: Motion;
 }
 
 export interface CameraSettings {
@@ -85,6 +90,8 @@ export interface CameraSettings {
   /** Manual flash switch (ignored in 'auto', where the camera decides). */
   flashOn: boolean;
   stabilized: boolean;
+  /** How the photographer holds the camera: 'frozen' = tripod or leaning against something. */
+  motion: Motion;
   /** Manual focus distance; overridden while autofocus tracks an element. */
   focusDistanceM: number;
   /** Continuous autofocus target, or null for manual focus. */

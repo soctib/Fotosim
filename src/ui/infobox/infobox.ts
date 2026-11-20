@@ -14,7 +14,14 @@ export function mountInfobox(root: HTMLDetailsElement, store: Store): void {
 
   store.subscribe((state, d) => {
     // Without details there is no curve to talk about.
-    const key = state.ui.infoKey === 'graph' && !state.ui.showDetails ? 'graphSimple' : state.ui.infoKey;
+    // On a tripod there is no handheld limit to quote.
+    const tripod = !Number.isFinite(d.shake.limitS);
+    const key =
+      state.ui.infoKey === 'graph' && !state.ui.showDetails
+        ? 'graphSimple'
+        : state.ui.infoKey === 'shutter' && tripod
+          ? 'shutterTripod'
+          : state.ui.infoKey;
     title.textContent = t.infoTitles[key];
     text.textContent = fill(t.info[key], {
       aperture: formatAperture(d.settings.aperture),
@@ -23,6 +30,7 @@ export function mountInfobox(root: HTMLDetailsElement, store: Store): void {
       handLimit: formatShutter(d.shake.limitS, t.locale),
       isLimit: formatShutter(d.shake.limitIsS, t.locale),
       dof: formatMeterRange(d.dof.nearM, d.dof.farM),
+      subject: d.subject ? t.elements[d.subject.id] : t.movement.none,
     });
   });
 }

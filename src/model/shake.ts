@@ -1,3 +1,5 @@
+import type { Motion } from './types';
+
 /**
  * Gain of image stabilisation in stops you can rely on. Makers rate 4–5 stops (CIPA),
  * in practice 2–3 hold reliably.
@@ -19,6 +21,23 @@ export function handheldLimitWithIsS(focalMm: number, crop: number, isStops = IS
   return handheldLimitS(focalMm, crop) * 2 ** isStops;
 }
 
+/**
+ * How many stops faster than the standing handheld limit the shutter must be while the
+ * photographer moves (rough field experience). Tripod: no shake at all. In a car it's the
+ * engine and the road, roughly like walking.
+ */
+export const MOTION_SHAKE_STOPS: Record<Exclude<Motion, 'frozen'>, number> = {
+  still: 0,
+  walk: 2,
+  run: 4,
+  drive: 2,
+};
+
+/** Handheld limit for a moving photographer (Infinity on a tripod). */
+export function motionHandheldLimitS(limitS: number, motion: Motion): number {
+  return motion === 'frozen' ? Infinity : limitS / 2 ** MOTION_SHAKE_STOPS[motion];
+}
+
 export type ShakeClass = 'safe' | 'needsIS' | 'needsTripod';
 
 export function classifyShake(
@@ -26,9 +45,10 @@ export function classifyShake(
   focalMm: number,
   crop: number,
   stabilized: boolean,
+  motion: Motion = 'still',
 ): ShakeClass {
-  if (shutterS <= handheldLimitS(focalMm, crop)) return 'safe';
-  if (stabilized && shutterS <= handheldLimitWithIsS(focalMm, crop)) return 'needsIS';
+  if (shutterS <= motionHandheldLimitS(handheldLimitS(focalMm, crop), motion)) return 'safe';
+  if (stabilized && shutterS <= motionHandheldLimitS(handheldLimitWithIsS(focalMm, crop), motion)) return 'needsIS';
   return 'needsTripod';
 }
 
@@ -41,7 +61,8 @@ export function shakeBlurFactor(
   focalMm: number,
   crop: number,
   stabilized: boolean,
+  motion: Motion = 'still',
 ): number {
   const limit = stabilized ? handheldLimitWithIsS(focalMm, crop) : handheldLimitS(focalMm, crop);
-  return shutterS / limit;
+  return shutterS / motionHandheldLimitS(limit, motion);
 }

@@ -81,6 +81,7 @@ export const de = {
     mode: 'Modus',
     flash: 'Blitz',
     stabilized: 'Bildstabilisator',
+    cameraMotion: 'Du beim Auslösen',
     focus: 'Fokus',
     sectionScene: 'Szene',
     sectionCamera: 'Kamera',
@@ -109,6 +110,28 @@ export const de = {
     distance: 'Entfernung',
     focusHere: 'Hierauf fokussieren',
     focusHereShort: 'Fokussieren',
+    motion: 'Bewegung',
+  },
+
+  motion: {
+    // How the photographer holds the camera.
+    camera: {
+      frozen: 'auf Stativ oder angelehnt',
+      still: 'stehend',
+      walk: 'gehend',
+      run: 'rennend',
+      drive: 'im fahrenden Auto',
+    },
+    // How a person moves (shown in their row of the scene panel).
+    subject: {
+      frozen: 'regungslos',
+      still: 'steht',
+      walk: 'geht',
+      run: 'rennt',
+      drive: 'fährt Auto',
+    },
+    blurred: 'Bewegung verwischt {names}',
+    and: ' und ',
   },
 
   exposure: {
@@ -128,6 +151,16 @@ export const de = {
     high: 'stark',
     veryHigh: 'sehr stark',
     equivalentIso: 'entspricht ISO {iso} an Vollformat',
+  },
+
+  movement: {
+    title: 'Bewegung',
+    sharp: 'scharf',
+    slight: 'leicht verwischt',
+    visible: 'verwischt',
+    strong: 'stark verwischt',
+    value: '{name}: {speed} km/h relativ zu dir',
+    none: 'nichts im Bild',
   },
 
   shake: {
@@ -237,6 +270,10 @@ export const de = {
     focus: 'Fokus',
     autofocus: 'Fokus nachführen',
     stabilized: 'Bildstabilisator',
+    cameraMotion: 'Du beim Auslösen',
+    motion: 'Bewegung',
+    shutterTripod: 'Belichtungszeit',
+    movement: 'Bewegungsunschärfe',
     exposure: 'Belichtung',
     noise: 'Rauschen',
     graph: 'Schärfekurve',
@@ -255,6 +292,14 @@ export const de = {
       'Kleine Blendenzahl = große Öffnung: mehr Licht, weniger Schärfentiefe. Aktuell: {aperture}, das entspricht {eqAperture} an Kleinbild.',
     shutter:
       'Wie lange der Sensor belichtet wird. Länger = heller, aber Bewegung und Verwacklung werden sichtbar. Aus der Hand bis etwa {handLimit}, mit Stabilisator bis etwa {isLimit}.',
+    shutterTripod:
+      'Wie lange der Sensor belichtet wird. Länger = heller. Auf dem Stativ verwackelt nichts, auch nicht bei sekundenlangen Zeiten – was sich bewegt, verwischt aber trotzdem.',
+    cameraMotion:
+      'Wie ruhig du die Kamera hältst. Auf dem Stativ oder fest angelehnt verwackelt nichts. Im Gehen, Rennen oder aus dem Auto wackelt sie stärker: Für Aufnahmen aus der Hand brauchst du kürzere Zeiten – die Bereiche unter der Belichtungszeit rücken mit. Bewegst du dich, verwischt außerdem alles, was stillsteht, und zwar Nahes stärker als Fernes. Wer sich so schnell wie du in dieselbe Richtung bewegt, bleibt dagegen scharf.',
+    motion:
+      'Wie sich die Person bewegt (quer durchs Bild). Während der Belichtung legt sie ein Stück Weg zurück und verwischt – je schneller, je näher und je länger die Brennweite, desto stärker. Auch wer still steht, schwankt und atmet ein wenig. Gegen Bewegung hilft nur eine kürzere Zeit, weder Stabilisator noch Stativ. Bewegst du dich mit, zählt nur der Unterschied: Gehst du neben jemandem her, bleibt er scharf.',
+    movement:
+      'Wie stark das Motiv im Fokus ({subject}) während der Belichtung verwischt, weil es sich gegenüber dir bewegt. Über der Linie gilt es nicht mehr als scharf. Dagegen hilft eine kürzere Zeit, mehr Abstand, eine kürzere Brennweite – oder du bewegst dich mit. Das Verwackeln deiner Hand zeigt dagegen der Bereich unter der Belichtungszeit.',
     iso: 'Verstärkung des Signals. Höhere ISO = heller, aber mehr Rauschen.',
     light: 'Wie hell die Szene ist. Sonne ist rund 500-mal heller als ein Wohnzimmer am Abend.',
     mode: 'Der Modus legt fest, was du einstellst und was die Kamera übernimmt.',
