@@ -24,6 +24,8 @@ const SIGMA_PER_DISC = 0.5;
 /** A sideways smear of length L as a Gaussian: sigma ≈ L/√12 for a box, a bit more so it reads as motion. */
 const SIGMA_PER_SMEAR = 0.35;
 const MAX_BLUR_PX = 60;
+/** Below this sigma (px) a blur filter changes nothing visible – skip it. */
+const MIN_VISIBLE_SIGMA = 0.3;
 /**
  * Exposure is shown as a brightness factor of 2^stops. The upper bound must be high enough that
  * even the darkest drawn colour (pupils, #111) clips to white – a lower cap freezes the image a
@@ -166,7 +168,11 @@ export function mountSim(root: HTMLElement, store: Store): void {
     const k = d.shake.blurFactor;
     const sigma = k > 1 ? Math.min(30, (k * W) / 1000) : 0;
     shake.setAttribute('stdDeviation', `${sigma.toFixed(2)} 0`);
-    frame.style.filter = sigma > 0 ? 'url(#sim-shake)' : '';
+    // What blurs the whole frame alike – pixels, diffraction, lens, noise filter, film, scan. At
+    // normal size it stays below a display pixel; digital zoom makes it show.
+    const system = Math.min(MAX_BLUR_PX, ((d.resolution.systemBlurUm / 1000 / d.sensor.widthMm) * W * SIGMA_PER_DISC));
+    const filters = [system >= MIN_VISIBLE_SIGMA ? `blur(${system.toFixed(2)}px)` : '', sigma > 0 ? 'url(#sim-shake)' : ''];
+    frame.style.filter = filters.filter(Boolean).join(' ');
 
     const parts = [
       fill(t.sim.caption, {

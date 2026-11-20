@@ -58,7 +58,7 @@ export function equivalentToZoomPosition(equivalentMm: number): number {
 
 /**
  * The sensor actually in use. Cameras: the sensor itself. Phones: the built-in camera whose real
- * focal length is closest – its sensor size and fixed aperture replace the main camera's.
+ * focal length is closest – its sensor size, fixed aperture, pixel count and lens replace the main camera's.
  */
 export function activeSensor(sensor: Sensor, focalLengthMm: number): Sensor {
   const cams = sensor.phoneCameras;
@@ -69,7 +69,14 @@ export function activeSensor(sensor: Sensor, focalLengthMm: number): Sensor {
     if (Math.abs(Math.log(o.realMm / focalLengthMm)) < Math.abs(Math.log(opts[best].realMm / focalLengthMm))) best = i;
   });
   const c = cams[best];
-  return { ...sensor, widthMm: c.widthMm, heightMm: c.heightMm, fixedAperture: c.aperture };
+  return {
+    ...sensor,
+    widthMm: c.widthMm,
+    heightMm: c.heightMm,
+    fixedAperture: c.aperture,
+    megapixels: c.outputMegapixels,
+    lensBlurUm: c.lensBlurUm,
+  };
 }
 
 /** e.g. "50 mm (≙ 80 mm KB)" – just "50 mm" when crop ≈ 1. Sub-10 mm lengths get a decimal in the locale's format. */

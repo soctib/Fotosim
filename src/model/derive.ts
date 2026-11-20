@@ -1,7 +1,9 @@
 // One pure function from (settings, scene) to everything the UI renders.
 // Graph, bars and simulation all read from this result, so they never disagree.
 
+import { CAMERA_LENSES } from '../data/cameraLenses';
 import { lightPreset } from '../data/lightPresets';
+import { SCANNERS } from '../data/scanners';
 import { SENSORS } from '../data/sensors';
 import { applyAutofocus, focusedElement } from './autofocus';
 import { costs, type Costs } from './costs';
@@ -18,6 +20,17 @@ import { autoIsoMax, maxApertureFor, resolveMode } from './modes';
 import { fastestShutterS } from './stops';
 import { classifyNoise, equivalentIso, noiseAmount, noiseIndexStops, type NoiseClass } from './noise';
 import {
+  BAYER_BLUR_FACTOR,
+  diffractionBlurUm,
+  effectiveResolution,
+  filmBlurUm,
+  lensBlurUm,
+  processingBlurUm,
+  shakeBlurUm,
+  type Resolution,
+} from './resolution';
+import {
+  blurDiscMm,
   blurFractionOfWidth,
   circleOfConfusionMm,
   cropFactor,
@@ -34,6 +47,7 @@ import {
 import {
   classifyMovement,
   movementBlurFractionOfWidth,
+  movementBlurMm,
   relativeMovementBlur,
   relativeSpeedMs,
   type MovementClass,
@@ -104,6 +118,8 @@ export interface Derived {
   /** The element in focus (tracked, or nearest to the focus distance) and its movement smear; null if nothing is visible. */
   subject: { id: ElementId; relativeSpeedMs: number; movementBlur: number; movementCls: MovementClass } | null;
   noise: { indexStops: number; cls: NoiseClass; amount: number; equivalentIso: number };
+  /** Detail in the photo of the subject in focus (whole frame if nothing is in focus). */
+  resolution: Resolution;
   elements: DerivedElement[];
   /** Rough price of the gear in use: camera or phone, lens, tripod. */
   costs: Costs;
@@ -169,6 +185,10 @@ export function derive(rawInput: CameraSettings, rawScene: Scene): Derived {
 
   const multiFrame = sensor.multiFrameStops ?? 0;
   const noiseIdx = noiseIndexStops(iso, crop, subject, multiFrame);
+  const shakeFactor = shakeBlurFactor(t, f, crop, settings.stabilized, settings.motion);
+  const cocMm = circleOfConfusionMm(sensor);
+
+  const resolution = subjectResolution(settings, sensor, noiseIdx, cocMm, shakeFactor, focused);
 
   return {
     settings,
@@ -178,7 +198,7 @@ export function derive(rawInput: CameraSettings, rawScene: Scene): Derived {
     minDistanceM: minDistanceM(f),
     fastestShutterS: fastestShutterS(sensor),
     crop,
-    cocMm: circleOfConfusionMm(sensor),
+    cocMm,
     equivalentFocalMm: equivalentFocalLengthMm(f, sensor),
     equivalentAperture: equivalentAperture(N, sensor),
     angleOfViewDeg: horizontalAngleOfViewDeg(f, sensor),
@@ -197,7 +217,7 @@ export function derive(rawInput: CameraSettings, rawScene: Scene): Derived {
       limitS: motionHandheldLimitS(handheldLimitS(f, crop), settings.motion),
       limitIsS: motionHandheldLimitS(handheldLimitWithIsS(f, crop), settings.motion),
       cls: classifyShake(t, f, crop, settings.stabilized, settings.motion),
-      blurFactor: shakeBlurFactor(t, f, crop, settings.stabilized, settings.motion),
+      blurFactor: shakeFactor,
     },
     movementBlurred: elements
       .filter((e) => e.id !== 'background' && e.visible && e.movementBlur > 1)
@@ -210,9 +230,57 @@ export function derive(rawInput: CameraSettings, rawScene: Scene): Derived {
       amount: noiseAmount(noiseIdx),
       equivalentIso: equivalentIso(iso, crop, multiFrame),
     },
+    resolution,
     elements,
     costs: costs(input.sensorId, settings.lensId, f * crop, settings.motion, sensor.fixedAperture !== undefined),
     blurAt: (distanceM) => relativeBlur(f, N, focus, distanceM, sensor),
     blurFractionAt: (distanceM) => blurFractionOfWidth(f, N, focus, distanceM, sensor),
   };
+}
+
+/**
+ * Effective resolution for the subject in focus: the file's pixels (film: the scanner's), the
+ * optics at this aperture, the subject's defocus and movement, shake and noise reduction.
+ */
+function subjectResolution(
+  settings: CameraSettings,
+  sensor: Sensor,
+  noiseIdx: number,
+  cocMm: number,
+  shakeFactor: number,
+  focused: DerivedElement | null,
+): Resolution {
+  const { focalLengthMm: f, aperture: N, shutterS: t, iso, focusDistanceM: focus } = settings;
+  const W = sensor.widthMm;
+  const H = sensor.heightMm;
+  const areaUm2 = W * H * 1e6;
+  const crop = cropFactor(sensor);
+  const lens = sensor.lensBlurUm ?? lensBlurUm(CAMERA_LENSES[settings.lensId], f * crop, N, 1 / crop);
+  const common = {
+    diffraction: diffractionBlurUm(N),
+    lens,
+    defocus: focused ? blurDiscMm(f, N, focus, focused.distanceM) * 1000 : 0,
+    motion: focused ? movementBlurMm(focused.relativeSpeedMs, t, f, focused.distanceM) * 1000 : 0,
+    shake: shakeBlurUm(shakeFactor, cocMm),
+  };
+  if (sensor.isFilm) {
+    const scanner = SCANNERS[settings.scanner];
+    const pitch = scanner.pitchUm ?? Math.sqrt(areaUm2 / (scanner.outputMegapixels! * 1e6));
+    return effectiveResolution({
+      frameWidthMm: W,
+      frameHeightMm: H,
+      pixelPitchUm: pitch,
+      samplingFactor: scanner.pitchUm ? 1 : BAYER_BLUR_FACTOR,
+      scannerBlurUm: scanner.blurUm,
+      blurs: { ...common, film: filmBlurUm(iso) },
+    });
+  }
+  const pitch = Math.sqrt(areaUm2 / ((sensor.megapixels ?? 24) * 1e6));
+  return effectiveResolution({
+    frameWidthMm: W,
+    frameHeightMm: H,
+    pixelPitchUm: pitch,
+    samplingFactor: BAYER_BLUR_FACTOR,
+    blurs: { ...common, processing: processingBlurUm(noiseIdx, pitch, !!sensor.phoneCameras) },
+  });
 }

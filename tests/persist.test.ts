@@ -64,4 +64,14 @@ describe('parseState with older saves', () => {
     const bad = { ...changed, camera: { ...changed.camera, motion: 'fly' } };
     expect(parseState(JSON.stringify(bad), initialState)!.camera).toEqual(initialState.camera);
   });
+
+  it('fills in the scanner missing from older states and rejects an unknown one', () => {
+    const film = { ...changed, camera: { ...changed.camera, sensorId: 'film35' as const, scanner: 'drum' as const } };
+    expect(parseState(JSON.stringify(film), initialState)!.camera.scanner).toBe('drum');
+    const old = JSON.parse(JSON.stringify(changed));
+    delete old.camera.scanner;
+    expect(parseState(JSON.stringify(old), initialState)!.camera).toEqual(changed.camera);
+    const bad = { ...changed, camera: { ...changed.camera, scanner: 'fax' } };
+    expect(parseState(JSON.stringify(bad), initialState)!.camera).toEqual(initialState.camera);
+  });
 });

@@ -39,6 +39,10 @@ export interface Sensor {
    * length picks one (see activeSensor()); widthMm/heightMm/fixedAperture above are the main camera's.
    */
   phoneCameras?: PhoneCamera[];
+  /** Digital cameras: pixel count of a representative body (MP). Phones: per module; film: the scanner decides. */
+  megapixels?: number;
+  /** Built-in lens blur (µm); phones get it per module from activeSensor(). */
+  lensBlurUm?: number;
 }
 
 /** One built-in phone camera module. */
@@ -48,6 +52,10 @@ export interface PhoneCamera {
   widthMm: number;
   heightMm: number;
   aperture: number;
+  /** Pixel count of the photo the phone saves by default (MP): quad-Bayer sensors bin 48/50 MP down. */
+  outputMegapixels: number;
+  /** Blur of the built-in lens on the sensor (µm), see model/resolution.ts. */
+  lensBlurUm: number;
 }
 
 export type LensId = 'kit' | 'fastZoom' | 'prime';
@@ -62,7 +70,16 @@ export interface CameraLens {
   maxApertureTele: number;
   wideEqMm: number;
   teleEqMm: number;
+  /**
+   * Sharpness on full frame, as blur on the sensor (µm): `bestUm` is what's left stopped down to the
+   * sweet spot, `wideOpenUm` the aberrations wide open (they fade as the aperture closes).
+   */
+  bestUm: number;
+  wideOpenUm: number;
 }
+
+/** How film negatives become files. */
+export type ScannerId = 'lab' | 'flatbed' | 'filmScanner' | 'cameraScan' | 'drum';
 
 export type Mode = 'auto' | 'P' | 'Av' | 'Tv' | 'M';
 
@@ -99,6 +116,8 @@ export interface CameraSettings {
   focusDistanceM: number;
   /** Continuous autofocus target, or null for manual focus. */
   afTarget: ElementId | null;
+  /** Film cameras only: how the negatives are scanned. */
+  scanner: ScannerId;
 }
 
 export interface Scene {

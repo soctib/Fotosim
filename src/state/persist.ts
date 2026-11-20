@@ -4,6 +4,7 @@
 
 import { CAMERA_LENSES } from '../data/cameraLenses';
 import { LIGHT_PRESETS } from '../data/lightPresets';
+import { SCANNERS } from '../data/scanners';
 import { SENSORS } from '../data/sensors';
 import { de } from '../data/texts.de';
 import { MOTIONS } from '../model/motion';
@@ -28,6 +29,7 @@ const optional = <T>(v: unknown, ok: (v: unknown) => v is T, fallback: T): T | n
 function parseCamera(v: unknown, elementIds: ElementId[], defaults: CameraSettings): CameraSettings | null {
   if (!isObj(v)) return null;
   const motion = optional(v.motion, isMotion, defaults.motion);
+  const scanner = optional(v.scanner, (x): x is CameraSettings['scanner'] => has(SCANNERS, x), defaults.scanner);
   const ok =
     has(SENSORS, v.sensorId) &&
     has(CAMERA_LENSES, v.lensId) &&
@@ -41,10 +43,13 @@ function parseCamera(v: unknown, elementIds: ElementId[], defaults: CameraSettin
     isBool(v.stabilized) &&
     isPos(v.focusDistanceM) &&
     (v.afTarget === null || elementIds.includes(v.afTarget as ElementId));
-  if (!ok || motion === null) return null;
+  if (!ok || motion === null || scanner === null) return null;
   const { sensorId, lensId, focalLengthMm, aperture, shutterS, iso, autoIso, mode, flashOn, stabilized, focusDistanceM, afTarget } =
     v as unknown as CameraSettings;
-  return { sensorId, lensId, focalLengthMm, aperture, shutterS, iso, autoIso, mode, flashOn, stabilized, motion, focusDistanceM, afTarget };
+  return {
+    sensorId, lensId, focalLengthMm, aperture, shutterS, iso, autoIso, mode, flashOn, stabilized, motion, focusDistanceM, afTarget,
+    scanner,
+  };
 }
 
 /** The elements must be exactly the default ones (same ids, same order). */

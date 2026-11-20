@@ -4,6 +4,7 @@
 // Fields the current mode sets itself are disabled and show the camera's choice.
 
 import { CAMERA_LENSES, LENS_ORDER } from '../../data/cameraLenses';
+import { SCANNER_ORDER } from '../../data/scanners';
 import { SENSORS, SENSOR_ORDER } from '../../data/sensors';
 import { de as t, fill } from '../../data/texts.de';
 import type { Derived } from '../../model/derive';
@@ -17,7 +18,7 @@ import {
 } from '../../model/focal';
 import { MOTIONS } from '../../model/motion';
 import { APERTURES, ISOS, SHUTTER_SPEEDS_S, formatAperture, formatShutter } from '../../model/stops';
-import type { AutoField, ElementId, LensId, Mode, Motion, SensorId } from '../../model/types';
+import type { AutoField, ElementId, LensId, Mode, Motion, ScannerId, SensorId } from '../../model/types';
 import {
   MAX_DISTANCE_M,
   MIN_DISTANCE_M,
@@ -90,6 +91,12 @@ export function mountControls(root: HTMLElement, store: Store): void {
           ${SENSOR_ORDER.map((id) => `<option value="${id}">${t.sensors[id]}</option>`).join('')}
         </select>
       </div>
+      <div class="control" data-info="scanner">
+        <label for="c-scanner">${t.controls.scanner}</label>
+        <select id="c-scanner">
+          ${SCANNER_ORDER.map((id) => `<option value="${id}">${t.scanners[id]}</option>`).join('')}
+        </select>
+      </div>
       <div class="control" data-info="mode">
         <span class="control-label">${t.controls.mode}</span>
         <div class="segmented" role="radiogroup" aria-label="${t.controls.mode}">
@@ -141,6 +148,7 @@ export function mountControls(root: HTMLElement, store: Store): void {
 
   const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
   const sensor = $<HTMLSelectElement>('c-sensor');
+  const scanner = $<HTMLSelectElement>('c-scanner');
   const lens = $<HTMLSelectElement>('c-lens');
   const focal = $<HTMLInputElement>('c-focal');
   const stabilized = $<HTMLInputElement>('c-stabilized');
@@ -171,6 +179,7 @@ export function mountControls(root: HTMLElement, store: Store): void {
     const focalLengthMm = snapFocal(next, CAMERA_LENSES[d.settings.lensId], d.equivalentFocalMm);
     setCamera(store, { sensorId: next.id, focalLengthMm });
   });
+  scanner.addEventListener('change', () => setCamera(store, { scanner: scanner.value as ScannerId }));
   lens.addEventListener('change', () => {
     // Switching to primes snaps to the nearest step.
     const d = store.derived();
@@ -209,6 +218,9 @@ export function mountControls(root: HTMLElement, store: Store): void {
     const autoHint = (field: AutoField) => (auto.has(field) ? t.controls.autoSetHint : '');
 
     sensor.value = s.sensorId;
+    // Only film needs scanning.
+    scanner.value = s.scanner;
+    scanner.closest<HTMLElement>('.control')!.hidden = !d.sensor.isFilm;
 
     if (isContinuousFocal(d.sensor, CAMERA_LENSES[s.lensId])) {
       focal.max = String(ZOOM_SLIDER_STEPS);

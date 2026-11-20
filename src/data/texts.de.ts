@@ -25,6 +25,14 @@ export const de = {
     mf67: 'Mittelformat 6×7 (Film)',
   },
 
+  scanners: {
+    lab: 'Labor-Scan (Standard)',
+    flatbed: 'Flachbettscanner',
+    filmScanner: 'Filmscanner',
+    cameraScan: 'Abfotografiert (Digitalkamera)',
+    drum: 'Trommelscanner',
+  },
+
   cameraLenses: {
     kit: 'Kit-Zoom (f/3.5–5.6)',
     fastZoom: 'Profi-Zoom (f/2.8)',
@@ -89,6 +97,7 @@ export const de = {
     sectionLens: 'Objektiv',
     cameraType: 'Kameratyp',
     lensType: 'Objektivtyp',
+    scanner: 'Scan',
     phoneLensHint: 'Beim Handy fest eingebaut.',
     autofocus: 'Fokus nachführen',
     autofocusOff: 'Aus',
@@ -162,6 +171,41 @@ export const de = {
     strong: 'stark verwischt',
     value: '{name}: {speed} km/h relativ zu dir',
     none: 'nichts im Bild',
+  },
+
+  resolution: {
+    title: 'Auflösung',
+    /** Bar value: effective of nominal megapixels. */
+    value: '{effective} von {nominal} MP',
+    megapixels: '{value} MP',
+    /** Bar verdict: the factor that limits detail most. */
+    limit: 'Grenze: {factor}',
+    factors: {
+      pixels: 'Pixel',
+      diffraction: 'Beugung',
+      lens: 'Objektiv',
+      defocus: 'Fokus',
+      motion: 'Bewegung',
+      shake: 'Verwacklung',
+      processing: 'Rauschfilter',
+      film: 'Film',
+      scanner: 'Scan',
+    },
+    /** Infobox: one sentence on the bottleneck. */
+    because: {
+      pixels: 'Hier setzt die Pixelzahl die Grenze – Objektiv und Blende holen schon fast alles heraus.',
+      diffraction:
+        'Am meisten kostet die Beugung bei {aperture}: Je weiter abgeblendet, desto weicher wird alles. Für das meiste Detail die Blende nur bis etwa f/5.6–8 schließen.',
+      lens: 'Hier ist das Objektiv die Grenze – offen und an den Enden eines Zooms ist es am weichsten. Abblenden hilft, ein besseres Objektiv mehr.',
+      defocus: 'Das Motiv liegt nicht genau in der Schärfe – das kostet hier am meisten.',
+      motion: 'Die Bewegung des Motivs kostet hier am meisten – eine kürzere Zeit hilft.',
+      shake: 'Verwacklung kostet hier am meisten – kürzere Zeit, Stabilisator oder Stativ helfen.',
+      processing:
+        'Die Rauschunterdrückung bügelt feine Details weg („Aquarell-Look“). Mehr Licht hilft am meisten; Handys filtern früher und kräftiger als Kameras.',
+      film: 'Der Film selbst löst nicht feiner auf. Ein langsamerer Film (niedrigere ISO) hat feineres Korn und hält mehr Detail fest.',
+      scanner: 'Der Scan ist der Flaschenhals: Auf dem Film steckt mehr, als dieser Scan herausholt.',
+    },
+    sharesTitle: 'Was am meisten Detail kostet',
   },
 
   shake: {
@@ -296,6 +340,8 @@ export const de = {
     movement: 'Bewegungsunschärfe',
     exposure: 'Belichtung',
     noise: 'Rauschen',
+    resolution: 'Auflösung',
+    scanner: 'Scan',
     graph: 'Schärfekurve',
     graphSimple: 'Schärfentiefe',
     sim: 'Kamerabild',
@@ -333,6 +379,10 @@ export const de = {
       'Zeigt, wie weit die Belichtung vom Ideal abweicht, in Blendenstufen. Eine Stufe = doppelt bzw. halb so viel Licht.',
     noise:
       'Rauschen hängt von ISO und Sensorgröße ab. Ein kleiner Sensor rauscht bei ISO 100 etwa so wie Vollformat bei viel höherer ISO. Handys gleichen einen Teil davon aus: Sie nehmen mehrere Bilder kurz hintereinander auf und verrechnen sie – neuere Handys mehr als ältere.',
+    resolution:
+      '{because} Effektive Megapixel zählen das echte Detail vom Motiv im Fokus – die Pixelzahl ({nominal} MP) ist nur die Obergrenze. Nachschärfen macht Kanten kräftiger, bringt aber kein Detail zurück.',
+    scanner:
+      'Ein Negativ wird erst durch den Scan zur Datei – und der Scan entscheidet oft, wie viel vom Film übrig bleibt. Der Standard-Scan vom Labor hat nur etwa 6 MP; ein Filmscanner oder eine abfotografierende Digitalkamera holt deutlich mehr heraus, ein Trommelscanner fast alles. Bei Mittelformat bringt der größere Film mehr Pixel bei gleicher Scan-Dichte.',
     graphSimple:
       'Der grüne Bereich ist die Schärfentiefe: Was darin steht, wird scharf. Personen, Hintergrund und Fokuslinie kannst du verschieben. Mit „Details“ siehst du die ganze Schärfekurve.',
     graph:

@@ -37,6 +37,7 @@ export const initialState: AppState = {
     motion: 'still',
     focusDistanceM: 3,
     afTarget: null,
+    scanner: 'lab',
   },
   scene: {
     lightPresetId: 'cloudy',

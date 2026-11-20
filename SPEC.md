@@ -35,6 +35,8 @@ Light situation, plus one compact row per element: visible toggle, movement (per
 - **Movement**: smear of the subject in focus (tracked target, else the visible element nearest the focus distance),
   log scale ¼×–16× the sharpness limit with a line at 1×; sharp ≤ 1, slight ≤ 2, visible ≤ 4, else strong.
   Shows the relative speed in km/h. Hand shake is not included – the shutter slider's ranges show that.
+- **Resolution** ("Auflösung"): effective megapixels of the subject in focus, log scale 0.5–100 MP, with the file's
+  pixel count as a mark; the verdict names the bottleneck ("Grenze: Beugung"). Its infobox lists each factor's share.
 
 ### 4. Camera image simulation ("killer feature")
 Shown together with the bars as one foldable group.
@@ -44,6 +46,8 @@ nose can be sharp and the eyes not. Close persons drift to the image centre (the
 On top: `brightness()` per layer from its exposure offset (flash lights only near layers),
 SVG `feTurbulence` overlay for noise (opacity from `noise.amount`); sizes and positions from a real perspective projection (`heightFractionPerM`).
 Directional blur for camera shake when `shake.blurFactor > 1`; each layer also smears sideways by its own movement blur.
+A whole-frame Gaussian from `resolution.systemBlurUm` (pixels, diffraction, lens, noise filter, film, scan) – below a
+display pixel at normal size, visible only when zoomed in.
 
 ### 5. Infobox
 Shows the text for the **last clicked/tapped element**, filled with live values (`texts.info`, `fill()`).
@@ -69,6 +73,7 @@ dropdown. Light and element distances live in the scene panel.
 |---|---|
 | Camera type (= sensor/film size) | iPhone XR, iPhone 15 Pro Max, Fairphone 5, 1" compact, MFT, APS-C, full frame digital mid-range and high-end (same sensor; high-end has a 1/8000 s shutter and costs more), 35 mm film, MF digital 44×33, MF 645, 6×6, 6×7 (film) |
 | Focal length | Steps are common full-frame-equivalent focal lengths; shown as **real + equivalent**, e.g. "50 mm (≙ 76 mm KB)". Phones: only their built-in back cameras (XR: 26 mm; 15 Pro Max: 13/24/120 mm; Fairphone 5: 13/25 mm), each with its own sensor size and fixed aperture – the focal length picks the camera (`activeSensor()`). |
+| Scan (film cameras only) | Lab scan (default, ≈ 6 MP from 35 mm), flatbed, film scanner, camera scan (24 MP), drum scanner (`data/scanners.ts`) |
 | Lens | Kit zoom f/3.5–5.6 (default), pro zoom f/2.8, fast prime f/1.4 – limits the widest aperture (phones: built in, control locked) |
 | Aperture | 1.4 … 22 in ⅓ stops, limited by the lens (phones: fixed, control locked) |
 | Shutter | 30 s … 1/4000 (mechanical, high-end full frame 1/8000; phones 1/16000 electronic), with markers **"hand"** (1/(2·f·crop)) and **"hand + IS"** (+2 stops) that move with focal length |
@@ -126,6 +131,15 @@ All formulas use mm for focal length/sensor, m for distances, s for shutter.
   Auto mode fires the flash if it'd otherwise be ≥ 1 stop under, slower than the plain handheld limit, or (auto ISO
   only – a fast film doesn't count) need ISO ≥ 1600.
 - **Focus tracking** (`autofocus.ts`): applied before mode resolution (auto modes and flash use the focus distance).
+- **Effective resolution** (`resolution.ts`): every factor is a blur width on the sensor (µm), combined as a root
+  sum of squares into b; effective MP = frame area / b² (≤ the file's pixels), so one CoC of blur leaves 1500 px
+  along the diagonal – the graph's "sharp" standard. Factors: pixel pitch × 1.1 (Bayer; phones: their saved,
+  binned pixel count); diffraction 0.45 · 2.44 · λ · N; lens per class (residual at the sweet spot + aberrations
+  ∝ (wide open/N)², zooms +25 % at the ends, scaled to the format; phones per module); the subject's defocus disc
+  and movement smear; shake = shake factor · ¼ CoC; noise reduction above noise index 5 (phones 3) growing per
+  stop; film ≈ 65 lp/mm at ISO 400, ∝ ISO^−¼; the scan's pitch and optics as one "scan" factor. Calibration
+  targets are the tests (24 MP + prime at f/5.6 ≈ 14 MP, f/22 ≈ 4; diffraction takes over at f/11 on 24 MP and f/8
+  on 45 MP; 35 mm ISO 400: lab scan ≈ 4 MP, film scanner ≈ 7).
 - **derive.ts**: one function `(settings, scene) → Derived`. Everything the UI renders comes from here.
 
 ## Architecture

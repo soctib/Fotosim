@@ -1033,6 +1033,7 @@ header {
 .bar-movement[data-cls='slight'] .bar-class,
 .bar-movement[data-cls='visible'] .bar-class { color: var(--warn); }
 .bar-movement[data-cls='strong'] .bar-class { color: var(--bad); }
+.bar-resolution .bar-fill { background: var(--accent); }
 /* Sharpness limit: above this line the subject no longer counts as sharp. */
 .bar-limit {
   position: absolute;
@@ -1071,14 +1072,14 @@ header {
   }
 }
 
-/* Phones: three upright bars would squeeze the camera image, so they lie flat in a strip below it. */
+/* Phones: four upright bars would squeeze the camera image, so they lie flat in a strip below it. */
 @media (max-width: 520px) {
   .preview-body {
     grid-template-columns: minmax(0, 1fr);
   }
   .bars {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 6px;
   }
   .bar {
@@ -1172,6 +1173,35 @@ header {
 .infobox p {
   margin: 0;
   font-size: 0.9rem;
+}
+.info-extra:empty {
+  display: none;
+}
+.info-extra h3 {
+  margin: 10px 0 4px;
+  font-size: 0.85rem;
+}
+.shares {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 0.8rem;
+}
+.shares li {
+  display: grid;
+  grid-template-columns: 8.5em 1fr 3em;
+  align-items: center;
+  gap: 6px;
+}
+.shares li span:last-child {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+.share-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(to right, var(--accent) var(--share), var(--line) var(--share));
 }
 
 /* ---- costs ---- */

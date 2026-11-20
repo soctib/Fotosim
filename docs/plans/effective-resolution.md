@@ -35,11 +35,14 @@ show them as shares.
 
 ### Calibration targets (become tests)
 
-- Full frame 24 MP, prime at f/5.6, in focus, tripod: ≈ 15–20 effective MP, limited by pixels.
-- Same at f/22: clearly lower (≈ 5–8), limited by diffraction. Diffraction starts to show around f/11 at 24 MP and around f/8 at 45 MP.
+*Implemented; the root sum of squares made a few of the first guesses unreachable, so the tests use
+the values in brackets.*
+
+- Full frame 24 MP, prime at f/5.6, in focus, tripod: ≈ 15–20 effective MP, limited by pixels. [12–18]
+- Same at f/22: clearly lower (≈ 5–8), limited by diffraction. [3–6] Diffraction starts to show around f/11 at 24 MP and around f/8 at 45 MP.
 - Kit zoom wide open: noticeably below the prime at the same aperture; ≈ equal two stops down.
-- iPhone XR in daylight: ≈ 5–8 of its 12 MP. iPhone 15 Pro Max tele (f/2.8, 1.12 µm): diffraction-limited.
-- 35 mm ISO 400 film, lab scan: scan-limited at ≈ 5–6 MP; with a film scanner film-limited at ≈ 10–14.
+- iPhone XR in daylight: ≈ 5–8 of its 12 MP. [4–7] iPhone 15 Pro Max tele (f/2.8, 1.12 µm): diffraction-limited.
+- 35 mm ISO 400 film, lab scan: scan-limited at ≈ 5–6 MP; with a film scanner film-limited at ≈ 10–14. [3–5 of the scan's 6.3 MP; 6–10]
 - 6×7 film with a film scanner: well above any 35 mm result.
 - Night street, phone, high noise index: processing becomes the bottleneck.
 

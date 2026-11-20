@@ -1,4 +1,4 @@
-// Vertical exposure, noise and movement bars. Pure output of derive().
+// Vertical exposure, noise, movement and resolution bars. Pure output of derive().
 
 import { de as t, fill } from '../../data/texts.de';
 import type { Derived } from '../../model/derive';
@@ -15,6 +15,14 @@ const MOVEMENT_MIN = 1 / 4;
 const MOVEMENT_MAX = 16;
 const movementPct = (x: number) =>
   Math.min(100, Math.max(0, (Math.log(x / MOVEMENT_MIN) / Math.log(MOVEMENT_MAX / MOVEMENT_MIN)) * 100));
+
+/** Resolution bar: effective megapixels on a log scale from 0.5 (empty) to 100 MP (full). */
+const MP_MIN = 0.5;
+const MP_MAX = 100;
+const mpPct = (mp: number) => Math.min(100, Math.max(0, (Math.log(mp / MP_MIN) / Math.log(MP_MAX / MP_MIN)) * 100));
+
+/** "4,3" below 10 MP, "24" above. */
+export const formatMp = (mp: number) => formatNumber(mp, mp < 10 ? 1 : 0);
 
 const signed = (x: number, digits = 1) => {
   const r = Number(x.toFixed(digits));
@@ -46,6 +54,12 @@ export function mountBars(root: HTMLElement, store: Store): void {
       <span class="bar-track"><span class="bar-fill"></span><span class="bar-limit" style="--pos:${movementPct(1)}%"></span></span>
       <span class="bar-value"></span>
       <span class="bar-class"></span>
+    </button>
+    <button type="button" class="bar bar-resolution" data-info="resolution">
+      <span class="bar-title">${t.resolution.title}</span>
+      <span class="bar-track"><span class="bar-fill"></span><span class="bar-limit"></span></span>
+      <span class="bar-value"></span>
+      <span class="bar-class"></span>
     </button>`;
 
   const exp = root.querySelector<HTMLElement>('.bar-exposure')!;
@@ -54,6 +68,8 @@ export function mountBars(root: HTMLElement, store: Store): void {
   noise.addEventListener('click', () => setInfo(store, 'noise'));
   const movement = root.querySelector<HTMLElement>('.bar-movement')!;
   movement.addEventListener('click', () => setInfo(store, 'movement'));
+  const resolution = root.querySelector<HTMLElement>('.bar-resolution')!;
+  resolution.addEventListener('click', () => setInfo(store, 'resolution'));
 
   store.subscribe((_s, d: Derived) => {
     const off = d.exposureOffsetStops;
@@ -82,6 +98,17 @@ export function mountBars(root: HTMLElement, store: Store): void {
     movement.querySelector('.bar-value')!.textContent = subj
       ? fill(t.movement.value, { name: t.elements[subj.id], speed: formatNumber(kmh, kmh < 1 ? 1 : 0) })
       : t.movement.none;
+
+    // The file's pixel count as the mark the effective value can't pass.
+    const r = d.resolution;
+    resolution.dataset.cls = r.bottleneck;
+    resolution.querySelector<HTMLElement>('.bar-fill')!.style.setProperty('--fill', `${Math.max(2, mpPct(r.effectiveMp))}%`);
+    resolution.querySelector<HTMLElement>('.bar-limit')!.style.setProperty('--pos', `${mpPct(r.nominalMp)}%`);
+    resolution.querySelector('.bar-value')!.textContent = fill(t.resolution.value, {
+      effective: formatMp(r.effectiveMp),
+      nominal: formatMp(r.nominalMp),
+    });
+    resolution.querySelector('.bar-class')!.textContent = fill(t.resolution.limit, { factor: t.resolution.factors[r.bottleneck] });
   });
 }
 
