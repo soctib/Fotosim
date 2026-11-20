@@ -6,15 +6,17 @@ import type { SensorId } from '../model/types';
 
 export interface PhoneClass {
   id: string;
-  /** Camera type (a concrete phone) this class is highlighted for. */
-  sensorId: SensorId;
+  /** Camera types (concrete phones of that era) this class is highlighted for. */
+  sensorIds: SensorId[];
   lensesEqMm: number[];
 }
 
+const CURRENT: SensorId[] = ['iphone15ProMax', 'fairphone5'];
+
 export const PHONE_CLASSES: PhoneClass[] = [
-  { id: 'y2019basic', sensorId: 'iphoneXR', lensesEqMm: [13, 26] },
-  { id: 'y2019tele', sensorId: 'iphoneXR', lensesEqMm: [13, 26, 52] },
-  { id: 'currentBasic', sensorId: 'iphone15ProMax', lensesEqMm: [13, 26] },
-  { id: 'currentPro', sensorId: 'iphone15ProMax', lensesEqMm: [13, 24, 77] },
-  { id: 'currentZoom', sensorId: 'iphone15ProMax', lensesEqMm: [13, 24, 70, 115] },
+  { id: 'y2019basic', sensorIds: ['iphoneXR'], lensesEqMm: [13, 26] },
+  { id: 'y2019tele', sensorIds: ['iphoneXR'], lensesEqMm: [13, 26, 52] },
+  { id: 'currentBasic', sensorIds: CURRENT, lensesEqMm: [13, 26] },
+  { id: 'currentPro', sensorIds: CURRENT, lensesEqMm: [13, 24, 77] },
+  { id: 'currentZoom', sensorIds: CURRENT, lensesEqMm: [13, 24, 70, 115] },
 ];

@@ -3,6 +3,7 @@
 export type SensorId =
   | 'iphoneXR'
   | 'iphone15ProMax'
+  | 'fairphone5'
   | 'oneInch'
   | 'mft'
   | 'apsc'
@@ -27,6 +28,11 @@ export interface Sensor {
   ledFlash?: boolean;
   /** Film: the ISO is the loaded film's speed – no camera mode can change it. */
   isFilm?: boolean;
+  /**
+   * Phones merge a burst of frames into one photo (Smart HDR, Deep Fusion, …): N usable frames
+   * average out noise by log2(N) stops. Rough estimate per phone generation; 0 for cameras.
+   */
+  multiFrameStops?: number;
   /**
    * Phones: the built-in back cameras, each with its own sensor and fixed aperture. The focal
    * length picks one (see activeSensor()); widthMm/heightMm/fixedAperture above are the main camera's.

@@ -60,8 +60,8 @@ dropdown. Light and element distances live in the scene panel.
 
 | Control | Values |
 |---|---|
-| Camera type (= sensor/film size) | iPhone XR, iPhone 15 Pro Max, 1" compact, MFT, APS-C, full frame digital, 35 mm film, MF digital 44×33, MF 645, 6×6, 6×7 (film) |
-| Focal length | Steps are common full-frame-equivalent focal lengths; shown as **real + equivalent**, e.g. "50 mm (≙ 76 mm KB)". Phones: only their built-in back cameras (XR: 26 mm; 15 Pro Max: 13/24/120 mm), each with its own sensor size and fixed aperture – the focal length picks the camera (`activeSensor()`). |
+| Camera type (= sensor/film size) | iPhone XR, iPhone 15 Pro Max, Fairphone 5, 1" compact, MFT, APS-C, full frame digital, 35 mm film, MF digital 44×33, MF 645, 6×6, 6×7 (film) |
+| Focal length | Steps are common full-frame-equivalent focal lengths; shown as **real + equivalent**, e.g. "50 mm (≙ 76 mm KB)". Phones: only their built-in back cameras (XR: 26 mm; 15 Pro Max: 13/24/120 mm; Fairphone 5: 13/25 mm), each with its own sensor size and fixed aperture – the focal length picks the camera (`activeSensor()`). |
 | Lens | Kit zoom f/3.5–5.6 (default), pro zoom f/2.8, fast prime f/1.4 – limits the widest aperture (phones: built in, control locked) |
 | Aperture | 1.4 … 22 in ⅓ stops, limited by the lens (phones: fixed, control locked) |
 | Shutter | 30 s … 1/4000 (mechanical; phones 1/16000 electronic), with markers **"hand"** (1/(2·f·crop)) and **"hand + IS"** (+2 stops) that move with focal length |

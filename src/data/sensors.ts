@@ -20,7 +20,23 @@ const IPHONE_15_PRO_MAX_CAMERAS: PhoneCamera[] = [
   { equivalentMm: 120, widthMm: 4.5, heightMm: 3.4, aperture: 2.8 },
 ];
 
-const phone = (id: SensorId, cameras: PhoneCamera[], main: number): Sensor => ({
+/**
+ * Fairphone 5: ultra wide 13 mm f/2.2 (Sony IMX858, 50 MP at 0.7 µm, 1/2.51"), main 25 mm f/1.9
+ * (Sony IMX800, 50 MP at 1.0 µm, 1/1.49"). Sources give 25 or 26 mm for the main camera.
+ */
+const FAIRPHONE_5_CAMERAS: PhoneCamera[] = [
+  { equivalentMm: 13, widthMm: 5.7, heightMm: 4.3, aperture: 2.2 },
+  { equivalentMm: 25, widthMm: 8.2, heightMm: 6.1, aperture: 1.9 },
+];
+
+/*
+ * Multi-frame noise gain (stops), estimated from what each phone's pipeline merges:
+ * - iPhone XR: first-generation Smart HDR, merges frames mainly for highlights, no Deep Fusion.
+ * - iPhone 15 Pro Max: Photonic Engine / Deep Fusion merges up to ~9 frames (≈ 3 stops),
+ *   less after rejecting frames that don't line up.
+ * - Fairphone 5: multi-frame HDR on a Qualcomm ISP; reviewers rate its processing as basic.
+ */
+const phone = (id: SensorId, cameras: PhoneCamera[], main: number, multiFrameStops: number): Sensor => ({
   id,
   widthMm: cameras[main].widthMm,
   heightMm: cameras[main].heightMm,
@@ -29,11 +45,13 @@ const phone = (id: SensorId, cameras: PhoneCamera[], main: number): Sensor => ({
   flashGuideNumber: 2,
   ledFlash: true,
   phoneCameras: cameras,
+  multiFrameStops,
 });
 
 export const SENSORS: Record<SensorId, Sensor> = {
-  iphoneXR: phone('iphoneXR', XR_CAMERAS, 0),
-  iphone15ProMax: phone('iphone15ProMax', IPHONE_15_PRO_MAX_CAMERAS, 1),
+  iphoneXR: phone('iphoneXR', XR_CAMERAS, 0, 1.5),
+  iphone15ProMax: phone('iphone15ProMax', IPHONE_15_PRO_MAX_CAMERAS, 1, 2.5),
+  fairphone5: phone('fairphone5', FAIRPHONE_5_CAMERAS, 1, 1.5),
   oneInch: { id: 'oneInch', widthMm: 13.2, heightMm: 8.8, flashGuideNumber: 6 },
   mft: { id: 'mft', widthMm: 17.3, heightMm: 13, flashGuideNumber: 10 },
   apsc: { id: 'apsc', widthMm: 23.5, heightMm: 15.6, flashGuideNumber: 12 },
@@ -49,6 +67,7 @@ export const SENSORS: Record<SensorId, Sensor> = {
 export const SENSOR_ORDER: SensorId[] = [
   'iphoneXR',
   'iphone15ProMax',
+  'fairphone5',
   'oneInch',
   'mft',
   'apsc',

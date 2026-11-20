@@ -59,6 +59,10 @@ describe('derive() layout and gear', () => {
     expect(d.equivalentFocalMm).toBeCloseTo(120, 6);
     expect(d.maxAperture).toBe(2.8); // the tele camera, not the main one
     expect(d.gear.phoneIds).toEqual(['currentZoom']);
+    // Fairphone 5 main camera (25 mm): any current phone class has a native lens there.
+    const fp = derive({ ...initialState.camera, sensorId: 'fairphone5', focalLengthMm: focalOptions(SENSORS.fairphone5)[1].realMm }, initialState.scene);
+    expect(fp.maxAperture).toBe(1.9);
+    expect(fp.gear.phoneIds).toEqual(['currentBasic', 'currentPro', 'currentZoom']);
     expect(d.gear.lensIds).toEqual([]);
   });
 });

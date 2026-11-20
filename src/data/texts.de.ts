@@ -12,6 +12,7 @@ export const de = {
   sensors: {
     iphoneXR: 'iPhone XR (2018)',
     iphone15ProMax: 'iPhone 15 Pro Max (2023)',
+    fairphone5: 'Fairphone 5 (2023)',
     oneInch: 'Kompaktkamera (1 Zoll)',
     mft: 'Micro Four Thirds',
     apsc: 'APS-C',
@@ -266,7 +267,7 @@ export const de = {
     exposure:
       'Zeigt, wie weit die Belichtung vom Ideal abweicht, in Blendenstufen. Eine Stufe = doppelt bzw. halb so viel Licht.',
     noise:
-      'Rauschen hängt von ISO und Sensorgröße ab. Ein kleiner Sensor rauscht bei ISO 100 etwa so wie Vollformat bei viel höherer ISO.',
+      'Rauschen hängt von ISO und Sensorgröße ab. Ein kleiner Sensor rauscht bei ISO 100 etwa so wie Vollformat bei viel höherer ISO. Handys gleichen einen Teil davon aus: Sie nehmen mehrere Bilder kurz hintereinander auf und verrechnen sie – neuere Handys mehr als ältere.',
     graphSimple:
       'Der grüne Bereich ist die Schärfentiefe: Was darin steht, wird scharf. Personen, Hintergrund und Fokuslinie kannst du verschieben. Mit „Details“ siehst du die ganze Schärfekurve.',
     graph:

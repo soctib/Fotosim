@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { SENSORS } from '../src/data/sensors';
 import { derive } from '../src/model/derive';
+import { focalOptions } from '../src/model/focal';
 import { NOISE_VISIBLE_STOPS, classifyNoise, equivalentIso, noiseAmount, noiseIndexStops } from '../src/model/noise';
 import { cropFactor } from '../src/model/optics';
 import { initialState } from '../src/state/store';
@@ -25,10 +26,23 @@ describe('noise verdict (normal viewing size)', () => {
     expect(classifyNoise(noiseIndexStops(12800, 1.5))).toBe('veryHigh');
   });
 
-  it('a phone in sunlight at base ISO is at most slightly noisy', () => {
-    const old = derive({ ...initialState.camera, sensorId: 'iphoneXR', focalLengthMm: 26 / cropFactor(SENSORS.iphoneXR), mode: 'auto' }, { ...initialState.scene, lightPresetId: 'sun' });
+  it('merging frames takes stops off the noise and the equivalent ISO', () => {
+    expect(noiseIndexStops(100, 4, 0, 2)).toBeCloseTo(noiseIndexStops(100, 4) - 2, 10);
+    expect(equivalentIso(100, 4, 2)).toBe(400);
+  });
+
+  it('phones in sunlight at base ISO look clean (multi-frame merging), but not as clean as full frame', () => {
+    const sun = { ...initialState.scene, lightPresetId: 'sun' };
+    const old = derive({ ...initialState.camera, sensorId: 'iphoneXR', focalLengthMm: 26 / cropFactor(SENSORS.iphoneXR), mode: 'auto' }, sun);
     expect(old.settings.iso).toBe(100);
-    expect(old.noise.cls).toBe('medium');
+    expect(old.noise.cls).toBe('low');
+    expect(old.noise.equivalentIso).toBeGreaterThan(1000);
+    for (const sensorId of ['iphone15ProMax', 'fairphone5'] as const) {
+      for (const o of focalOptions(SENSORS[sensorId])) {
+        const d = derive({ ...initialState.camera, sensorId, focalLengthMm: o.realMm, mode: 'auto' }, sun);
+        expect(d.noise.cls, `${sensorId} ${o.equivalentMm} mm`).toBe('low');
+      }
+    }
     const modern = derive({ ...initialState.camera, sensorId: 'iphone15ProMax', focalLengthMm: 24 / cropFactor(SENSORS.iphone15ProMax), mode: 'auto' }, { ...initialState.scene, lightPresetId: 'sun' });
     expect(modern.noise.cls).toBe('low');
     expect(modern.noise.amount).toBeLessThan(0.25);

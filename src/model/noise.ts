@@ -1,16 +1,17 @@
 /**
  * Noise index in stops relative to ISO 100 on full frame.
  * Smaller sensors collect less total light: crop² ≙ the same factor in ISO.
- * Underexposure that is brightened later adds noise as well.
+ * Underexposure that is brightened later adds noise as well. Phones merge several frames, which
+ * takes `multiFrameStops` off again.
  */
-export function noiseIndexStops(iso: number, crop: number, exposureOffsetStops = 0): number {
+export function noiseIndexStops(iso: number, crop: number, exposureOffsetStops = 0, multiFrameStops = 0): number {
   const underexposure = Math.max(0, -exposureOffsetStops);
-  return Math.log2(iso / 100) + 2 * Math.log2(crop) + underexposure;
+  return Math.log2(iso / 100) + 2 * Math.log2(crop) + underexposure - multiFrameStops;
 }
 
-/** "Full-frame equivalent ISO" – a more intuitive way to show the same thing. */
-export function equivalentIso(iso: number, crop: number): number {
-  return iso * crop * crop;
+/** "Full-frame equivalent ISO" – a more intuitive way to show the same thing (multi-frame merging included). */
+export function equivalentIso(iso: number, crop: number, multiFrameStops = 0): number {
+  return (iso * crop * crop) / 2 ** multiFrameStops;
 }
 
 export type NoiseClass = 'low' | 'medium' | 'high' | 'veryHigh';

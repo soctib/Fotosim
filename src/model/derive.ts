@@ -132,7 +132,8 @@ export function derive(input: CameraSettings, scene: Scene): Derived {
     };
   });
 
-  const noiseIdx = noiseIndexStops(iso, crop, subject);
+  const multiFrame = sensor.multiFrameStops ?? 0;
+  const noiseIdx = noiseIndexStops(iso, crop, subject, multiFrame);
 
   return {
     settings,
@@ -167,7 +168,7 @@ export function derive(input: CameraSettings, scene: Scene): Derived {
       indexStops: noiseIdx,
       cls: classifyNoise(noiseIdx),
       amount: noiseAmount(noiseIdx),
-      equivalentIso: equivalentIso(iso, crop),
+      equivalentIso: equivalentIso(iso, crop, multiFrame),
     },
     elements,
     gear: matchingGear(sensor, f, N, crop),
@@ -182,7 +183,7 @@ function matchingGear(sensor: Sensor, focalMm: number, aperture: number, crop: n
   if (sensor.fixedAperture !== undefined) {
     // 9 %: 24 vs 26 mm main cameras count as the same framing, 70 vs 77 mm teles don't.
     const phoneIds = PHONE_CLASSES.filter(
-      (p) => p.sensorId === sensor.id && p.lensesEqMm.some((l) => Math.abs(Math.log(l / eq)) < 0.09),
+      (p) => p.sensorIds.includes(sensor.id) && p.lensesEqMm.some((l) => Math.abs(Math.log(l / eq)) < 0.09),
     ).map((p) => p.id);
     return { lensIds: [], phoneIds };
   }

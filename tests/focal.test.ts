@@ -13,6 +13,7 @@ describe('focal options', () => {
   it('phones only offer their built-in cameras – no digital zoom steps', () => {
     expect(focalOptions(SENSORS.iphoneXR).map((o) => o.equivalentMm)).toEqual([26]);
     expect(focalOptions(SENSORS.iphone15ProMax).map((o) => o.equivalentMm)).toEqual([13, 24, 120]);
+    expect(focalOptions(SENSORS.fairphone5).map((o) => o.equivalentMm)).toEqual([13, 25]);
   });
   it('each phone camera has its own sensor, so its own real focal length (≈ Apple\'s specs)', () => {
     const real = focalOptions(SENSORS.iphone15ProMax).map((o) => o.realMm);
