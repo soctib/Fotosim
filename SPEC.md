@@ -44,6 +44,7 @@ Optional: directional blur for camera shake when `shake.blurFactor > 1`.
 
 ### 5. Infobox
 Shows the text for the **last clicked/tapped element**, filled with live values (`texts.info`, `fill()`).
+Foldable in both modes (folded, the summary just reads "Hilfe"). Folded, it sinks below every open box in its column.
 
 ### 6. Lens & phone list (side panel / bottom sheet on mobile)
 - Rough lens prices (orders of magnitude), highlighting classes that match the current framing (full-frame-equivalent
@@ -82,7 +83,7 @@ Entering applies a fixed setup (`applySimple` in `src/state/actions.ts`): sun, p
 focus on person 1. The angle of view (nearest full-frame step) and the aperture carry over.
 Only the graph, the camera image (no fold heading; the line under it gets a darker/brighter stepper for the
 light situation, so the shutter time can become a problem) and three sliders remain: aperture, shutter (set by the
-camera, shown as an indicator of the handheld ranges) and focal length. Leaving keeps the setup and shows
+camera, shown as an indicator of the handheld ranges) and focal length, plus the infobox above the controls. Leaving keeps the setup and shows
 everything again.
 
 ## Model (src/model, pure functions, unit-tested)

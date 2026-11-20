@@ -220,6 +220,9 @@ export const de = {
   },
 
   // Infobox titles, keyed like `info`.
+  /** Summary of the folded infobox (unfolded it shows the current title). */
+  infoFolded: 'Hilfe',
+
   infoTitles: {
     sensor: 'Kameratyp',
     lens: 'Objektiv',

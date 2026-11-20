@@ -127,6 +127,31 @@ header {
   }
 }
 
+/*
+ * Folded boxes sink below everything still open in their column: `order` does it where the column
+ * is a plain stack (wide info column, phones), area templates in the two-column layout.
+ */
+#infobox:not([open]) {
+  order: 1;
+}
+#gear:not([open]) {
+  order: 2;
+}
+@media (min-width: 761px) and (max-width: 1399px) {
+  .layout:has(#infobox:not([open])) {
+    grid-template-areas:
+      'stage side'
+      'stage gear'
+      'stage info';
+  }
+  .layout:has(#infobox:not([open])):has(#gear:not([open])) {
+    grid-template-areas:
+      'stage side'
+      'stage info'
+      'stage gear';
+  }
+}
+
 .stage {
   grid-area: stage;
   display: grid;
@@ -1012,14 +1037,28 @@ header {
  * the click. Fixed height instead; scrolls in the rare case a text doesn't fit.
  */
 @media (min-width: 761px) {
-  .infobox {
+  .infobox[open] {
     height: 15.5rem;
     overflow-y: auto;
   }
 }
+.infobox summary {
+  cursor: pointer;
+}
 .infobox h2 {
-  margin: 0 0 4px;
+  display: inline;
+  margin: 0;
   font-size: 1rem;
+}
+.infobox[open] summary {
+  margin-bottom: 4px;
+}
+.infobox[open] .info-folded,
+.infobox:not([open]) h2 {
+  display: none;
+}
+.info-folded {
+  font-weight: 600;
 }
 .infobox p {
   margin: 0;
@@ -1194,7 +1233,7 @@ header {
 
 .simple #bars,
 .simple #elements,
-.simple .col-info,
+.simple #gear,
 .simple .preview > summary,
 /* The lens-limit hint names a lens that isn't shown; the slider's track already starts there. */
 .simple #h-aperture,
@@ -1213,13 +1252,29 @@ header {
 .simple .preview-body {
   grid-template-columns: minmax(0, 560px);
 }
-@media (min-width: 1400px) {
-  /* The third column would be empty. */
+/* Desktop: two columns at every width, the infobox above the controls (below them while folded). */
+@media (min-width: 761px) {
   .simple .layout {
     grid-template-columns: minmax(0, 1fr) 300px;
-    grid-template-areas: 'stage side';
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+      'stage info'
+      'stage side';
     max-width: 1200px;
   }
+  .simple .layout:has(#infobox:not([open])) {
+    grid-template-areas:
+      'stage side'
+      'stage info';
+  }
+  .simple .col-info {
+    display: contents;
+  }
+  .simple .col-info > #infobox {
+    grid-area: info;
+  }
+}
+@media (min-width: 1400px) {
   body.simple header {
     max-width: 1200px;
   }

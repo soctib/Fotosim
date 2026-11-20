@@ -34,7 +34,7 @@ app.innerHTML = `
     </div>
     <aside id="controls"></aside>
     <div class="col-info">
-      <section id="infobox"></section>
+      <details id="infobox" open></details>
       <details id="gear"></details>
     </div>
   </main>`;
@@ -48,7 +48,7 @@ mountGraph($('#graph'), store);
 mountPreviewSummary($<HTMLDetailsElement>('.preview'), store);
 mountElements($('#elements'), store);
 mountControls($('#controls'), store);
-mountInfobox($('#infobox'), store);
+mountInfobox($<HTMLDetailsElement>('#infobox'), store);
 mountGear($<HTMLDetailsElement>('#gear'), store);
 
 // Wide layout: while the lens/phone list is folded, the third column has room – move the

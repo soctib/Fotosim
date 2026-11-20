@@ -1,14 +1,14 @@
-// Explanation for the last touched element, filled with live values.
+// Explanation for the last touched element, filled with live values. Foldable: folded, the
+// summary just says "Hilfe"; unfolded it shows the current title.
 
 import { de as t, fill } from '../../data/texts.de';
 import { formatAperture, formatShutter } from '../../model/stops';
 import type { Store } from '../../state/store';
 import { formatMeterRange } from '../distance';
 
-export function mountInfobox(root: HTMLElement, store: Store): void {
+export function mountInfobox(root: HTMLDetailsElement, store: Store): void {
   root.classList.add('infobox');
-  root.setAttribute('aria-live', 'polite');
-  root.innerHTML = `<h2></h2><p></p>`;
+  root.innerHTML = `<summary><span class="info-folded">${t.infoFolded}</span><h2></h2></summary><p aria-live="polite"></p>`;
   const title = root.querySelector('h2')!;
   const text = root.querySelector('p')!;
 
