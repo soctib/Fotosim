@@ -10,6 +10,7 @@ describe('stop lists', () => {
   it.each([
     ['shutter', SHUTTER_SPEEDS_S.map((s) => 1 / s)],
     ['iso', [...ISOS]],
+    ['aperture', APERTURES.map((n) => n * n)],
   ])('%s steps are ⅓ stop apart (nominal values, ±0.15 stop)', (_name, values) => {
     for (let i = 1; i < values.length; i++) {
       expect(Math.abs(Math.log2(values[i] / values[i - 1]) - THIRD)).toBeLessThan(0.15);

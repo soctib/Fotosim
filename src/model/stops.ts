@@ -1,8 +1,12 @@
 import type { Sensor } from './types';
 
-// Selectable values ("the usual ones"). Full stops plus a few common extras.
+// Selectable values: the nominal ⅓-stop numbers cameras display.
 
-export const APERTURES = [1.4, 1.8, 2, 2.8, 4, 5.6, 8, 11, 16, 22] as const;
+/** f-numbers in ⅓ stops (wide → narrow). */
+export const APERTURES = [
+  1.4, 1.6, 1.8, 2, 2.2, 2.5, 2.8, 3.2, 3.5, 4, 4.5, 5, 5.6, 6.3, 7.1, 8, 9, 10, 11, 13, 14, 16,
+  18, 20, 22,
+] as const;
 
 /**
  * Shutter speeds in ⅓ stops with the nominal values cameras display (slow → fast).

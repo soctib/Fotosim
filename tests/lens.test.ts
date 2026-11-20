@@ -21,7 +21,8 @@ describe('lens max aperture', () => {
   });
 
   it('rounds to the next selectable aperture that is not faster', () => {
-    expect(lensMaxAperture(kit, 24)).toBe(4); // f/3.5 isn't on the list
+    expect(lensMaxAperture(kit, 24)).toBe(3.5);
+    expect(lensMaxAperture(kit, 50)).toBe(4.5); // raw ≈ 4.4
     expect(lensMaxAperture(kit, 85)).toBe(5.6);
     expect(lensMaxAperture(CAMERA_LENSES.fastZoom, 50)).toBe(2.8);
     expect(lensMaxAperture(CAMERA_LENSES.prime, 50)).toBe(1.4);
@@ -32,13 +33,13 @@ describe('modes respect the lens', () => {
   it('Av and M clamp a too-wide aperture to the lens limit', () => {
     for (const mode of ['Av', 'M'] as const) {
       const r = resolveMode({ ...ff, lensId: 'kit', mode, aperture: 1.4 }, SENSORS.fullFrame, 13);
-      expect(r.settings.aperture).toBe(5.6);
+      expect(r.settings.aperture).toBe(4.5); // raw ≈ 4.4 at 50 mm
     }
   });
 
   it('P never opens wider than the lens allows, even at night', () => {
     const r = resolveMode({ ...ff, lensId: 'kit', mode: 'P' }, SENSORS.fullFrame, 4);
-    expect(r.settings.aperture).toBeGreaterThanOrEqual(5.6);
+    expect(r.settings.aperture).toBeGreaterThanOrEqual(4.5);
   });
 
   it('auto mode fires the flash in candle light with the kit zoom', () => {
