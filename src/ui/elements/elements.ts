@@ -97,7 +97,9 @@ export function mountElements(root: HTMLElement, store: Store): void {
       }
       row.classList.toggle('hidden-el', !el.visible);
       // Don't overwrite what the user is typing.
-      if (document.activeElement !== distance) distance.value = showMeters(el.distanceM);
+      // The derived distance: at least the lens's near limit.
+      const shown = d.elements.find((e) => e.id === el.id)!.distanceM;
+      if (document.activeElement !== distance) distance.value = showMeters(shown);
       distance.min = showMeters(d.minDistanceM);
       distance.disabled = !el.visible;
       // Manual focusing is locked while focus tracking is on.

@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { EQUIVALENT_FOCAL_STEPS_MM, SENSORS } from '../src/data/sensors';
-import { activeSensor, focalOptions, formatFocal } from '../src/model/focal';
+import { CAMERA_LENSES } from '../src/data/cameraLenses';
+import {
+  activeSensor,
+  equivalentToZoomPosition,
+  focalOptions,
+  formatFocal,
+  isContinuousFocal,
+  snapFocal,
+  zoomPositionToEquivalent,
+} from '../src/model/focal';
 import { cropFactor } from '../src/model/optics';
 import { formatShutter } from '../src/model/stops';
 
@@ -55,5 +64,32 @@ describe('formatting', () => {
     expect(formatShutter(0.6, 'de-DE')).toBe('0,6 s');
     expect(formatShutter(2.5, 'de-DE')).toBe('2,5 s');
     expect(formatShutter(1 / 60, 'de-DE')).toBe('1/60 s');
+  });
+});
+
+describe('continuous focal length for zooms', () => {
+  it('only zooms on cameras are continuous', () => {
+    expect(isContinuousFocal(SENSORS.apsc, CAMERA_LENSES.kit)).toBe(true);
+    expect(isContinuousFocal(SENSORS.apsc, CAMERA_LENSES.fastZoom)).toBe(true);
+    expect(isContinuousFocal(SENSORS.apsc, CAMERA_LENSES.prime)).toBe(false);
+    expect(isContinuousFocal(SENSORS.iphone15ProMax, CAMERA_LENSES.kit)).toBe(false);
+  });
+  it('zooms keep any equivalent focal length within the range, clamped at the ends', () => {
+    const crop = cropFactor(SENSORS.apsc);
+    expect(snapFocal(SENSORS.apsc, CAMERA_LENSES.kit, 60) * crop).toBeCloseTo(60, 10);
+    expect(snapFocal(SENSORS.apsc, CAMERA_LENSES.kit, 5) * crop).toBeCloseTo(EQUIVALENT_FOCAL_STEPS_MM[0], 10);
+    expect(snapFocal(SENSORS.apsc, CAMERA_LENSES.kit, 1000) * crop).toBeCloseTo(400, 10);
+  });
+  it('primes and phones snap to the nearest step', () => {
+    expect(snapFocal(SENSORS.fullFrame, CAMERA_LENSES.prime, 57)).toBeCloseTo(50, 10);
+    expect(snapFocal(SENSORS.fullFrame, CAMERA_LENSES.prime, 62)).toBeCloseTo(70, 10);
+    const phone = focalOptions(SENSORS.iphone15ProMax);
+    expect(snapFocal(SENSORS.iphone15ProMax, CAMERA_LENSES.kit, 100)).toBe(phone[2].realMm);
+  });
+  it('slider position maps log-linearly onto the step range and back', () => {
+    expect(zoomPositionToEquivalent(0)).toBeCloseTo(14, 10);
+    expect(zoomPositionToEquivalent(1)).toBeCloseTo(400, 10);
+    expect(zoomPositionToEquivalent(0.5)).toBeCloseTo(Math.sqrt(14 * 400), 10);
+    for (const eq of [14, 50, 123, 400]) expect(zoomPositionToEquivalent(equivalentToZoomPosition(eq))).toBeCloseTo(eq, 10);
   });
 });

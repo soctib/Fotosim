@@ -113,7 +113,12 @@ export interface Derived {
   blurFractionAt: (distanceM: number) => number;
 }
 
-export function derive(input: CameraSettings, scene: Scene): Derived {
+export function derive(rawInput: CameraSettings, rawScene: Scene): Derived {
+  // The lens won't focus closer than its near limit, and the image of anything closer is taken
+  // as if at that limit. Applied here rather than stored, so zooming back out restores the scene.
+  const near = (m: number) => Math.max(minDistanceM(rawInput.focalLengthMm), m);
+  const input = { ...rawInput, focusDistanceM: near(rawInput.focusDistanceM) };
+  const scene = { ...rawScene, elements: rawScene.elements.map((el) => ({ ...el, distanceM: near(el.distanceM) })) };
   const sensor = activeSensor(SENSORS[input.sensorId], input.focalLengthMm);
   const sceneEv100 = lightPreset(scene.lightPresetId).ev100;
   const { settings, autoFields } = resolveMode(applyAutofocus(input, scene), sensor, sceneEv100);

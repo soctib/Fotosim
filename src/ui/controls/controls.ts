@@ -3,11 +3,18 @@
 // DOM is built once; the subscriber only syncs values so sliders aren't replaced mid-drag.
 // Fields the current mode sets itself are disabled and show the camera's choice.
 
-import { LENS_ORDER } from '../../data/cameraLenses';
+import { CAMERA_LENSES, LENS_ORDER } from '../../data/cameraLenses';
 import { SENSORS, SENSOR_ORDER } from '../../data/sensors';
 import { de as t, fill } from '../../data/texts.de';
 import type { Derived } from '../../model/derive';
-import { focalOptions, formatFocal } from '../../model/focal';
+import {
+  equivalentToZoomPosition,
+  focalOptions,
+  formatFocal,
+  isContinuousFocal,
+  snapFocal,
+  zoomPositionToEquivalent,
+} from '../../model/focal';
 import { MOTIONS } from '../../model/motion';
 import { APERTURES, ISOS, SHUTTER_SPEEDS_S, formatAperture, formatShutter } from '../../model/stops';
 import type { AutoField, ElementId, LensId, Mode, Motion, SensorId } from '../../model/types';
@@ -43,6 +50,9 @@ const posToFocus = (p: number) => MIN_DISTANCE_M * (MAX_DISTANCE_M / MIN_DISTANC
 /** Position (0…1) of a shutter time on the shutter slider, which runs slow → `fastest` in even ⅓ stops. */
 const SLOWEST = SHUTTER_SPEEDS_S[0];
 const shutterPos = (s: number, fastest: number) => Math.log(SLOWEST / s) / Math.log(SLOWEST / fastest);
+
+/** Resolution of the focal slider when a zoom makes it continuous. */
+const ZOOM_SLIDER_STEPS = 1000;
 
 function nearestIndex(values: readonly number[], target: number): number {
   let best = 0;
@@ -155,16 +165,26 @@ export function mountControls(root: HTMLElement, store: Store): void {
   }
 
   sensor.addEventListener('change', () => {
-    // Keep the angle of view: pick the new sensor's step closest to the current equivalent focal length.
+    // Keep the angle of view as far as the new sensor and the lens allow.
+    const d = store.derived();
     const next = SENSORS[sensor.value as SensorId];
-    const opts = focalOptions(next);
-    const i = nearestIndex(opts.map((o) => o.equivalentMm), store.derived().equivalentFocalMm);
-    setCamera(store, { sensorId: next.id, focalLengthMm: opts[i].realMm });
+    const focalLengthMm = snapFocal(next, CAMERA_LENSES[d.settings.lensId], d.equivalentFocalMm);
+    setCamera(store, { sensorId: next.id, focalLengthMm });
   });
-  lens.addEventListener('change', () => setCamera(store, { lensId: lens.value as LensId }));
+  lens.addEventListener('change', () => {
+    // Switching to primes snaps to the nearest step.
+    const d = store.derived();
+    const lensId = lens.value as LensId;
+    setCamera(store, { lensId, focalLengthMm: snapFocal(d.sensor, CAMERA_LENSES[lensId], d.equivalentFocalMm) });
+  });
   focal.addEventListener('input', () => {
-    const opts = focalOptions(store.derived().sensor);
-    setCamera(store, { focalLengthMm: opts[Number(focal.value)].realMm });
+    const d = store.derived();
+    if (isContinuousFocal(d.sensor, CAMERA_LENSES[d.settings.lensId])) {
+      const eq = zoomPositionToEquivalent(Number(focal.value) / ZOOM_SLIDER_STEPS);
+      setCamera(store, { focalLengthMm: snapFocal(d.sensor, CAMERA_LENSES[d.settings.lensId], eq) });
+    } else {
+      setCamera(store, { focalLengthMm: focalOptions(d.sensor)[Number(focal.value)].realMm });
+    }
   });
   stabilized.addEventListener('change', () => setCamera(store, { stabilized: stabilized.checked }));
   cameraMotion.addEventListener('change', () => setCamera(store, { motion: cameraMotion.value as Motion }));
@@ -190,12 +210,19 @@ export function mountControls(root: HTMLElement, store: Store): void {
 
     sensor.value = s.sensorId;
 
-    const opts = focalOptions(d.sensor);
-    const fi = nearestIndex(opts.map((o) => o.realMm), s.focalLengthMm);
-    focal.max = String(opts.length - 1);
-    focal.disabled = opts.length < 2; // e.g. iPhone XR: a single back camera
-    focal.value = String(fi);
-    $('o-focal').textContent = formatFocal(opts[fi].realMm, d.sensor, t.kb, t.locale);
+    if (isContinuousFocal(d.sensor, CAMERA_LENSES[s.lensId])) {
+      focal.max = String(ZOOM_SLIDER_STEPS);
+      focal.disabled = false;
+      focal.value = String(Math.round(equivalentToZoomPosition(d.equivalentFocalMm) * ZOOM_SLIDER_STEPS));
+      $('o-focal').textContent = formatFocal(s.focalLengthMm, d.sensor, t.kb, t.locale);
+    } else {
+      const opts = focalOptions(d.sensor);
+      const fi = nearestIndex(opts.map((o) => o.realMm), s.focalLengthMm);
+      focal.max = String(opts.length - 1);
+      focal.disabled = opts.length < 2; // e.g. iPhone XR: a single back camera
+      focal.value = String(fi);
+      $('o-focal').textContent = formatFocal(opts[fi].realMm, d.sensor, t.kb, t.locale);
+    }
 
     const fixed = d.sensor.fixedAperture !== undefined;
     // Phones have built-in lenses: no lens choice, just a note.

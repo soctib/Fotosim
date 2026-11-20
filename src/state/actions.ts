@@ -1,9 +1,10 @@
 // Small, named state mutations so UI modules don't each spell out the spread boilerplate.
 
 import { SENSORS } from '../data/sensors';
-import { activeSensor, focalOptions } from '../model/focal';
+import { CAMERA_LENSES } from '../data/cameraLenses';
+import { activeSensor, snapFocal } from '../model/focal';
 import { cropFactor, MAX_DISTANCE_M, minDistanceM } from '../model/optics';
-import type { CameraSettings, ElementId, Mode, Motion, Scene } from '../model/types';
+import type { CameraSettings, ElementId, Mode, Motion } from '../model/types';
 import type { AppState, InfoKey, Store } from './store';
 
 export { MAX_DISTANCE_M, MIN_DISTANCE_M } from '../model/optics';
@@ -12,24 +13,18 @@ export { MAX_DISTANCE_M, MIN_DISTANCE_M } from '../model/optics';
 const clampDistance = (m: number, focalMm: number) =>
   Math.min(MAX_DISTANCE_M, Math.max(minDistanceM(focalMm), m));
 
-/** Elements closer than the lens's near limit are pushed out to it (returns the same array if nothing moved). */
-function clampElements(scene: Scene, focalMm: number): Scene['elements'] {
-  const min = minDistanceM(focalMm);
-  return scene.elements.some((el) => el.distanceM < min)
-    ? scene.elements.map((el) => (el.distanceM < min ? { ...el, distanceM: min } : el))
-    : scene.elements;
-}
-
 /**
- * Patch the camera. A longer lens has a farther near limit, so the focus and the elements
- * are kept at or beyond it – like a real lens that simply won't focus any closer.
+ * Patch the camera. A newly set focus is kept at or beyond the lens's near limit. Zooming in
+ * doesn't move the elements or the stored focus: derive() applies the farther near limit, so
+ * zooming back out restores the scene as it was.
  */
 export function setCamera(store: Store, patch: Partial<CameraSettings>): void {
   store.update((s: AppState) => {
     const camera = { ...s.camera, ...patch };
-    camera.focusDistanceM = clampDistance(camera.focusDistanceM, camera.focalLengthMm);
-    const elements = clampElements(s.scene, camera.focalLengthMm);
-    return { ...s, camera, scene: elements === s.scene.elements ? s.scene : { ...s.scene, elements } };
+    if (patch.focusDistanceM !== undefined) {
+      camera.focusDistanceM = clampDistance(camera.focusDistanceM, camera.focalLengthMm);
+    }
+    return { ...s, camera };
   });
 }
 
@@ -117,21 +112,19 @@ export function setMode(store: Store, mode: Mode): void {
 /**
  * The setup simplified mode stands for: sun, one person standing and the background, a full-frame
  * body with the pro zoom in Av, auto ISO, no flash, stabiliser on, photographer standing, no focus tracking. Keeps the angle
- * of view (nearest full-frame step) and the aperture; focuses on person 1.
+ * of view (clamped to the zoom range) and the aperture; focuses on person 1.
  */
 export function applySimple(s: AppState): AppState {
   const sensor = SENSORS.fullFrame;
   const eqMm = s.camera.focalLengthMm * cropFactor(activeSensor(SENSORS[s.camera.sensorId], s.camera.focalLengthMm));
-  const opts = focalOptions(sensor);
-  const focalLengthMm = opts.reduce((a, b) => (Math.abs(b.equivalentMm - eqMm) < Math.abs(a.equivalentMm - eqMm) ? b : a)).realMm;
+  const focalLengthMm = snapFocal(sensor, CAMERA_LENSES.fastZoom, eqMm);
   const elements = s.scene.elements.map((el) => ({
     ...el,
     visible: el.id !== 'person2',
     motion: el.id === 'background' ? el.motion : ('still' as const),
   }));
   const scene = { ...s.scene, lightPresetId: 'sun', elements };
-  const clamped = { ...scene, elements: clampElements(scene, focalLengthMm) };
-  const person1 = clamped.elements.find((el) => el.id === 'person1')!;
+  const person1 = scene.elements.find((el) => el.id === 'person1')!;
   return {
     ...s,
     camera: {
@@ -147,7 +140,7 @@ export function applySimple(s: AppState): AppState {
       afTarget: null,
       focusDistanceM: person1.distanceM,
     },
-    scene: clamped,
+    scene,
     ui: { ...s.ui, simple: true },
   };
 }

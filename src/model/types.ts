@@ -55,6 +55,8 @@ export type LensId = 'kit' | 'fastZoom' | 'prime';
 /** Interchangeable lens class; limits the widest aperture. Focal range is given as full-frame equivalent. */
 export interface CameraLens {
   id: LensId;
+  /** Zooms move continuously across the focal range; primes only offer the common steps. */
+  zoom: boolean;
   /** Widest aperture at the wide end (≤ wideEqMm) and at the long end (≥ teleEqMm); log-interpolated between. */
   maxApertureWide: number;
   maxApertureTele: number;
