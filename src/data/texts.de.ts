@@ -243,7 +243,7 @@ export const de = {
   // Infobox: shown for the last clicked/tapped element. {placeholders} get live values.
   info: {
     sensor:
-      'Der Kameratyp steht für die Sensor- oder Filmgröße. Ein größerer Sensor sammelt mehr Licht: weniger Rauschen und bei gleicher Blende weniger Schärfentiefe, aber dieselbe Belichtungszeit. Faustregel: Brennweite und Blende mal Cropfaktor ergeben den Kleinbild-Wert; f/1.8 am Handy (2019) wirkt wie f/11 an Vollformat.',
+      'Der Kameratyp steht für die Sensor- oder Filmgröße. Ein größerer Sensor sammelt mehr Licht: weniger Rauschen und bei gleicher Blende weniger Schärfentiefe, aber dieselbe Belichtungszeit. Faustregel: Brennweite und Blende mal Cropfaktor ergeben den Kleinbild-Wert; f/1.8 am iPhone XR wirkt wie f/11 an Vollformat.',
     lens: 'Das Objektiv legt fest, wie weit die Blende aufgeht. Das Kit-Zoom aus dem Kamera-Set ist günstig, aber lichtschwach – gerade am langen Ende. Lichtstarke Objektive (kleine Blendenzahl) kosten mehr, lassen mehr Licht herein und machen den Hintergrund unschärfer. Gerade: größte Blende {maxAperture}.',
     focalLength:
       'Die Brennweite bestimmt den Bildausschnitt. Angegeben ist die echte Brennweite und in Klammern, was sie an Kleinbild entspricht. Lange Brennweiten verwackeln leichter.',
@@ -255,7 +255,7 @@ export const de = {
     light: 'Wie hell die Szene ist. Sonne ist rund 500-mal heller als ein Wohnzimmer am Abend.',
     mode: 'Der Modus legt fest, was du einstellst und was die Kamera übernimmt.',
     stabilized:
-      'Der Stabilisator gleicht kleine Wackler der Hand aus – etwa drei Blendenstufen längere Zeiten werden möglich. Gegen Bewegung der Personen hilft er nicht.',
+      'Der Stabilisator gleicht kleine Wackler der Hand aus – etwa zwei Blendenstufen längere Zeiten werden möglich. Gegen Bewegung der Personen hilft er nicht.',
     flash:
       'Der Blitz reicht nur ein paar Meter. Was weiter weg ist, bleibt dunkel. Im Graph siehst du die Reichweite.',
     focus:

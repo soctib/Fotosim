@@ -63,7 +63,7 @@ dropdown. Light and element distances live in the scene panel.
 | Focal length | Steps are common full-frame-equivalent focal lengths; shown as **real + equivalent**, e.g. "50 mm (≙ 76 mm KB)". Phones: only their built-in back cameras (XR: 26 mm; 15 Pro Max: 13/24/120 mm), each with its own sensor size and fixed aperture – the focal length picks the camera (`activeSensor()`). |
 | Lens | Kit zoom f/3.5–5.6 (default), pro zoom f/2.8, fast prime f/1.4 – limits the widest aperture (phones: built in, control locked) |
 | Aperture | 1.4 … 22 in ⅓ stops, limited by the lens (phones: fixed, control locked) |
-| Shutter | 30 s … 1/4000 (mechanical; phones 1/16000 electronic), with markers **"hand"** (1/(f·crop)) and **"hand + IS"** (+3 stops) that move with focal length |
+| Shutter | 30 s … 1/4000 (mechanical; phones 1/16000 electronic), with markers **"hand"** (1/(2·f·crop)) and **"hand + IS"** (+2 stops) that move with focal length |
 | ISO | 100 … 12800 in ⅓ stops, optional auto ISO (P/Av/Tv). Film: fixed by the loaded film in every mode, no auto ISO |
 | Light | Sun 15, cloudy 13, shade 12, dusk 9, office 8, living room 6, night street 4, candle 3 (EV100) |
 | Mode | **A** (full auto), **P**, **Av** (Nikon/Sony: A), **Tv** (Nikon/Sony: S), **M** – each with a short explanation |
@@ -99,7 +99,7 @@ All formulas use mm for focal length/sensor, m for distances, s for shutter.
 - **Noise index** (stops) = `log2(ISO/100) + 2·log2(crop) + underexposure`. Equivalent ISO = ISO · crop².
   Verdict for normal viewing size: low < 4 (≈ ISO 1600 full frame), medium < 6, high < 8, else very high; the overlay
   starts at index 2 (≈ ISO 400 full frame).
-- **Shake**: handheld limit `1/(f·crop)`, IS adds 3 stops.
+- **Shake**: handheld limit `1/(2·f·crop)` (the classic 1/f rule is too lax for modern sensors), IS adds 2 stops (rated 4–5, reliable 2–3).
 - **Flash**: guide number model, full power correct at `GN·√(ISO/100)/N`, −2 stops per doubled distance.
   TTL: camera throttles power (0…7 stops) so the focused subject is correct; other elements get the same power.
   Built-in flash syncs at max 1/250 s (and ≥ 1/60 s in auto-shutter modes); a phone LED has no such limits.

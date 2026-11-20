@@ -1,9 +1,18 @@
-/** Typical gain of image stabilisation in stops. */
-export const IS_STOPS = 3;
+/**
+ * Gain of image stabilisation in stops you can rely on. Makers rate 4–5 stops (CIPA),
+ * in practice 2–3 hold reliably.
+ */
+export const IS_STOPS = 2;
 
-/** Rule of thumb: slowest handheld shutter ≈ 1 / (equivalent focal length). */
+/**
+ * Safety factor on the classic 1/(equivalent focal length) rule. That rule dates from small film
+ * prints; today's high-resolution sensors show shake sooner, so twice as fast is the usual advice.
+ */
+export const HANDHELD_SAFETY = 2;
+
+/** Slowest handheld shutter ≈ 1 / (2 · equivalent focal length). */
 export function handheldLimitS(focalMm: number, crop: number): number {
-  return 1 / (focalMm * crop);
+  return 1 / (HANDHELD_SAFETY * focalMm * crop);
 }
 
 export function handheldLimitWithIsS(focalMm: number, crop: number, isStops = IS_STOPS): number {
