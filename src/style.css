@@ -676,6 +676,15 @@ header {
 .control .hint:empty {
   display: none;
 }
+/*
+ * The shutter hint changes with every aperture, light or focal length step, and its longest form
+ * ("von der Kamera gesetzt · aus der Hand nur mit Stabilisator") wraps. It always keeps two lines,
+ * empty or not, so the controls below don't jump while a slider is moved.
+ */
+.control #h-shutter {
+  display: block;
+  min-height: calc(2em * 1.4);
+}
 
 /* ---- camera image ---- */
 
@@ -762,10 +771,16 @@ header {
   .sim-footer .light-stepper {
     flex-basis: 100%;
   }
+  /* Full UI on a phone: the bars sit beside the image, so the caption is narrow and can need three lines. */
+  body:not(.simple) .sim-caption {
+    min-height: calc(3em * 1.4);
+  }
 }
 .sim-caption {
   margin: 0;
   min-width: 0;
+  /* Two lines reserved: the shake warning makes it wrap, and on phones everything below would jump. */
+  min-height: calc(2em * 1.4);
   font-size: 0.8rem;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
@@ -963,6 +978,9 @@ header {
 .bar-class {
   font-weight: 600;
   line-height: 1.2;
+  /* "stark überbelichtet" wraps, "passt" doesn't: two lines reserved, so the bars (and the image beside them) keep their height */
+  min-height: 2.4em;
+  text-align: center;
 }
 .bar-exposure[data-cls='slightUnder'] .bar-class,
 .bar-exposure[data-cls='slightOver'] .bar-class { color: var(--warn); }
@@ -1187,9 +1205,10 @@ header {
 .simple .light-stepper {
   display: inline-flex;
 }
-/* centre the caption's first line on the 26px stepper buttons */
+/* centre the caption's first line on the 26px stepper buttons (the reserved two lines grow by that) */
 .simple .sim-caption {
   padding-top: 4px;
+  min-height: calc(2em * 1.4 + 4px);
 }
 .simple .preview-body {
   grid-template-columns: minmax(0, 560px);
