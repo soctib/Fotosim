@@ -19,6 +19,7 @@ import {
 import { autoIsoMax, maxApertureFor, resolveMode } from './modes';
 import { fastestShutterS } from './stops';
 import { classifyNoise, equivalentIso, noiseAmount, noiseIndexStops, type NoiseClass } from './noise';
+import { outputSize, type OutputSize } from './outputSize';
 import {
   BAYER_BLUR_FACTOR,
   diffractionBlurUm,
@@ -132,6 +133,8 @@ export interface Derived {
   noise: { indexStops: number; cls: NoiseClass; amount: number; equivalentIso: number };
   /** Detail in the photo of the subject in focus (whole frame if nothing is in focus). */
   resolution: Resolution;
+  /** Which screens and print sizes the photo still looks good on. */
+  outputSize: OutputSize;
   elements: DerivedElement[];
   /** Rough price of the gear in use: camera or phone, lens, tripod. */
   costs: Costs;
@@ -255,6 +258,7 @@ export function derive(rawInput: CameraSettings, rawScene: Scene): Derived {
       equivalentIso: equivalentIso(iso, crop, multiFrame),
     },
     resolution,
+    outputSize: outputSize(resolution.effectiveMp, sensor.widthMm / sensor.heightMm, noiseIdx),
     elements,
     costs: costs(input.sensorId, settings.lensId, f * opticalCrop, settings.motion, optical.fixedAperture !== undefined),
     blurAt: (distanceM) => relativeBlur(f, N, focus, distanceM, sensor),

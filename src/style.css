@@ -1212,6 +1212,37 @@ header {
   font-variant-numeric: tabular-nums;
   color: var(--muted);
 }
+.out-summary {
+  margin: 0 0 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.out-table {
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+.out-table th,
+.out-table td {
+  padding: 1px 10px 1px 0;
+  text-align: left;
+  font-weight: normal;
+}
+.out-table thead th {
+  color: var(--muted);
+}
+.out-table td {
+  text-align: center;
+  font-weight: 700;
+}
+.out-table .out-sharp { color: var(--sharp); }
+.out-table .out-ok { color: var(--warn); }
+.out-table .out-soft { color: var(--bad); }
+.out-table .na { color: var(--muted); font-weight: normal; }
+.out-note {
+  margin: 4px 0 0;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
 .share-bar {
   height: 6px;
   border-radius: 3px;

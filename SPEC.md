@@ -36,7 +36,9 @@ Light situation, plus one compact row per element: visible toggle, movement (per
   log scale ¼×–16× the sharpness limit with a line at 1×; sharp ≤ 1, slight ≤ 2, visible ≤ 4, else strong.
   Shows the relative speed in km/h. Hand shake is not included – the shutter slider's ranges show that.
 - **Resolution** ("Auflösung"): effective megapixels of the subject in focus, log scale 0.5–100 MP, with the file's
-  pixel count as a mark; the verdict names the bottleneck ("Grenze: Beugung"). Its infobox lists each factor's share.
+  pixel count as a mark; the verdict names the bottleneck ("Grenze: Beugung"). Its infobox lists each factor's share
+  and a table "Wie groß kann ich das zeigen?" (screens and prints, up close and at normal distance, ✓ / ~ / ✗) with a
+  one-sentence summary.
 
 ### 4. Camera image simulation ("killer feature")
 Shown together with the bars as one foldable group.
@@ -149,6 +151,11 @@ All formulas use mm for focal length/sensor, m for distances, s for shutter.
   resolution (pixels ÷ z²; noise reduction runs on the uncropped frame) – and the real sensor for the lens (widest
   aperture, lens sharpness), the modes, costs and the equivalent focal length/aperture. The graph draws the
   uncropped DOF band as a dashed outline.
+- **Output size** (`outputSize.ts`): the eye resolves 1′, so an image of diagonal G seen from D needs
+  G/(D·tan 1′) effective pixels along its diagonal – ≈ 3400 at normal distance (D ≈ G) for any size, more for big
+  prints up close (30 cm). Screens (phone, Full HD, 4K) at normal distance need at most their own pixels. ✓ meets
+  the eye's limit, ~ the CoC standard (1500 px diagonal at normal distance, scaled alike – the graph's "sharp"),
+  else ✗. Viewing closer than normal adds 2·log2(enlargement) to the noise index; "high" noise drops a level.
 - **derive.ts**: one function `(settings, scene) → Derived`. Everything the UI renders comes from here.
 
 ## Architecture

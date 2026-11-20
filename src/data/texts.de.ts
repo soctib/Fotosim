@@ -213,6 +213,39 @@ export const de = {
     sharesTitle: 'Was am meisten Detail kostet',
   },
 
+  outputSize: {
+    title: 'Wie groß kann ich das zeigen?',
+    intro:
+      'Aus der Nähe (30 cm, Fotobuch, Abzug in der Hand) braucht ein großer Druck viele Pixel. Mit Abstand – so weit weg, wie das Bild groß ist – reicht für jede Größe dasselbe: Ein Poster von der anderen Raumseite braucht nicht mehr als ein A4-Blatt in der Hand.',
+    close: 'Nähe',
+    normal: 'Abstand',
+    targets: {
+      phone: 'Handy',
+      fullHd: 'Full-HD-Monitor',
+      uhd: '4K-Monitor',
+      p10x15: '10 × 15 cm',
+      p13x18: '13 × 18 cm',
+      a4: 'A4',
+      a3: 'A3',
+      p50x70: '50 × 70 cm',
+      p100x150: '100 × 150 cm',
+    },
+    verdicts: { sharp: 'gestochen scharf', ok: 'ordentlich', soft: 'weich' },
+    grainy: 'körnig',
+    legend: '✓ gestochen scharf · ~ ordentlich · ✗ weich oder körnig',
+    summaryClose: {
+      sharp: 'Aus der Nähe gestochen scharf bis {size}.',
+      ok: 'Aus der Nähe ordentlich bis {size}.',
+      none: 'Aus der Nähe in jeder Druckgröße weich.',
+    },
+    summaryNormal: {
+      sharp: 'Mit Abstand betrachtet reicht es für jede Größe.',
+      ok: 'Mit Abstand betrachtet ordentlich in jeder Größe.',
+      soft: 'Auch mit Abstand betrachtet weich.',
+      grainy: 'Mit Abstand betrachtet körnig.',
+    },
+  },
+
   shake: {
     safe: 'aus der Hand',
     needsIS: 'aus der Hand nur mit Stabilisator',

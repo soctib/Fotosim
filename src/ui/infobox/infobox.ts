@@ -1,9 +1,10 @@
 // Explanation for the last touched element, filled with live values. Foldable: folded, the
 // summary just says "Hilfe"; unfolded it shows the current title. Some topics add a live detail
-// block below the text (resolution: what costs the detail).
+// block below the text (resolution: how big the photo can be shown, and what costs the detail).
 
 import { de as t, fill } from '../../data/texts.de';
 import type { Derived } from '../../model/derive';
+import { OUTPUT_TARGETS, type OutputTargetId, type OutputView } from '../../model/outputSize';
 import { formatAperture, formatShutter } from '../../model/stops';
 import type { InfoKey, Store } from '../../state/store';
 import { formatMp } from '../bars/bars';
@@ -40,7 +41,7 @@ export function mountInfobox(root: HTMLDetailsElement, store: Store): void {
       mp: formatMp(d.resolution.nominalMp),
       because: fill(t.resolution.because[d.resolution.bottleneck], { aperture }),
     });
-    extra.innerHTML = key === 'resolution' ? resolutionShares(d) : '';
+    extra.innerHTML = key === 'resolution' ? outputTable(d) + resolutionShares(d) : '';
   });
 }
 
@@ -60,4 +61,30 @@ function resolutionShares(d: Derived): string {
     )
     .join('');
   return `<h3>${t.resolution.sharesTitle}</h3><ul class="shares">${rows}</ul>`;
+}
+
+const SYMBOLS = { sharp: '✓', ok: '~', soft: '✗' } as const;
+
+/** Summary sentence plus a compact table: each screen and print size, up close and at normal distance. */
+function outputTable(d: Derived): string {
+  const o = d.outputSize;
+  const ts = t.outputSize;
+  const summary = [
+    o.close ? fill(ts.summaryClose[o.close.verdict === 'sharp' ? 'sharp' : 'ok'], { size: ts.targets[o.close.id] }) : ts.summaryClose.none,
+    o.normal.reason === 'noise' && o.normal.verdict !== 'sharp' ? ts.summaryNormal.grainy : ts.summaryNormal[o.normal.verdict],
+  ].join(' ');
+  const cell = (id: OutputTargetId, view: OutputView) => {
+    const r = o.results.find((x) => x.id === id && x.view === view);
+    if (!r) return '<td class="na">–</td>';
+    const label = r.reason === 'noise' ? ts.grainy : ts.verdicts[r.verdict];
+    return `<td class="out-${r.verdict}" title="${label}" aria-label="${label}">${SYMBOLS[r.verdict]}</td>`;
+  };
+  const rows = OUTPUT_TARGETS.map(
+    (target) => `<tr><th scope="row">${ts.targets[target.id]}</th>${cell(target.id, 'close')}${cell(target.id, 'normal')}</tr>`,
+  ).join('');
+  return `<h3>${ts.title}</h3>
+    <p class="out-summary">${summary}</p>
+    <table class="out-table"><thead><tr><th></th><th scope="col">${ts.close}</th><th scope="col">${ts.normal}</th></tr></thead><tbody>${rows}</tbody></table>
+    <p class="out-note">${ts.legend}</p>
+    <p class="out-note">${ts.intro}</p>`;
 }
