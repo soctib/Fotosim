@@ -177,3 +177,25 @@ export function rememberFold(
   restore();
   return { restore };
 }
+
+// The camera image's width (px) the user dragged it to; like the folds, it's layout, not app state.
+const SIM_WIDTH_KEY = 'fotosim.simWidth.v1';
+
+export function loadSimWidth(): number | null {
+  try {
+    const v: unknown = JSON.parse(localStorage.getItem(SIM_WIDTH_KEY) ?? 'null');
+    return isPos(v) ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+/** `null` forgets the saved width (back to the default). */
+export function saveSimWidth(px: number | null): void {
+  try {
+    if (px === null) localStorage.removeItem(SIM_WIDTH_KEY);
+    else localStorage.setItem(SIM_WIDTH_KEY, JSON.stringify(px));
+  } catch {
+    // storage blocked – ignore
+  }
+}

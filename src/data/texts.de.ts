@@ -218,6 +218,7 @@ export const de = {
       veryHigh: 'stark verrauscht',
     },
     caption: '{shutter} · {aperture} · ISO {iso}',
+    resize: 'Größe des Kamerabilds ändern (ziehen oder Pfeiltasten, Doppelklick setzt zurück)',
   },
 
   costs: {
