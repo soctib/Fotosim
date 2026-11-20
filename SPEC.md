@@ -80,7 +80,8 @@ The app opens in a simplified mode for beginners; the header switch "Alle Einste
 Entering applies a fixed setup (`applySimple` in `src/state/actions.ts`): sun, person 1 and the background
 (person 2 hidden), full frame with the pro zoom, Av, auto ISO, no flash, stabiliser on, no focus tracking,
 focus on person 1. The angle of view (nearest full-frame step) and the aperture carry over.
-Only the graph, the camera image (no fold heading) and three sliders remain: aperture, shutter (set by the
+Only the graph, the camera image (no fold heading; the line under it gets a darker/brighter stepper for the
+light situation, so the shutter time can become a problem) and three sliders remain: aperture, shutter (set by the
 camera, shown as an indicator of the handheld ranges) and focal length. Leaving keeps the setup and shows
 everything again.
 

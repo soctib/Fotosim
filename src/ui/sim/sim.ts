@@ -11,6 +11,7 @@ import { formatAperture, formatShutter } from '../../model/stops';
 import type { ElementId } from '../../model/types';
 import { focusOn, setAutofocus, setInfo } from '../../state/actions';
 import { FACE_DEPTH_M } from '../face';
+import { mountLightStepper } from '../lightStepper';
 import type { Store } from '../../state/store';
 import { projection } from './projection';
 import { sceneryFor, type Scenery } from './scenery';
@@ -48,12 +49,17 @@ export function mountSim(root: HTMLElement, store: Store): void {
     <svg width="0" height="0" aria-hidden="true" style="position:absolute">
       <filter id="sim-shake" x="-10%" width="120%"><feGaussianBlur stdDeviation="0 0"/></filter>
     </svg>
-    <p class="sim-caption"></p>`;
+    <div class="sim-footer">
+      <p class="sim-caption"></p>
+      <div data-role="light-stepper"></div>
+    </div>`;
 
   const frame = root.querySelector<HTMLElement>('.sim-frame')!;
   const noise = root.querySelector<SVGSVGElement>('.noise')!;
   const shake = root.querySelector<SVGFEGaussianBlurElement>('#sim-shake feGaussianBlur')!;
   const caption = root.querySelector<HTMLElement>('.sim-caption')!;
+  // Shown in simplified mode only (CSS), where the scene panel is hidden.
+  mountLightStepper(root.querySelector<HTMLElement>('[data-role="light-stepper"]')!, store);
   const layer = (id: ElementId | 'sky') => root.querySelector<SVGSVGElement>(`[data-layer="${id}"]`)!;
 
   const afOverlay = root.querySelector<SVGSVGElement>('.af-overlay')!;

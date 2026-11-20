@@ -75,6 +75,8 @@ export const de = {
     iso: 'ISO',
     autoIso: 'Auto-ISO',
     light: 'Lichtsituation',
+    lightDarker: 'dunkler',
+    lightBrighter: 'heller',
     mode: 'Modus',
     flash: 'Blitz',
     stabilized: 'Bildstabilisator',

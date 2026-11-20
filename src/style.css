@@ -739,11 +739,81 @@ header {
   pointer-events: none;
 }
 
+/*
+ * Caption left, light stepper right. The stepper must not jump between lines as the caption grows
+ * (its buttons would move under the pointer): wide, it stays on the line and the caption wraps;
+ * on phones it always gets its own line.
+ */
+.sim-footer {
+  display: flex;
+  justify-content: space-between;
+  /* top, not centre: a caption wrapping to a second line must not push the stepper down */
+  align-items: flex-start;
+  gap: 4px 12px;
+  margin-top: 4px;
+}
+.sim-footer .light-stepper {
+  flex: none;
+}
+@media (max-width: 480px) {
+  .sim-footer {
+    flex-wrap: wrap;
+  }
+  .sim-footer .light-stepper {
+    flex-basis: 100%;
+  }
+}
 .sim-caption {
-  margin: 4px 0 0;
+  margin: 0;
+  min-width: 0;
   font-size: 0.8rem;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
+}
+
+/* Light situation stepper (simplified mode): darker | name | brighter. */
+.light-stepper {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+}
+.light-stepper .names {
+  display: grid;
+  text-align: center;
+}
+.light-stepper .names > span {
+  grid-area: 1 / 1;
+  visibility: hidden;
+}
+.light-stepper .names > span.current {
+  visibility: visible;
+}
+.light-stepper button {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--fg);
+  cursor: pointer;
+}
+.light-stepper button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.light-stepper svg {
+  width: 15px;
+  height: 15px;
+  fill: currentColor;
+  stroke: currentColor;
+  stroke-width: 0;
+}
+.light-stepper button[data-step='-1'] svg {
+  color: var(--sun);
 }
 
 /* Scene colours are the "real world" – the same in light and dark mode. Backdrop and scenery
@@ -1102,7 +1172,7 @@ header {
   white-space: nowrap;
 }
 
-/* ---- simplified mode: graph, camera image and three sliders only ---- */
+/* ---- simplified mode: graph, camera image (with the light stepper) and three sliders only ---- */
 
 .simple #bars,
 .simple #elements,
@@ -1112,6 +1182,14 @@ header {
 .simple #h-aperture,
 .simple .panel .control:not([data-info='aperture'], [data-info='shutter'], [data-info='focalLength']) {
   display: none;
+}
+/* The light situation stays, as a stepper under the camera image: darker light is what makes the shutter time matter. */
+.simple .light-stepper {
+  display: inline-flex;
+}
+/* centre the caption's first line on the 26px stepper buttons */
+.simple .sim-caption {
+  padding-top: 4px;
 }
 .simple .preview-body {
   grid-template-columns: minmax(0, 560px);
