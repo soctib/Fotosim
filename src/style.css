@@ -531,18 +531,19 @@ header p {
   font-weight: 600;
 }
 
-/* Shutter: handheld ranges as a coloured band above the track, each labelled above its middle. */
+/* Shutter: handheld ranges as a coloured band below the track, each labelled under its middle. */
 .range-wrap {
   position: relative;
 }
 .shake-zones {
   position: relative;
-  height: 19px;
+  height: 24px;
+  margin-top: 5px; /* gap between the thumb's tip and the band */
   pointer-events: none;
 }
 .shake-zones .zone {
   position: absolute;
-  bottom: 0;
+  top: 0;
   height: 5px;
   background: var(--zc);
 }
@@ -557,7 +558,7 @@ header p {
   font-weight: 600;
   line-height: 1;
   color: var(--zc);
-  bottom: 8px;
+  top: 10px;
 }
 .shake-zones .zone-tripod {
   --zc: var(--bad);
@@ -567,6 +568,77 @@ header p {
 }
 .shake-zones .zone-hand {
   --zc: var(--sharp);
+}
+/*
+ * Shutter slider: neutral track and a pin-shaped knob whose tip points down at the band, coloured like the
+ * range it sits in. Even when the camera sets the time it keeps its colour; only the track fades.
+ */
+#c-shutter {
+  --zc: var(--muted);
+  --track: color-mix(in srgb, var(--muted) 55%, transparent);
+  appearance: none;
+  -webkit-appearance: none;
+  display: block; /* inline would add line-box space above the band */
+  height: 26px;
+  background: transparent;
+  cursor: pointer;
+}
+#c-shutter[data-zone='safe'] {
+  --zc: var(--sharp);
+}
+#c-shutter[data-zone='needsIS'] {
+  --zc: var(--warn);
+}
+#c-shutter[data-zone='needsTripod'] {
+  --zc: var(--bad);
+}
+#c-shutter::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--track);
+}
+#c-shutter::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--track);
+}
+#c-shutter::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 20px;
+  margin-top: -5px; /* body centred on the track, tip below it */
+  border: none;
+  border-radius: 4px 4px 0 0;
+  background:
+    linear-gradient(to top right, transparent 50%, var(--zc) 50%) left bottom / 50% 8px no-repeat,
+    linear-gradient(to top left, transparent 50%, var(--zc) 50%) right bottom / 50% 8px no-repeat,
+    linear-gradient(var(--zc), var(--zc)) left top / 100% 12px no-repeat;
+  filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.35));
+}
+#c-shutter::-moz-range-thumb {
+  width: 16px;
+  height: 20px;
+  border: none;
+  border-radius: 4px 4px 0 0;
+  background:
+    linear-gradient(to top right, transparent 50%, var(--zc) 50%) left bottom / 50% 8px no-repeat,
+    linear-gradient(to top left, transparent 50%, var(--zc) 50%) right bottom / 50% 8px no-repeat,
+    linear-gradient(var(--zc), var(--zc)) left top / 100% 12px no-repeat;
+  filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.35));
+  transform: translateY(3px);
+}
+.control #c-shutter:disabled {
+  opacity: 1;
+  cursor: not-allowed;
+}
+/* Fade the track by colour, not opacity: in WebKit the thumb lives inside the track and would fade too. */
+.control #c-shutter:disabled {
+  --track: color-mix(in srgb, var(--muted) 22%, transparent);
+}
+#c-shutter:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 /* Stabiliser off: its range needs a tripod too. */
 .shake-zones .zone.off {

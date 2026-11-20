@@ -50,10 +50,11 @@ function nearestIndex(values: readonly number[], target: number): number {
   return best;
 }
 
+/** A labelled range input; `extra` goes below the track (shutter: handheld ranges). */
 const range = (id: string, label: string, max: number, info: string, extra = '') => `
   <div class="control" data-info="${info}">
     <label for="c-${id}">${label} <output id="o-${id}"></output></label>
-    <div class="range-wrap">${extra}<input id="c-${id}" type="range" min="0" max="${max}" step="1"></div>
+    <div class="range-wrap"><input id="c-${id}" type="range" min="0" max="${max}" step="1">${extra}</div>
     <small class="hint" id="h-${id}"></small>
   </div>`;
 
@@ -227,6 +228,8 @@ export function mountControls(root: HTMLElement, store: Store): void {
     $('o-shutter').textContent = formatShutter(s.shutterS, t.locale);
     const fastest = SHUTTER_SPEEDS_S[fastestIdx];
     shakeZones.update(shutterPos(d.shake.limitIsS, fastest), shutterPos(d.shake.limitS, fastest), s.stabilized);
+    // The knob takes the colour of the range it sits in (stays coloured while the camera sets the time).
+    shutter.dataset.zone = d.shake.cls;
     hint('shutter', [autoHint('shutterS'), d.shake.cls !== 'safe' ? t.shake[d.shake.cls] : ''].filter(Boolean).join(' · '));
 
     // ISO: always automatic in A; auto ISO is a choice in P/Av/Tv; M is fully manual.
@@ -265,9 +268,10 @@ export function mountControls(root: HTMLElement, store: Store): void {
 const THUMB_PX = 16;
 
 /**
- * Coloured band above the shutter slider: tripod | handheld with stabiliser | handheld, split at the two
+ * Coloured band below the shutter slider: tripod | handheld with stabiliser | handheld, split at the two
  * handheld limits (slider fractions, may lie outside 0…1). Without a stabiliser its range is shown struck out.
- * Labels sit centred over their range, nudged apart if a range is too narrow, and kept inside the slider.
+ * The limits sit where the thumb's centre would be; the outer ends run the full width of the slider.
+ * Labels sit centred under their range, nudged apart if a range is too narrow, and kept inside the slider.
  */
 function mountShakeZones(root: HTMLElement) {
   const zone = (z: ShakeZone) => root.querySelector<HTMLElement>(`.zone.zone-${z}`)!;
@@ -282,7 +286,10 @@ function mountShakeZones(root: HTMLElement) {
     const b = clamp(Math.max(isLimit, handLimit));
     const ranges: Record<ShakeZone, [number, number]> = { tripod: [0, a], is: [a, b], hand: [b, 1] };
     const w = root.clientWidth;
-    const px = (p: number) => THUMB_PX / 2 + p * (w - THUMB_PX);
+    // Thumb centre at fraction p; the band's outer ends reach the slider's edges.
+    const px = (p: number) => (p <= 0 ? 0 : p >= 1 ? w : THUMB_PX / 2 + p * (w - THUMB_PX));
+    const css = (p: number) =>
+      p <= 0 ? '0px' : p >= 1 ? '100%' : `calc(${(p * 100).toFixed(2)}% + ${(THUMB_PX / 2 - p * THUMB_PX).toFixed(2)}px)`;
     const GAP = 6;
     const lefts: Partial<Record<ShakeZone, number>> = {};
     const widths: Partial<Record<ShakeZone, number>> = {};
@@ -294,8 +301,8 @@ function mountShakeZones(root: HTMLElement) {
       const empty = to - from < 1e-6;
       el.hidden = empty;
       lab.hidden = empty;
-      el.style.left = `calc(${(from * 100).toFixed(2)}% + ${(THUMB_PX / 2 - from * THUMB_PX).toFixed(2)}px)`;
-      el.style.width = `calc(${((to - from) * 100).toFixed(2)}% - ${((to - from) * THUMB_PX).toFixed(2)}px)`;
+      el.style.left = css(from);
+      el.style.width = `calc(${css(to)} - ${css(from)})`;
       const off = z === 'is' && !stabilized;
       el.classList.toggle('off', off);
       lab.classList.toggle('off', off);
