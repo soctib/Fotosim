@@ -37,6 +37,7 @@ export function mountInfobox(root: HTMLDetailsElement, store: Store): void {
       dof: formatMeterRange(d.dof.nearM, d.dof.farM),
       subject: d.subject ? t.elements[d.subject.id] : t.movement.none,
       nominal: formatMp(d.resolution.nominalMp),
+      mp: formatMp(d.resolution.nominalMp),
       because: fill(t.resolution.because[d.resolution.bottleneck], { aperture }),
     });
     extra.innerHTML = key === 'resolution' ? resolutionShares(d) : '';

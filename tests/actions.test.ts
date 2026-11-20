@@ -130,3 +130,14 @@ describe('simplified mode', () => {
     expect(store.get().camera).toEqual(camera);
   });
 });
+
+describe('simplified mode and digital zoom', () => {
+  it('entering simplified mode resets the digital zoom; leaving keeps 1×', () => {
+    const store = createStore();
+    setCamera(store, { digitalZoom: 4 });
+    setSimple(store, true);
+    expect(store.get().camera.digitalZoom).toBe(1);
+    setSimple(store, false);
+    expect(store.get().camera.digitalZoom).toBe(1);
+  });
+});

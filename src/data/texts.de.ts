@@ -80,6 +80,11 @@ export const de = {
 
   controls: {
     focalLength: 'Brennweite',
+    digitalZoom: 'Digitalzoom',
+    /** Digital zoom slider value: factor, the matching full-frame focal length and the pixels left. */
+    digitalZoomValue: '{factor}× (≙ {eq} mm {kb}, {mp} MP)',
+    digitalZoomOff: 'aus – ganzes Bild',
+    phoneModuleHint: 'Die {eq}-mm-Kamera wäre hier schärfer.',
     aperture: 'Blende',
     shutter: 'Belichtungszeit',
     iso: 'ISO',
@@ -262,6 +267,7 @@ export const de = {
       veryHigh: 'stark verrauscht',
     },
     caption: '{shutter} · {aperture} · ISO {iso}',
+    zoomCaption: '{factor}× Digitalzoom',
     resize: 'Größe des Kamerabilds ändern (ziehen oder Pfeiltasten, Doppelklick setzt zurück)',
   },
 
@@ -325,6 +331,7 @@ export const de = {
     sensor: 'Kameratyp',
     lens: 'Objektiv',
     focalLength: 'Brennweite',
+    digitalZoom: 'Digitalzoom',
     aperture: 'Blende',
     shutter: 'Belichtungszeit',
     iso: 'ISO',
@@ -354,6 +361,8 @@ export const de = {
     lens: 'Das Objektiv legt fest, wie weit die Blende aufgeht. Das Kit-Zoom aus dem Kamera-Set ist günstig, aber lichtschwach – gerade am langen Ende. Lichtstarke Objektive (kleine Blendenzahl) kosten mehr, lassen mehr Licht herein und machen den Hintergrund unschärfer. Gerade: größte Blende {maxAperture}.',
     focalLength:
       'Die Brennweite bestimmt den Bildausschnitt. Angegeben ist die echte Brennweite und in Klammern, was sie an Kleinbild entspricht. Lange Brennweiten verwackeln leichter.',
+    digitalZoom:
+      'Digitalzoom schneidet nur einen Ausschnitt aus dem Foto und vergrößert ihn – Detail kommt keins dazu. Hier bleiben {mp} MP übrig; Rauschen, Unschärfe und irgendwann die Pixel werden sichtbar. Auch die Schärfentiefe schrumpft (der Rahmen im Graph zeigt sie ohne Zoom): Am Objektiv ändert sich nichts, aber was im ganzen Bild noch als scharf durchging, ist vergrößert sichtbar unscharf. Ein 2×-Ausschnitt aus 50 mm hat etwa die halbe Schärfentiefe, echte 100 mm nur ein Viertel. Mehr Detail gibt es nur näher dran („Zoom mit den Füßen“) oder mit längerer Brennweite.',
     aperture:
       'Kleine Blendenzahl = große Öffnung: mehr Licht, weniger Schärfentiefe. Aktuell: {aperture}, das entspricht {eqAperture} an Kleinbild.',
     shutter:

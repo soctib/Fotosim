@@ -316,6 +316,13 @@ header {
 .graph .dof {
   fill: var(--dof);
 }
+/* Digital zoom: where "sharp" ended in the uncropped photo. */
+.graph .dof-uncropped {
+  fill: none;
+  stroke: var(--sharp);
+  stroke-opacity: 0.45;
+  stroke-dasharray: 4 3;
+}
 .graph .dof-label {
   fill: var(--sharp);
   font-size: 11px;
@@ -731,12 +738,19 @@ header {
   box-shadow: 0 0 0 1px var(--line);
 }
 
+.sim-frame .sim-image,
 .sim-frame .layer,
 .sim-frame .noise {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
+}
+
+/* Grain is in the file: above the (filtered) image, below the AF frame. */
+.sim-frame .noise {
+  z-index: 10;
+  pointer-events: none;
 }
 
 /* Only drawn shapes take taps (to set the autofocus); sky and empty areas fall through. */

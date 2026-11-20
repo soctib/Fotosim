@@ -21,8 +21,8 @@ const MP_MIN = 0.5;
 const MP_MAX = 100;
 const mpPct = (mp: number) => Math.min(100, Math.max(0, (Math.log(mp / MP_MIN) / Math.log(MP_MAX / MP_MIN)) * 100));
 
-/** "4,3" below 10 MP, "24" above. */
-export const formatMp = (mp: number) => formatNumber(mp, mp < 10 ? 1 : 0);
+/** "0,12" below 1 MP, "4,3" below 10 MP, "24" above. */
+export const formatMp = (mp: number) => formatNumber(mp, mp < 1 ? 2 : mp < 10 ? 1 : 0);
 
 const signed = (x: number, digits = 1) => {
   const r = Number(x.toFixed(digits));

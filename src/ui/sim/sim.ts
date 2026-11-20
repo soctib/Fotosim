@@ -9,6 +9,7 @@
 import { de as t, fill } from '../../data/texts.de';
 import type { Derived, DerivedElement } from '../../model/derive';
 import { formatAperture, formatShutter } from '../../model/stops';
+import { formatNumber } from '../distance';
 import type { ElementId } from '../../model/types';
 import { focusOn, setAutofocus, setInfo } from '../../state/actions';
 import { FACE_DEPTH_M } from '../face';
@@ -37,6 +38,10 @@ const MIN_VISIBLE_SIGMA = 0.3;
  */
 const MAX_BRIGHTNESS = 2 ** 6;
 const MIN_BRIGHTNESS = 0.03;
+/** Grain frequency of the noise overlay at 1× (per display pixel). */
+const GRAIN_FREQUENCY = 0.9;
+/** Show pixels once one pixel of the file covers this many display pixels (drawn as whole-pixel cells, at least 2). */
+const MIN_PIXEL_PX = 1.5;
 /** How long the AF frame stays visible after a one-shot tap-to-focus (matches the CSS animation). */
 const AF_FLASH_MS = 900;
 
@@ -44,13 +49,15 @@ export function mountSim(root: HTMLElement, store: Store): void {
   root.classList.add('sim');
   root.innerHTML = `
     <div class="sim-frame" role="img" aria-label="${t.sim.title}">
-      <svg class="layer" data-layer="sky" xmlns="${SVG_NS}"></svg>
-      <svg class="layer" data-layer="background" xmlns="${SVG_NS}"></svg>
-      <svg class="layer" data-layer="person2" xmlns="${SVG_NS}"></svg>
-      <svg class="layer" data-layer="person1" xmlns="${SVG_NS}"></svg>
+      <div class="sim-image">
+        <svg class="layer" data-layer="sky" xmlns="${SVG_NS}"></svg>
+        <svg class="layer" data-layer="background" xmlns="${SVG_NS}"></svg>
+        <svg class="layer" data-layer="person2" xmlns="${SVG_NS}"></svg>
+        <svg class="layer" data-layer="person1" xmlns="${SVG_NS}"></svg>
+      </div>
       <svg class="noise" xmlns="${SVG_NS}" aria-hidden="true">
         <filter id="sim-noise">
-          <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/>
+          <feTurbulence type="fractalNoise" baseFrequency="${GRAIN_FREQUENCY}" numOctaves="2" stitchTiles="stitch"/>
           <!-- grey from the red channel, opaque, then stretched for contrast -->
           <feColorMatrix type="matrix" values="1 0 0 0 0  1 0 0 0 0  1 0 0 0 0  0 0 0 0 1"/>
           <feComponentTransfer>
@@ -65,6 +72,13 @@ export function mountSim(root: HTMLElement, store: Store): void {
     <svg width="0" height="0" aria-hidden="true" style="position:absolute">
       <filter id="sim-shake" x="-10%" width="120%"><feGaussianBlur stdDeviation="0 0"/></filter>
       <filter id="sim-move-background" x="-10%" width="120%"><feGaussianBlur stdDeviation="0 0"/></filter>
+      <filter id="sim-pixelate" x="0" y="0" width="100%" height="100%">
+        <feFlood x="1" y="1" width="1" height="1"/>
+        <feComposite width="2" height="2"/>
+        <feTile result="samples"/>
+        <feComposite in="SourceGraphic" in2="samples" operator="in"/>
+        <feMorphology operator="dilate" radius="1"/>
+      </filter>
     </svg>
     <div class="sim-footer">
       <p class="sim-caption"></p>
@@ -72,9 +86,13 @@ export function mountSim(root: HTMLElement, store: Store): void {
     </div>`;
 
   const frame = root.querySelector<HTMLElement>('.sim-frame')!;
+  // Optics and sampling (system blur, shake, pixels) filter the image; grain and the AF frame sit on top.
+  const image = root.querySelector<HTMLElement>('.sim-image')!;
   const noise = root.querySelector<SVGSVGElement>('.noise')!;
   const shake = root.querySelector<SVGFEGaussianBlurElement>('#sim-shake feGaussianBlur')!;
   const moveBackground = root.querySelector<SVGFEGaussianBlurElement>('#sim-move-background feGaussianBlur')!;
+  const pixelate = root.querySelector<SVGFilterElement>('#sim-pixelate')!;
+  const grain = root.querySelector<SVGElement>('#sim-noise feTurbulence')!;
   const caption = root.querySelector<HTMLElement>('.sim-caption')!;
   // Shown in simplified mode only (CSS), where the scene panel is hidden.
   mountLightStepper(root.querySelector<HTMLElement>('[data-role="light-stepper"]')!, store);
@@ -108,7 +126,23 @@ export function mountSim(root: HTMLElement, store: Store): void {
     const H = (W * d.sensor.heightMm) / d.sensor.widthMm;
     if (!W) return;
 
-    const sigmaAt = (m: number) => Math.min(MAX_BLUR_PX, d.blurFractionAt(m) * W * SIGMA_PER_DISC);
+    // Digital zoom: the layers draw the uncropped photo, enlarged z× around the subject in focus
+    // by one transform. Inside it, lengths are in uncropped pixels (they get enlarged with
+    // everything else); CSS filters on whole layers act after it, in display pixels.
+    const z = d.zoom.factor;
+    const uncropped = (el: DerivedElement): DerivedElement =>
+      z === 1
+        ? el
+        : {
+            ...el,
+            heightFractionPerM: el.heightFractionPerM / z,
+            blurFractionOfWidth: el.blurFractionOfWidth / z,
+            movementBlurFractionOfWidth: el.movementBlurFractionOfWidth / z,
+          };
+    const view = cropView(d, scenery, W, H);
+    const zoomed = (svg: string) => (z === 1 ? svg : `<g transform="matrix(${z} 0 0 ${z} ${view.tx.toFixed(2)} ${view.ty.toFixed(2)})">${svg}</g>`);
+
+    const sigmaAt = (m: number) => Math.min(MAX_BLUR_PX, (d.blurFractionAt(m) / z) * W * SIGMA_PER_DISC);
     const gain = (el: DerivedElement) => Math.min(MAX_BRIGHTNESS, Math.max(MIN_BRIGHTNESS, 2 ** el.exposureOffsetStops));
     const moveSigma = (el: DerivedElement) => Math.min(MAX_BLUR_PX, el.movementBlurFractionOfWidth * W * SIGMA_PER_SMEAR);
 
@@ -122,7 +156,7 @@ export function mountSim(root: HTMLElement, store: Store): void {
       `${bgMove > 0.1 ? ' url(#sim-move-background)' : ''}`;
     const sky = layer('sky');
     sky.setAttribute('viewBox', `0 0 ${W} ${H}`);
-    sky.innerHTML = scenery.backdrop(bg, W, H);
+    sky.innerHTML = zoomed(scenery.backdrop(uncropped(bg), W, H));
     sky.style.filter = filterFor(bg);
     sky.style.zIndex = '0';
     frame.style.background = scenery.frameColor;
@@ -135,16 +169,18 @@ export function mountSim(root: HTMLElement, store: Store): void {
       svg.style.display = el.visible ? '' : 'none';
       svg.style.zIndex = String(i + 1);
       if (el.id === 'background') {
-        svg.innerHTML = scenery.scenery(el, W, H);
+        svg.innerHTML = zoomed(scenery.scenery(uncropped(el), W, H));
         svg.style.filter = filterFor(el);
       } else {
         // Persons blur per part (nose, face, ears sit at different distances), so the light goes into
         // each part's filter too, ahead of the blur. Movement adds a sideways smear on top of the defocus.
-        const move = moveSigma(el);
-        svg.innerHTML = drawPerson(el, W, H, gain(el), (dm) => {
-          const sigma = sigmaAt(el.distanceM + dm);
-          return `${Math.min(MAX_BLUR_PX, Math.hypot(sigma, move)).toFixed(2)} ${sigma.toFixed(2)}`;
-        });
+        const move = moveSigma(el) / z;
+        svg.innerHTML = zoomed(
+          drawPerson(uncropped(el), W, H, z, gain(el), (dm) => {
+            const sigma = sigmaAt(el.distanceM + dm);
+            return `${Math.min(MAX_BLUR_PX, Math.hypot(sigma, move)).toFixed(2)} ${sigma.toFixed(2)}`;
+          }),
+        );
         svg.style.filter = '';
       }
     });
@@ -154,7 +190,7 @@ export function mountSim(root: HTMLElement, store: Store): void {
     const tracked = d.elements.find((e) => e.id === d.settings.afTarget && e.visible);
     const sinceTap = tapped ? performance.now() - tapped.at : Infinity;
     const flashed = sinceTap < AF_FLASH_MS ? d.elements.find((e) => e.id === tapped!.id) : undefined;
-    const afFrame = (el: DerivedElement) => drawAfFrame(el, scenery.afTarget, W, H);
+    const afFrame = (el: DerivedElement) => drawAfFrame(uncropped(el), scenery.afTarget, W, H, view);
     afOverlay.innerHTML = tracked
       ? afFrame(tracked)
       : flashed
@@ -163,6 +199,9 @@ export function mountSim(root: HTMLElement, store: Store): void {
 
     // Quadratic so "low" noise stays nearly clean and "very high" is unmistakable.
     noise.style.opacity = Math.min(0.9, d.noise.amount ** 2 * 1.2).toFixed(3);
+    // Noise sits in the file's pixels: finer than a display pixel at normal size, enlarged with them once zoomed in.
+    const pixelPx = W / d.resolution.pixelsAcross;
+    grain.setAttribute('baseFrequency', (GRAIN_FREQUENCY / Math.max(1, pixelPx)).toFixed(3));
 
     // Directional blur once the shutter is slower than the handheld limit.
     const k = d.shake.blurFactor;
@@ -170,9 +209,17 @@ export function mountSim(root: HTMLElement, store: Store): void {
     shake.setAttribute('stdDeviation', `${sigma.toFixed(2)} 0`);
     // What blurs the whole frame alike – pixels, diffraction, lens, noise filter, film, scan. At
     // normal size it stays below a display pixel; digital zoom makes it show.
-    const system = Math.min(MAX_BLUR_PX, ((d.resolution.systemBlurUm / 1000 / d.sensor.widthMm) * W * SIGMA_PER_DISC));
-    const filters = [system >= MIN_VISIBLE_SIGMA ? `blur(${system.toFixed(2)}px)` : '', sigma > 0 ? 'url(#sim-shake)' : ''];
-    frame.style.filter = filters.filter(Boolean).join(' ');
+    const system = Math.min(MAX_BLUR_PX, (d.resolution.systemBlurUm / 1000 / d.sensor.widthMm) * z * W * SIGMA_PER_DISC);
+    // Once one pixel of the file covers a few display pixels, show the pixels: sample each cell
+    // once and fill the cell with it (last, like the sensor sampling the blurred image).
+    const cell = pixelPx >= MIN_PIXEL_PX ? Math.max(2, Math.round(pixelPx)) : 0;
+    if (cell) setPixelate(pixelate, cell);
+    const filters = [
+      system >= MIN_VISIBLE_SIGMA ? `blur(${system.toFixed(2)}px)` : '',
+      sigma > 0 ? 'url(#sim-shake)' : '',
+      cell ? 'url(#sim-pixelate)' : '',
+    ];
+    image.style.filter = filters.filter(Boolean).join(' ');
 
     const parts = [
       fill(t.sim.caption, {
@@ -181,6 +228,7 @@ export function mountSim(root: HTMLElement, store: Store): void {
         iso: d.settings.iso,
       }),
     ];
+    if (z > 1) parts.push(fill(t.sim.zoomCaption, { factor: formatNumber(z, z < 10 ? 1 : 0) }));
     if (d.shake.cls !== 'safe') parts.push(t.shake[d.shake.cls]);
     caption.textContent = parts.join(' · ');
   }
@@ -194,13 +242,60 @@ export function mountSim(root: HTMLElement, store: Store): void {
   }).observe(frame);
 }
 
-/** Camera-style AF frame (corner brackets) around the face, or the scenery's main object. */
-function drawAfFrame(el: DerivedElement, target: Scenery['afTarget'], W: number, H: number): string {
+/** Digital zoom transform: display = z · uncropped + (tx, ty). */
+interface CropView {
+  z: number;
+  tx: number;
+  ty: number;
+}
+
+/** Where the AF frame sits – the face, or the scenery's main object – and its size, in uncropped pixels. */
+function focusTarget(el: DerivedElement, target: Scenery['afTarget'], W: number, H: number) {
   const { perM, groundY, cx } = projection(el, W, H);
   const isPerson = el.id !== 'background';
-  const x = isPerson ? cx : W / 2 + target.lateralM * perM;
-  const y = groundY - (isPerson ? 1.63 : target.heightM) * perM;
-  const size = Math.min(H * 0.6, Math.max(18, (isPerson ? 0.45 : target.sizeM) * perM));
+  return {
+    x: isPerson ? cx : W / 2 + target.lateralM * perM,
+    y: groundY - (isPerson ? 1.63 : target.heightM) * perM,
+    size: (isPerson ? 0.45 : target.sizeM) * perM,
+  };
+}
+
+/**
+ * The crop is centred on the subject in focus (the frame centre if there is none), shifted only as
+ * far as needed to stay inside the uncropped photo.
+ */
+function cropView(d: Derived, scenery: Scenery, W: number, H: number): CropView {
+  const z = d.zoom.factor;
+  if (z === 1) return { z, tx: 0, ty: 0 };
+  const el = d.subject && d.elements.find((e) => e.id === d.subject!.id);
+  let x = W / 2;
+  let y = H / 2;
+  if (el) {
+    const p = focusTarget({ ...el, heightFractionPerM: el.heightFractionPerM / z }, scenery.afTarget, W, H);
+    x = p.x;
+    y = p.y;
+  }
+  const clamp = (v: number, size: number) => Math.min(size - size / (2 * z), Math.max(size / (2 * z), v));
+  return { z, tx: W / 2 - z * clamp(x, W), ty: H / 2 - z * clamp(y, H) };
+}
+
+/** Point the pixelate filter at a cell size: one sample in the middle of each cell, dilated over the cell. */
+function setPixelate(filter: SVGFilterElement, cell: number): void {
+  const [flood, crop, , , dilate] = [...filter.children];
+  const mid = String(Math.floor(cell / 2));
+  flood.setAttribute('x', mid);
+  flood.setAttribute('y', mid);
+  crop.setAttribute('width', String(cell));
+  crop.setAttribute('height', String(cell));
+  dilate.setAttribute('radius', String(Math.ceil(cell / 2)));
+}
+
+/** Camera-style AF frame (corner brackets) around the face, or the scenery's main object, in display pixels. */
+function drawAfFrame(el: DerivedElement, target: Scenery['afTarget'], W: number, H: number, view: CropView): string {
+  const p = focusTarget(el, target, W, H);
+  const x = view.z * p.x + view.tx;
+  const y = view.z * p.y + view.ty;
+  const size = Math.min(H * 0.6, Math.max(18, p.size * view.z));
   // Keep the frame inside the image even when the target is huge or at the edge.
   const half = size / 2;
   const fx = Math.min(W - half - 2, Math.max(half + 2, x));
@@ -259,12 +354,14 @@ function drawNose(perM: number): string {
  * Person facing the camera. Distance = eyes. Nose, face/body and ears each get their own
  * blur from their own distance – with a shallow enough depth of field the nose tip can be
  * sharp while the eyes are not. `stdDeviation(dm)` gives the blur ("x y" in px) for an offset from the eye plane;
+ * `zoom` is the digital zoom the drawing will be enlarged by (fine detail needs display pixels);
  * `gain` is the exposure factor, applied before the blur (see MAX_BRIGHTNESS).
  */
 function drawPerson(
   el: DerivedElement,
   W: number,
   H: number,
+  zoom: number,
   gain: number,
   stdDeviation: (dm: number) => string,
 ): string {
@@ -291,9 +388,9 @@ function drawPerson(
        <rect class="skin" x="-4.5" y="-152" width="9" height="8"/>
        <circle class="skin" cx="0" cy="-163" r="11.5"/>
        <path class="hair" d="M-11.8,-163 Q-12,-178 0,-177 Q12,-178 11.8,-163 Q8,-171 0,-171 Q-8,-171 -11.8,-163 Z"/>
-       ${drawEye(-4.2, perM)}${drawEye(4.2, perM)}
+       ${drawEye(-4.2, perM * zoom)}${drawEye(4.2, perM * zoom)}
        <path class="mouth" d="M-3.8,-155.8 Q0,-153 3.8,-155.8"/>`,
     )}
-    ${part('nose', drawNose(perM))}
+    ${part('nose', drawNose(perM * zoom))}
   </g>`;
 }

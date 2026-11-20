@@ -139,6 +139,7 @@ export function applySimple(s: AppState): AppState {
       motion: 'still',
       afTarget: null,
       focusDistanceM: person1.distanceM,
+      digitalZoom: 1,
     },
     scene,
     ui: { ...s.ui, simple: true },

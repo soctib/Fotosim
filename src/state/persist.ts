@@ -29,6 +29,7 @@ const optional = <T>(v: unknown, ok: (v: unknown) => v is T, fallback: T): T | n
 function parseCamera(v: unknown, elementIds: ElementId[], defaults: CameraSettings): CameraSettings | null {
   if (!isObj(v)) return null;
   const motion = optional(v.motion, isMotion, defaults.motion);
+  const digitalZoom = optional(v.digitalZoom, (z): z is number => isNum(z) && z >= 1, defaults.digitalZoom);
   const scanner = optional(v.scanner, (x): x is CameraSettings['scanner'] => has(SCANNERS, x), defaults.scanner);
   const ok =
     has(SENSORS, v.sensorId) &&
@@ -43,12 +44,12 @@ function parseCamera(v: unknown, elementIds: ElementId[], defaults: CameraSettin
     isBool(v.stabilized) &&
     isPos(v.focusDistanceM) &&
     (v.afTarget === null || elementIds.includes(v.afTarget as ElementId));
-  if (!ok || motion === null || scanner === null) return null;
+  if (!ok || motion === null || digitalZoom === null || scanner === null) return null;
   const { sensorId, lensId, focalLengthMm, aperture, shutterS, iso, autoIso, mode, flashOn, stabilized, focusDistanceM, afTarget } =
     v as unknown as CameraSettings;
   return {
     sensorId, lensId, focalLengthMm, aperture, shutterS, iso, autoIso, mode, flashOn, stabilized, motion, focusDistanceM, afTarget,
-    scanner,
+    digitalZoom, scanner,
   };
 }
 

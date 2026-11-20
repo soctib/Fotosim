@@ -18,6 +18,18 @@ export function minDistanceM(focalMm: number): number {
   return Math.max(MIN_DISTANCE_M, (MIN_FOCUS_FOCAL_FACTOR * focalMm) / 1000);
 }
 
+/** Digital zoom goes up to 20× (phones offer up to 25×) – far enough for the pixels to show. */
+export const MAX_DIGITAL_ZOOM = 20;
+
+/**
+ * Cropping by z and showing the crop at the same size is the same as a sensor z times smaller (with
+ * the same pixels): crop factor × z, circle of confusion ÷ z, angle of view and framing narrower.
+ */
+export function croppedSensor<S extends Sensor>(sensor: S, zoom: number): S {
+  if (zoom === 1) return sensor;
+  return { ...sensor, widthMm: sensor.widthMm / zoom, heightMm: sensor.heightMm / zoom };
+}
+
 export function sensorDiagonalMm(sensor: Sensor): number {
   return Math.hypot(sensor.widthMm, sensor.heightMm);
 }

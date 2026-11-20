@@ -116,6 +116,8 @@ export interface CameraSettings {
   focusDistanceM: number;
   /** Continuous autofocus target, or null for manual focus. */
   afTarget: ElementId | null;
+  /** Digital zoom (crop) factor, 1 = the whole frame. */
+  digitalZoom: number;
   /** Film cameras only: how the negatives are scanned. */
   scanner: ScannerId;
 }

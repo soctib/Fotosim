@@ -34,6 +34,8 @@ import {
   blurFractionOfWidth,
   circleOfConfusionMm,
   cropFactor,
+  croppedSensor,
+  MAX_DIGITAL_ZOOM,
   depthOfField,
   equivalentAperture,
   equivalentFocalLengthMm,
@@ -87,7 +89,7 @@ export interface DerivedElement {
 export interface Derived {
   settings: CameraSettings;
   autoFields: Set<AutoField>;
-  /** Sensor in use (phones: the built-in camera chosen by the focal length). */
+  /** Sensor in use (phones: the built-in camera chosen by the focal length), uncropped. */
   sensor: Sensor;
   /** Fastest shutter speed this camera type offers. */
   fastestShutterS: number;
@@ -96,11 +98,21 @@ export interface Derived {
   /** Near limit of the current lens: focus and elements can't get closer. */
   minDistanceM: number;
   crop: number;
+  /** Circle of confusion for the photo as shown (smaller when cropped). */
   cocMm: number;
+  /** Lens-side values: the optical focal length and aperture in full-frame terms (no digital zoom). */
   equivalentFocalMm: number;
   equivalentAperture: number;
+  /** Angle of view of the photo as shown. */
   angleOfViewDeg: number;
+  /** Depth of field of the photo as shown – narrower when cropped. */
   dof: DepthOfField;
+  /**
+   * Digital zoom: the crop factor, the framing it matches in full-frame terms and the depth of field
+   * the uncropped photo had. derive() treats the crop as a smaller sensor (croppedSensor()), so
+   * elements, blur, noise, shake and resolution all describe the cropped photo.
+   */
+  zoom: { factor: number; equivalentFocalMm: number; dofUncropped: DepthOfField };
   hyperfocalM: number;
   sceneEv100: number;
   ambientOffsetStops: number;
@@ -135,11 +147,16 @@ export function derive(rawInput: CameraSettings, rawScene: Scene): Derived {
   const near = (m: number) => Math.max(minDistanceM(rawInput.focalLengthMm), m);
   const input = { ...rawInput, focusDistanceM: near(rawInput.focusDistanceM) };
   const scene = { ...rawScene, elements: rawScene.elements.map((el) => ({ ...el, distanceM: near(el.distanceM) })) };
-  const sensor = activeSensor(SENSORS[input.sensorId], input.focalLengthMm);
+  const optical = activeSensor(SENSORS[input.sensorId], input.focalLengthMm);
+  const zoom = Math.min(MAX_DIGITAL_ZOOM, Math.max(1, input.digitalZoom));
+  // The photo as shown: everything below that depends on the frame uses the cropped sensor;
+  // the lens and the camera's own decisions use the real one.
+  const sensor = croppedSensor(optical, zoom);
   const sceneEv100 = lightPreset(scene.lightPresetId).ev100;
-  const { settings, autoFields } = resolveMode(applyAutofocus(input, scene), sensor, sceneEv100);
+  const { settings, autoFields } = resolveMode(applyAutofocus(input, scene), optical, sceneEv100);
   const { focalLengthMm: f, aperture: N, shutterS: t, iso, focusDistanceM: focus } = settings;
   const crop = cropFactor(sensor);
+  const opticalCrop = cropFactor(optical);
 
   const ambient = exposureOffsetStops(sceneEv100, N, t, iso);
   let flash: Derived['flash'] = null;
@@ -188,21 +205,28 @@ export function derive(rawInput: CameraSettings, rawScene: Scene): Derived {
   const shakeFactor = shakeBlurFactor(t, f, crop, settings.stabilized, settings.motion);
   const cocMm = circleOfConfusionMm(sensor);
 
-  const resolution = subjectResolution(settings, sensor, noiseIdx, cocMm, shakeFactor, focused);
+  // Noise reduction runs on the whole frame, before any crop.
+  const uncroppedNoiseIdx = noiseIdx - 2 * Math.log2(zoom);
+  const resolution = subjectResolution(settings, optical, zoom, uncroppedNoiseIdx, cocMm, shakeFactor, focused);
 
   return {
     settings,
     autoFields,
-    sensor,
-    maxAperture: maxApertureFor(settings, sensor),
+    sensor: optical,
+    maxAperture: maxApertureFor(settings, optical),
     minDistanceM: minDistanceM(f),
-    fastestShutterS: fastestShutterS(sensor),
-    crop,
+    fastestShutterS: fastestShutterS(optical),
+    crop: opticalCrop,
     cocMm,
-    equivalentFocalMm: equivalentFocalLengthMm(f, sensor),
-    equivalentAperture: equivalentAperture(N, sensor),
+    equivalentFocalMm: equivalentFocalLengthMm(f, optical),
+    equivalentAperture: equivalentAperture(N, optical),
     angleOfViewDeg: horizontalAngleOfViewDeg(f, sensor),
     dof: depthOfField(f, N, focus, sensor),
+    zoom: {
+      factor: zoom,
+      equivalentFocalMm: equivalentFocalLengthMm(f, sensor),
+      dofUncropped: depthOfField(f, N, focus, optical),
+    },
     hyperfocalM: hyperfocalDistanceM(f, N, sensor),
     sceneEv100,
     ambientOffsetStops: ambient,
@@ -232,7 +256,7 @@ export function derive(rawInput: CameraSettings, rawScene: Scene): Derived {
     },
     resolution,
     elements,
-    costs: costs(input.sensorId, settings.lensId, f * crop, settings.motion, sensor.fixedAperture !== undefined),
+    costs: costs(input.sensorId, settings.lensId, f * opticalCrop, settings.motion, optical.fixedAperture !== undefined),
     blurAt: (distanceM) => relativeBlur(f, N, focus, distanceM, sensor),
     blurFractionAt: (distanceM) => blurFractionOfWidth(f, N, focus, distanceM, sensor),
   };
@@ -245,15 +269,17 @@ export function derive(rawInput: CameraSettings, rawScene: Scene): Derived {
 function subjectResolution(
   settings: CameraSettings,
   sensor: Sensor,
+  zoom: number,
   noiseIdx: number,
   cocMm: number,
   shakeFactor: number,
   focused: DerivedElement | null,
 ): Resolution {
   const { focalLengthMm: f, aperture: N, shutterS: t, iso, focusDistanceM: focus } = settings;
-  const W = sensor.widthMm;
-  const H = sensor.heightMm;
-  const areaUm2 = W * H * 1e6;
+  // Pixel pitch and lens come from the real sensor; the frame is the crop.
+  const areaUm2 = sensor.widthMm * sensor.heightMm * 1e6;
+  const W = sensor.widthMm / zoom;
+  const H = sensor.heightMm / zoom;
   const crop = cropFactor(sensor);
   const lens = sensor.lensBlurUm ?? lensBlurUm(CAMERA_LENSES[settings.lensId], f * crop, N, 1 / crop);
   const common = {

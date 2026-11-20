@@ -247,6 +247,15 @@ function draw(d: Derived, v: XView, L: Layout, details: boolean): string {
     ${d.elements.map((el) => `<filter id="blur-${el.id}" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="${figureBlurPx(el)}"/></filter>`).join('')}
   </defs>`);
 
+  // Digital zoom: the band the uncropped photo had, as a faint outline behind the narrower one.
+  if (d.zoom.factor > 1) {
+    const u = d.zoom.dofUncropped;
+    const gNear = xOf(u.nearM);
+    const gFar = Number.isFinite(u.farM) ? xOf(u.farM) : L.right;
+    if (gFar - gNear >= 3) {
+      parts.push(`<rect class="dof-uncropped" x="${gNear}" y="${L.plotTop}" width="${gFar - gNear}" height="${L.groundY - L.plotTop}"/>`);
+    }
+  }
   // Depth-of-field band (spans plot and scene strip).
   const near = xOf(d.dof.nearM);
   const far = Number.isFinite(d.dof.farM) ? xOf(d.dof.farM) : L.right;

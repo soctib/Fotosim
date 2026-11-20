@@ -47,7 +47,10 @@ On top: `brightness()` per layer from its exposure offset (flash lights only nea
 SVG `feTurbulence` overlay for noise (opacity from `noise.amount`); sizes and positions from a real perspective projection (`heightFractionPerM`).
 Directional blur for camera shake when `shake.blurFactor > 1`; each layer also smears sideways by its own movement blur.
 A whole-frame Gaussian from `resolution.systemBlurUm` (pixels, diffraction, lens, noise filter, film, scan) – below a
-display pixel at normal size, visible only when zoomed in.
+display pixel at normal size, visible only when zoomed in. **Digital zoom**: the layers draw the uncropped photo and
+one SVG transform enlarges it z× around the subject in focus (clamped to stay inside the frame); once a file pixel
+covers ≥ 1.5 display pixels an SVG pixelate filter (sample and dilate) shows the pixels. The grain overlay sits above
+the filtered image, at the size of a file pixel once those exceed a display pixel.
 
 ### 5. Infobox
 Shows the text for the **last clicked/tapped element**, filled with live values (`texts.info`, `fill()`).
@@ -74,6 +77,7 @@ dropdown. Light and element distances live in the scene panel.
 | Camera type (= sensor/film size) | iPhone XR, iPhone 15 Pro Max, Fairphone 5, 1" compact, MFT, APS-C, full frame digital mid-range and high-end (same sensor; high-end has a 1/8000 s shutter and costs more), 35 mm film, MF digital 44×33, MF 645, 6×6, 6×7 (film) |
 | Focal length | Steps are common full-frame-equivalent focal lengths; shown as **real + equivalent**, e.g. "50 mm (≙ 76 mm KB)". Phones: only their built-in back cameras (XR: 26 mm; 15 Pro Max: 13/24/120 mm; Fairphone 5: 13/25 mm), each with its own sensor size and fixed aperture – the focal length picks the camera (`activeSensor()`). |
 | Scan (film cameras only) | Lab scan (default, ≈ 6 MP from 35 mm), flatbed, film scanner, camera scan (24 MP), drum scanner (`data/scanners.ts`) |
+| Digital zoom (lens panel, not in simplified mode – entering it resets 1×) | 1× … 20×, log scale; label "2× (≙ 100 mm KB, 6 MP)". Phones: hint when a longer built-in camera covers the framing |
 | Lens | Kit zoom f/3.5–5.6 (default), pro zoom f/2.8, fast prime f/1.4 – limits the widest aperture (phones: built in, control locked) |
 | Aperture | 1.4 … 22 in ⅓ stops, limited by the lens (phones: fixed, control locked) |
 | Shutter | 30 s … 1/4000 (mechanical, high-end full frame 1/8000; phones 1/16000 electronic), with markers **"hand"** (1/(2·f·crop)) and **"hand + IS"** (+2 stops) that move with focal length |
@@ -140,6 +144,11 @@ All formulas use mm for focal length/sensor, m for distances, s for shutter.
   stop; film ≈ 65 lp/mm at ISO 400, ∝ ISO^−¼; the scan's pitch and optics as one "scan" factor. Calibration
   targets are the tests (24 MP + prime at f/5.6 ≈ 14 MP, f/22 ≈ 4; diffraction takes over at f/11 on 24 MP and f/8
   on 45 MP; 35 mm ISO 400: lab scan ≈ 4 MP, film scanner ≈ 7).
+- **Digital zoom**: a crop by z is a sensor z times smaller with the same pixels (`croppedSensor()`): derive uses it
+  for everything about the photo as shown – framing, CoC (DOF narrows), noise (+2·log2 z), handheld limit, movement,
+  resolution (pixels ÷ z²; noise reduction runs on the uncropped frame) – and the real sensor for the lens (widest
+  aperture, lens sharpness), the modes, costs and the equivalent focal length/aperture. The graph draws the
+  uncropped DOF band as a dashed outline.
 - **derive.ts**: one function `(settings, scene) → Derived`. Everything the UI renders comes from here.
 
 ## Architecture

@@ -57,7 +57,8 @@ wäre hier schärfer" when the crop exceeds what the tele module would give.
 
 ## UI
 
-- Slider "Digitalzoom" in the lens panel under the focal length, log scale 1×–10×, label
+- Slider "Digitalzoom" in the lens panel under the focal length, log scale 1×–10× (*implemented up to 20×: at
+  normal image sizes pixels only show beyond 10×*), label
   "2× (≙ 100 mm KB, 6 MP)".
 - Not in simplified mode; entering it resets the zoom to 1×.
 - Infobox text: what a crop does, the DOF explanation, "Zoom mit den Füßen".

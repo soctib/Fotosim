@@ -17,6 +17,7 @@ import {
   zoomPositionToEquivalent,
 } from '../../model/focal';
 import { MOTIONS } from '../../model/motion';
+import { MAX_DIGITAL_ZOOM } from '../../model/optics';
 import { APERTURES, ISOS, SHUTTER_SPEEDS_S, formatAperture, formatShutter } from '../../model/stops';
 import type { AutoField, ElementId, LensId, Mode, Motion, ScannerId, SensorId } from '../../model/types';
 import {
@@ -29,7 +30,8 @@ import {
   setMode,
 } from '../../state/actions';
 import type { InfoKey, Store } from '../../state/store';
-import { formatMeters } from '../distance';
+import { formatMp } from '../bars/bars';
+import { formatMeters, formatNumber } from '../distance';
 import { movementBlurredText } from '../motionText';
 
 const AF_TARGETS: ElementId[] = ['person1', 'person2', 'background'];
@@ -54,6 +56,15 @@ const shutterPos = (s: number, fastest: number) => Math.log(SLOWEST / s) / Math.
 
 /** Resolution of the focal slider when a zoom makes it continuous. */
 const ZOOM_SLIDER_STEPS = 1000;
+
+/** Digital zoom slider: log scale 1…MAX_DIGITAL_ZOOM; the first bit snaps to 1× so "off" is easy to hit. */
+const DIGITAL_ZOOM_STEPS = 1000;
+const DIGITAL_ZOOM_SNAP = 1.05;
+const digitalZoomToPos = (z: number) => Math.round((Math.log(z) / Math.log(MAX_DIGITAL_ZOOM)) * DIGITAL_ZOOM_STEPS);
+const posToDigitalZoom = (p: number) => {
+  const z = MAX_DIGITAL_ZOOM ** (p / DIGITAL_ZOOM_STEPS);
+  return z < DIGITAL_ZOOM_SNAP ? 1 : z;
+};
 
 function nearestIndex(values: readonly number[], target: number): number {
   let best = 0;
@@ -129,6 +140,7 @@ export function mountControls(root: HTMLElement, store: Store): void {
         <small class="hint" id="h-lens"></small>
       </div>
       ${range('focal', t.controls.focalLength, 0, 'focalLength')}
+      ${range('zoom', t.controls.digitalZoom, DIGITAL_ZOOM_STEPS, 'digitalZoom')}
       ${checkbox('stabilized', t.controls.stabilized, 'stabilized')}
       <div class="control" data-info="cameraMotion">
         <label for="c-motion">${t.controls.cameraMotion}</label>
@@ -151,6 +163,7 @@ export function mountControls(root: HTMLElement, store: Store): void {
   const scanner = $<HTMLSelectElement>('c-scanner');
   const lens = $<HTMLSelectElement>('c-lens');
   const focal = $<HTMLInputElement>('c-focal');
+  const digitalZoom = $<HTMLInputElement>('c-zoom');
   const stabilized = $<HTMLInputElement>('c-stabilized');
   const cameraMotion = $<HTMLSelectElement>('c-motion');
   const modeButtons = [...root.querySelectorAll<HTMLButtonElement>('[data-mode]')];
@@ -195,6 +208,7 @@ export function mountControls(root: HTMLElement, store: Store): void {
       setCamera(store, { focalLengthMm: focalOptions(d.sensor)[Number(focal.value)].realMm });
     }
   });
+  digitalZoom.addEventListener('input', () => setCamera(store, { digitalZoom: posToDigitalZoom(Number(digitalZoom.value)) }));
   stabilized.addEventListener('change', () => setCamera(store, { stabilized: stabilized.checked }));
   cameraMotion.addEventListener('change', () => setCamera(store, { motion: cameraMotion.value as Motion }));
   modeButtons.forEach((b) => b.addEventListener('click', () => setMode(store, b.dataset.mode as Mode)));
@@ -235,6 +249,24 @@ export function mountControls(root: HTMLElement, store: Store): void {
       focal.value = String(fi);
       $('o-focal').textContent = formatFocal(opts[fi].realMm, d.sensor, t.kb, t.locale);
     }
+
+    // Digital zoom: the framing it gives in full-frame terms and the pixels left.
+    const z = d.zoom.factor;
+    digitalZoom.value = String(digitalZoomToPos(z));
+    $('o-zoom').textContent =
+      z === 1
+        ? t.controls.digitalZoomOff
+        : fill(t.controls.digitalZoomValue, {
+            factor: formatNumber(z, z < 10 ? 1 : 0),
+            eq: Math.round(d.zoom.equivalentFocalMm),
+            kb: t.kb,
+            mp: formatMp(d.resolution.nominalMp),
+          });
+    // Phones: a longer built-in camera that covers this framing has more detail than the crop.
+    const longer = d.sensor.phoneCameras
+      ?.filter((c) => c.equivalentMm > d.equivalentFocalMm * 1.05 && c.equivalentMm <= d.zoom.equivalentFocalMm * 1.05)
+      .pop();
+    hint('zoom', longer ? fill(t.controls.phoneModuleHint, { eq: longer.equivalentMm }) : '');
 
     const fixed = d.sensor.fixedAperture !== undefined;
     // Phones have built-in lenses: no lens choice, just a note.
