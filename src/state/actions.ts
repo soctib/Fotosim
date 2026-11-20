@@ -1,7 +1,7 @@
 // Small, named state mutations so UI modules don't each spell out the spread boilerplate.
 
 import { SENSORS } from '../data/sensors';
-import { focalOptions } from '../model/focal';
+import { activeSensor, focalOptions } from '../model/focal';
 import { cropFactor, MAX_DISTANCE_M, minDistanceM } from '../model/optics';
 import type { CameraSettings, ElementId, Mode, Scene } from '../model/types';
 import type { AppState, InfoKey, Store } from './store';
@@ -114,7 +114,7 @@ export function setMode(store: Store, mode: Mode): void {
  */
 export function applySimple(s: AppState): AppState {
   const sensor = SENSORS.fullFrame;
-  const eqMm = s.camera.focalLengthMm * cropFactor(SENSORS[s.camera.sensorId]);
+  const eqMm = s.camera.focalLengthMm * cropFactor(activeSensor(SENSORS[s.camera.sensorId], s.camera.focalLengthMm));
   const opts = focalOptions(sensor);
   const focalLengthMm = opts.reduce((a, b) => (Math.abs(b.equivalentMm - eqMm) < Math.abs(a.equivalentMm - eqMm) ? b : a)).realMm;
   const elements = s.scene.elements.map((el) => ({ ...el, visible: el.id !== 'person2' }));

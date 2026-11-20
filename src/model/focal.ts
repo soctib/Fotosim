@@ -1,4 +1,4 @@
-import { EQUIVALENT_FOCAL_STEPS_MM, PHONE_LENSES_EQ_MM } from '../data/sensors';
+import { EQUIVALENT_FOCAL_STEPS_MM } from '../data/sensors';
 import { cropFactor } from './optics';
 import type { Sensor } from './types';
 
@@ -12,9 +12,31 @@ export interface FocalOption {
  * length derived from the crop factor. Phones: only their built-in cameras – no digital zoom.
  */
 export function focalOptions(sensor: Sensor): FocalOption[] {
+  if (sensor.phoneCameras) {
+    // Each phone camera has its own sensor, so its own crop factor.
+    return sensor.phoneCameras.map((c) => ({
+      realMm: c.equivalentMm / cropFactor({ ...sensor, ...c }),
+      equivalentMm: c.equivalentMm,
+    }));
+  }
   const crop = cropFactor(sensor);
-  const steps = PHONE_LENSES_EQ_MM[sensor.id] ?? EQUIVALENT_FOCAL_STEPS_MM;
-  return steps.map((eq) => ({ realMm: eq / crop, equivalentMm: eq }));
+  return EQUIVALENT_FOCAL_STEPS_MM.map((eq) => ({ realMm: eq / crop, equivalentMm: eq }));
+}
+
+/**
+ * The sensor actually in use. Cameras: the sensor itself. Phones: the built-in camera whose real
+ * focal length is closest – its sensor size and fixed aperture replace the main camera's.
+ */
+export function activeSensor(sensor: Sensor, focalLengthMm: number): Sensor {
+  const cams = sensor.phoneCameras;
+  if (!cams) return sensor;
+  const opts = focalOptions(sensor);
+  let best = 0;
+  opts.forEach((o, i) => {
+    if (Math.abs(Math.log(o.realMm / focalLengthMm)) < Math.abs(Math.log(opts[best].realMm / focalLengthMm))) best = i;
+  });
+  const c = cams[best];
+  return { ...sensor, widthMm: c.widthMm, heightMm: c.heightMm, fixedAperture: c.aperture };
 }
 
 /** e.g. "50 mm (≙ 80 mm KB)" – just "50 mm" when crop ≈ 1. Sub-10 mm lengths get a decimal in the locale's format. */

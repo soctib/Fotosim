@@ -183,6 +183,7 @@ export function mountControls(root: HTMLElement, store: Store): void {
     const opts = focalOptions(d.sensor);
     const fi = nearestIndex(opts.map((o) => o.realMm), s.focalLengthMm);
     focal.max = String(opts.length - 1);
+    focal.disabled = opts.length < 2; // e.g. iPhone XR: a single back camera
     focal.value = String(fi);
     $('o-focal').textContent = formatFocal(opts[fi].realMm, d.sensor, t.kb, t.locale);
 

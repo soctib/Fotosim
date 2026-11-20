@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { SENSORS } from '../src/data/sensors';
 import { PERSON_HEIGHT_M, derive } from '../src/model/derive';
+import { focalOptions } from '../src/model/focal';
 import { cropFactor, relativeBlur } from '../src/model/optics';
 import { initialState } from '../src/state/store';
 
@@ -53,9 +54,11 @@ describe('derive() layout and gear', () => {
   });
 
   it('lists phone classes with a native lens at the current framing', () => {
-    const crop = cropFactor(SENSORS.phoneModern);
-    const d = derive({ ...initialState.camera, sensorId: 'phoneModern', focalLengthMm: 77 / crop }, initialState.scene);
-    expect(d.gear.phoneIds).toEqual(['currentPro']);
+    const tele = focalOptions(SENSORS.iphone15ProMax)[2];
+    const d = derive({ ...initialState.camera, sensorId: 'iphone15ProMax', focalLengthMm: tele.realMm }, initialState.scene);
+    expect(d.equivalentFocalMm).toBeCloseTo(120, 6);
+    expect(d.maxAperture).toBe(2.8); // the tele camera, not the main one
+    expect(d.gear.phoneIds).toEqual(['currentZoom']);
     expect(d.gear.lensIds).toEqual([]);
   });
 });

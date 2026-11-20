@@ -77,10 +77,10 @@ describe('flash zone', () => {
 });
 
 describe('phone LED "flash"', () => {
-  const phone: CameraSettings = { ...initialState.camera, sensorId: 'phone2019', focalLengthMm: 4.2, mode: 'P', flashOn: true };
+  const phone: CameraSettings = { ...initialState.camera, sensorId: 'iphoneXR', focalLengthMm: 4.2, mode: 'P', flashOn: true };
 
   it('has no sync speed: in sun the phone still uses its fast electronic shutter', () => {
-    const r = resolveMode(phone, SENSORS.phone2019, 15);
+    const r = resolveMode(phone, SENSORS.iphoneXR, 15);
     expect(r.settings.flashOn).toBe(true);
     expect(r.settings.shutterS).toBeLessThan(FLASH_SYNC_S);
     const d = derive(phone, { ...initialState.scene, lightPresetId: 'sun' });
@@ -90,7 +90,7 @@ describe('phone LED "flash"', () => {
   it('a camera flash does cap the shutter at the sync speed', () => {
     const r = resolveMode({ ...initialState.camera, mode: 'M', flashOn: true, shutterS: 1 / 4000 }, SENSORS.apsc, 10);
     expect(r.settings.shutterS).toBeCloseTo(FLASH_SYNC_S, 6);
-    const p = resolveMode({ ...phone, mode: 'M', shutterS: 1 / 4000 }, SENSORS.phone2019, 10);
+    const p = resolveMode({ ...phone, mode: 'M', shutterS: 1 / 4000 }, SENSORS.iphoneXR, 10);
     expect(p.settings.shutterS).toBeCloseTo(1 / 4000, 8);
   });
 });

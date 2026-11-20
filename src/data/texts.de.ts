@@ -10,8 +10,8 @@ export const de = {
   kb: 'KB',
 
   sensors: {
-    phone2019: 'Handy (2019)',
-    phoneModern: 'Handy (aktuell, Pro)',
+    iphoneXR: 'iPhone XR (2018)',
+    iphone15ProMax: 'iPhone 15 Pro Max (2023)',
     oneInch: 'Kompaktkamera (1 Zoll)',
     mft: 'Micro Four Thirds',
     apsc: 'APS-C',

@@ -1,12 +1,39 @@
 import type { Sensor, SensorId } from '../model/types';
 
-// Approximate dimensions. Phones have a fixed aperture, so bright light needs their electronic shutter.
+import type { PhoneCamera } from '../model/types';
+
 // Approximate dimensions. Display names live in data/texts.*.ts.
+// Phones have a fixed aperture per camera, so bright light needs their electronic shutter.
+// Phone sensor sizes from pixel count × pixel pitch.
+
+/** iPhone XR: a single back camera, 12 MP at 1.4 µm (≈ 1/2.55"), 26 mm f/1.8. */
+const XR_CAMERAS: PhoneCamera[] = [{ equivalentMm: 26, widthMm: 5.6, heightMm: 4.2, aperture: 1.8 }];
+
+/**
+ * iPhone 15 Pro Max: ultra wide 13 mm f/2.2 (12 MP, 1.4 µm), main 24 mm f/1.78 (48 MP, 1.22 µm,
+ * ≈ 1/1.28"), 5× tele 120 mm f/2.8 (12 MP, 1.12 µm). The 28/35/48 mm settings are crops of the
+ * main sensor – digital zoom – and deliberately left out.
+ */
+const IPHONE_15_PRO_MAX_CAMERAS: PhoneCamera[] = [
+  { equivalentMm: 13, widthMm: 5.6, heightMm: 4.2, aperture: 2.2 },
+  { equivalentMm: 24, widthMm: 9.8, heightMm: 7.4, aperture: 1.8 },
+  { equivalentMm: 120, widthMm: 4.5, heightMm: 3.4, aperture: 2.8 },
+];
+
+const phone = (id: SensorId, cameras: PhoneCamera[], main: number): Sensor => ({
+  id,
+  widthMm: cameras[main].widthMm,
+  heightMm: cameras[main].heightMm,
+  fixedAperture: cameras[main].aperture,
+  fastestShutterS: 1 / 16000,
+  flashGuideNumber: 2,
+  ledFlash: true,
+  phoneCameras: cameras,
+});
+
 export const SENSORS: Record<SensorId, Sensor> = {
-  // ~1/2.55" class, e.g. iPhone 11 / Galaxy S10 main camera
-  phone2019: { id: 'phone2019', widthMm: 5.6, heightMm: 4.2, fixedAperture: 1.8, fastestShutterS: 1 / 16000, flashGuideNumber: 2, ledFlash: true },
-  // ~1/1.28" class, e.g. iPhone 15 Pro main camera
-  phoneModern: { id: 'phoneModern', widthMm: 9.8, heightMm: 7.3, fixedAperture: 1.8, fastestShutterS: 1 / 16000, flashGuideNumber: 2, ledFlash: true },
+  iphoneXR: phone('iphoneXR', XR_CAMERAS, 0),
+  iphone15ProMax: phone('iphone15ProMax', IPHONE_15_PRO_MAX_CAMERAS, 1),
   oneInch: { id: 'oneInch', widthMm: 13.2, heightMm: 8.8, flashGuideNumber: 6 },
   mft: { id: 'mft', widthMm: 17.3, heightMm: 13, flashGuideNumber: 10 },
   apsc: { id: 'apsc', widthMm: 23.5, heightMm: 15.6, flashGuideNumber: 12 },
@@ -20,8 +47,8 @@ export const SENSORS: Record<SensorId, Sensor> = {
 };
 
 export const SENSOR_ORDER: SensorId[] = [
-  'phone2019',
-  'phoneModern',
+  'iphoneXR',
+  'iphone15ProMax',
   'oneInch',
   'mft',
   'apsc',
@@ -36,11 +63,3 @@ export const SENSOR_ORDER: SensorId[] = [
 /** Common full-frame-equivalent focal lengths offered on the slider. */
 export const EQUIVALENT_FOCAL_STEPS_MM = [14, 18, 24, 28, 35, 50, 70, 85, 105, 135, 200, 300, 400];
 
-/**
- * Phones: one fixed-focal-length camera per entry (equivalent mm). Crop modes like the
- * 15 Pro's "2×" (48 mm, a crop of the main sensor) are digital zoom and deliberately left out.
- */
-export const PHONE_LENSES_EQ_MM: Partial<Record<SensorId, number[]>> = {
-  phone2019: [13, 26, 52],
-  phoneModern: [13, 24, 77], // 15 Pro; the Pro Max has 120 instead of 77
-};

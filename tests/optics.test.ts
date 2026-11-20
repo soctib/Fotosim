@@ -25,7 +25,7 @@ describe('crop factor', () => {
     expect(cropFactor(SENSORS.mf4433)).toBeCloseTo(0.79, 1);
   });
   it('is large for phones', () => {
-    expect(cropFactor(SENSORS.phone2019)).toBeGreaterThan(5);
+    expect(cropFactor(SENSORS.iphoneXR)).toBeGreaterThan(5);
   });
 });
 
@@ -44,7 +44,7 @@ describe('depth of field', () => {
     expect(depthOfField(24, 8, H, ff).nearM).toBeCloseTo(H / 2, 0);
   });
   it('a phone at f/1.8 has much more DOF than full frame at f/1.8 (same framing)', () => {
-    const phone = SENSORS.phone2019;
+    const phone = SENSORS.iphoneXR;
     const fPhone = 50 / cropFactor(phone);
     const dPhone = depthOfField(fPhone, 1.8, 3, phone);
     const dFf = depthOfField(50, 1.8, 3, ff);

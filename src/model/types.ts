@@ -1,8 +1,8 @@
 // Units: focal lengths and sensor dimensions in mm, distances in m, shutter in s.
 
 export type SensorId =
-  | 'phone2019'
-  | 'phoneModern'
+  | 'iphoneXR'
+  | 'iphone15ProMax'
   | 'oneInch'
   | 'mft'
   | 'apsc'
@@ -27,6 +27,20 @@ export interface Sensor {
   ledFlash?: boolean;
   /** Film: the ISO is the loaded film's speed – no camera mode can change it. */
   isFilm?: boolean;
+  /**
+   * Phones: the built-in back cameras, each with its own sensor and fixed aperture. The focal
+   * length picks one (see activeSensor()); widthMm/heightMm/fixedAperture above are the main camera's.
+   */
+  phoneCameras?: PhoneCamera[];
+}
+
+/** One built-in phone camera module. */
+export interface PhoneCamera {
+  /** Full-frame-equivalent focal length as the maker states it. */
+  equivalentMm: number;
+  widthMm: number;
+  heightMm: number;
+  aperture: number;
 }
 
 export type LensId = 'kit' | 'fastZoom' | 'prime';

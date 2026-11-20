@@ -6,6 +6,7 @@ import { lightPreset } from '../data/lightPresets';
 import { PHONE_CLASSES } from '../data/phones';
 import { SENSORS } from '../data/sensors';
 import { applyAutofocus } from './autofocus';
+import { activeSensor } from './focal';
 import { classifyExposure, exposureOffsetStops, type ExposureClass } from './exposure';
 import {
   flashFullOffsetStops,
@@ -59,6 +60,7 @@ export interface DerivedElement {
 export interface Derived {
   settings: CameraSettings;
   autoFields: Set<AutoField>;
+  /** Sensor in use (phones: the built-in camera chosen by the focal length). */
   sensor: Sensor;
   /** Fastest shutter speed this camera type offers. */
   fastestShutterS: number;
@@ -94,7 +96,7 @@ export interface Derived {
 }
 
 export function derive(input: CameraSettings, scene: Scene): Derived {
-  const sensor = SENSORS[input.sensorId];
+  const sensor = activeSensor(SENSORS[input.sensorId], input.focalLengthMm);
   const sceneEv100 = lightPreset(scene.lightPresetId).ev100;
   const { settings, autoFields } = resolveMode(applyAutofocus(input, scene), sensor, sceneEv100);
   const { focalLengthMm: f, aperture: N, shutterS: t, iso, focusDistanceM: focus } = settings;

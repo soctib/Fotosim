@@ -6,15 +6,15 @@ import type { SensorId } from '../model/types';
 
 export interface PhoneClass {
   id: string;
-  /** Closest sensor preset for the main camera. */
+  /** Camera type (a concrete phone) this class is highlighted for. */
   sensorId: SensorId;
   lensesEqMm: number[];
 }
 
 export const PHONE_CLASSES: PhoneClass[] = [
-  { id: 'y2019basic', sensorId: 'phone2019', lensesEqMm: [13, 26] },
-  { id: 'y2019tele', sensorId: 'phone2019', lensesEqMm: [13, 26, 52] },
-  { id: 'currentBasic', sensorId: 'phoneModern', lensesEqMm: [13, 26] },
-  { id: 'currentPro', sensorId: 'phoneModern', lensesEqMm: [13, 24, 77] },
-  { id: 'currentZoom', sensorId: 'phoneModern', lensesEqMm: [13, 24, 70, 115] },
+  { id: 'y2019basic', sensorId: 'iphoneXR', lensesEqMm: [13, 26] },
+  { id: 'y2019tele', sensorId: 'iphoneXR', lensesEqMm: [13, 26, 52] },
+  { id: 'currentBasic', sensorId: 'iphone15ProMax', lensesEqMm: [13, 26] },
+  { id: 'currentPro', sensorId: 'iphone15ProMax', lensesEqMm: [13, 24, 77] },
+  { id: 'currentZoom', sensorId: 'iphone15ProMax', lensesEqMm: [13, 24, 70, 115] },
 ];

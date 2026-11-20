@@ -26,10 +26,10 @@ describe('noise verdict (normal viewing size)', () => {
   });
 
   it('a phone in sunlight at base ISO is at most slightly noisy', () => {
-    const old = derive({ ...initialState.camera, sensorId: 'phone2019', focalLengthMm: 26 / cropFactor(SENSORS.phone2019), mode: 'auto' }, { ...initialState.scene, lightPresetId: 'sun' });
+    const old = derive({ ...initialState.camera, sensorId: 'iphoneXR', focalLengthMm: 26 / cropFactor(SENSORS.iphoneXR), mode: 'auto' }, { ...initialState.scene, lightPresetId: 'sun' });
     expect(old.settings.iso).toBe(100);
     expect(old.noise.cls).toBe('medium');
-    const modern = derive({ ...initialState.camera, sensorId: 'phoneModern', focalLengthMm: 24 / cropFactor(SENSORS.phoneModern), mode: 'auto' }, { ...initialState.scene, lightPresetId: 'sun' });
+    const modern = derive({ ...initialState.camera, sensorId: 'iphone15ProMax', focalLengthMm: 24 / cropFactor(SENSORS.iphone15ProMax), mode: 'auto' }, { ...initialState.scene, lightPresetId: 'sun' });
     expect(modern.noise.cls).toBe('low');
     expect(modern.noise.amount).toBeLessThan(0.25);
   });

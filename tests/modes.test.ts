@@ -49,7 +49,7 @@ describe('modes', () => {
   });
 
   it('phones reach 1/10000 s in bright sun (electronic shutter); cameras stop at 1/4000 s', () => {
-    const phone = resolveMode({ ...base, sensorId: 'phone2019', mode: 'auto' }, SENSORS.phone2019, 15);
+    const phone = resolveMode({ ...base, sensorId: 'iphoneXR', mode: 'auto' }, SENSORS.iphoneXR, 15);
     expect(phone.settings.shutterS).toBeLessThan(1 / 4000);
     const offset = 15 - Math.log2((1.8 * 1.8) / phone.settings.shutterS) + Math.log2(phone.settings.iso / 100);
     expect(Math.abs(offset)).toBeLessThan(0.2);
@@ -82,9 +82,9 @@ describe('modes', () => {
   });
 
   it('phones keep their fixed aperture in every mode', () => {
-    const phone = SENSORS.phone2019;
+    const phone = SENSORS.iphoneXR;
     for (const mode of ['auto', 'P', 'Av', 'Tv', 'M'] as const) {
-      const r = resolveMode({ ...base, sensorId: 'phone2019', mode, aperture: 8 }, phone, 12);
+      const r = resolveMode({ ...base, sensorId: 'iphoneXR', mode, aperture: 8 }, phone, 12);
       expect(r.settings.aperture).toBe(1.8);
       expect(r.autoFields.has('aperture')).toBe(false);
     }

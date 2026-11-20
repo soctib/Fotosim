@@ -48,8 +48,8 @@ describe('modes respect the lens', () => {
   });
 
   it('phones ignore the lens setting', () => {
-    const phone = SENSORS.phone2019;
-    const d = derive({ ...ff, sensorId: 'phone2019', lensId: 'kit', focalLengthMm: 26 / cropFactor(phone) }, initialState.scene);
+    const phone = SENSORS.iphoneXR;
+    const d = derive({ ...ff, sensorId: 'iphoneXR', lensId: 'kit', focalLengthMm: 26 / cropFactor(phone) }, initialState.scene);
     expect(d.maxAperture).toBe(1.8);
     expect(d.settings.aperture).toBe(1.8);
   });
