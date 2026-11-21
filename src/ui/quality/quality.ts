@@ -57,11 +57,7 @@ export function mountQuality(root: HTMLDetailsElement, store: Store): void {
       : d.zoom.factor > 1
         ? fill(t.resolution.fileZoom, { nominal, factor: formatMp(d.zoom.factor) })
         : fill(t.resolution.file, { nominal });
-    const phone = !!d.sensor.phoneCameras;
-    $('because').textContent =
-      phone && r.mainLoss === 'diffraction'
-        ? t.resolution.becauseDiffractionPhone
-        : fill(t.resolution.because[r.mainLoss ?? r.base], { aperture: formatAperture(d.settings.aperture) });
+    $('because').textContent = because(d);
     const list = losses(d);
     $('losses').innerHTML = list;
     $('losses-block').hidden = !list;
@@ -70,6 +66,21 @@ export function mountQuality(root: HTMLDetailsElement, store: Store): void {
     const normal = d.outputSize.results.find((x) => x.id === 'a4' && x.view === 'normal')!;
     $('intro').textContent = fill(t.outputSize.intro, { mp: formatMp(normal.sharpMp) });
   });
+}
+
+/** One sentence on the largest loss and what would help. */
+function because(d: Derived): string {
+  const r = d.resolution;
+  const tr = t.resolution;
+  const text =
+    r.mainLoss === 'diffraction' && d.sensor.phoneCameras
+      ? tr.becauseDiffractionPhone
+      : r.mainLoss === 'lens' && d.lensCause
+        ? d.lensCause === 'design'
+          ? tr.becauseLens.design[d.settings.lensId]
+          : tr.becauseLens[d.lensCause]
+        : tr.because[r.mainLoss ?? r.base];
+  return fill(text, { aperture: formatAperture(d.settings.aperture), medium: tr.medium[r.base] });
 }
 
 /** What each factor costs, as a share of the ceiling (they add up with the share reached, see model/resolution.ts). */

@@ -43,6 +43,10 @@ Light situation, plus one compact row per element: visible toggle, movement (per
   film: the scan's). Reaching the ceiling is never called a loss.
 - A tip on the largest loss (none below 10 % total), then "Verlust durch": each other factor's share of the
   ceiling (b_i² / b²); with the share reached they sum to 100 %. Film: the scan is a loss.
+  When the lens is the largest loss, the tip says what would help (model `lensBlurCause`): stop down
+  (aperture aberrations ≥ 30 % of the lens blur²), zoom towards the middle (zoom-end penalty ≥ 20 %), or
+  else only a sharper lens – kit → Profi-Zoom/prime, Profi-Zoom → prime; with the prime, the medium simply
+  outresolves any lens. Phones: their lens is fixed, nothing to change.
 - Table of screens and prints: verdict up close (30 cm) and at normal distance (✓ / ~ / ✗), and the effective MP
   needed for ✓ up close (screens: their own pixels), with a one-sentence summary. A link opens the infobox's
   explanation of "echte Details".

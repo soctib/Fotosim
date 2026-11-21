@@ -98,14 +98,39 @@ export function diffractionBlurUm(aperture: number): number {
  * for small sensors resolve finer, lenses for medium format coarser – in µm, not in the photo.
  */
 export function lensBlurUm(lens: CameraLens, equivalentFocalMm: number, aperture: number, formatScale: number): number {
+  const { bestUm, aberrationUm, zoomEndFactor } = lensBlurParts(lens, equivalentFocalMm, aperture);
+  return Math.hypot(bestUm, aberrationUm) * zoomEndFactor * formatScale;
+}
+
+/** The parts of lens blur: residual at the sweet spot, aberrations from the aperture, and the zoom-end factor. */
+function lensBlurParts(lens: CameraLens, equivalentFocalMm: number, aperture: number) {
   const wideOpen = lensMaxApertureRaw(lens, equivalentFocalMm);
-  const aberration = lens.wideOpenUm * Math.min(1, wideOpen / aperture) ** 2;
-  let blur = Math.hypot(lens.bestUm, aberration);
+  const aberrationUm = lens.wideOpenUm * Math.min(1, wideOpen / aperture) ** 2;
+  let zoomEndFactor = 1;
   if (lens.zoom) {
     const u = Math.log(equivalentFocalMm / lens.wideEqMm) / Math.log(lens.teleEqMm / lens.wideEqMm);
-    blur *= 1 + ZOOM_END_PENALTY * Math.abs(2 * Math.min(1, Math.max(0, u)) - 1);
+    zoomEndFactor = 1 + ZOOM_END_PENALTY * Math.abs(2 * Math.min(1, Math.max(0, u)) - 1);
   }
-  return blur * formatScale;
+  return { bestUm: lens.bestUm, aberrationUm, zoomEndFactor };
+}
+
+/**
+ * Why the lens blurs, i.e. what would help: 'wideOpen' – stop down; 'zoomEnd' – zoom back towards
+ * the middle; 'design' – nothing but a sharper lens. Judged by each part's share of the lens blur².
+ */
+export type LensCause = 'wideOpen' | 'zoomEnd' | 'design';
+/** Aperture aberrations name the cause from this share of the lens blur² on. */
+export const LENS_WIDE_OPEN_SHARE = 0.3;
+/** The zoom end names the cause from this share of the lens blur² on (the outer ≈ quarter of the range). */
+export const LENS_ZOOM_END_SHARE = 0.2;
+
+export function lensBlurCause(lens: CameraLens, equivalentFocalMm: number, aperture: number): LensCause {
+  const { bestUm, aberrationUm, zoomEndFactor } = lensBlurParts(lens, equivalentFocalMm, aperture);
+  const core = bestUm * bestUm + aberrationUm * aberrationUm;
+  const total = core * zoomEndFactor * zoomEndFactor;
+  if ((aberrationUm * aberrationUm) / total >= LENS_WIDE_OPEN_SHARE) return 'wideOpen';
+  if ((total - core) / total >= LENS_ZOOM_END_SHARE) return 'zoomEnd';
+  return 'design';
 }
 
 /** Shake smear (µm) from the shake factor (1 = at the handheld limit) and the circle of confusion. */

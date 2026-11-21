@@ -25,9 +25,11 @@ import {
   diffractionBlurUm,
   effectiveResolution,
   filmBlurUm,
+  lensBlurCause,
   lensBlurUm,
   processingBlurUm,
   shakeBlurUm,
+  type LensCause,
   type Resolution,
 } from './resolution';
 import {
@@ -133,6 +135,8 @@ export interface Derived {
   noise: { indexStops: number; cls: NoiseClass; amount: number; equivalentIso: number };
   /** Detail in the photo of the subject in focus (whole frame if nothing is in focus). */
   resolution: Resolution;
+  /** What would make the lens draw sharper (null for phones: their lens is fixed). */
+  lensCause: LensCause | null;
   /** Which screens and print sizes the photo still looks good on. */
   outputSize: OutputSize;
   elements: DerivedElement[];
@@ -258,6 +262,7 @@ export function derive(rawInput: CameraSettings, rawScene: Scene): Derived {
       equivalentIso: equivalentIso(iso, crop, multiFrame),
     },
     resolution,
+    lensCause: optical.lensBlurUm === undefined ? lensBlurCause(CAMERA_LENSES[settings.lensId], f * opticalCrop, N) : null,
     outputSize: outputSize(resolution.effectiveMp, sensor.widthMm / sensor.heightMm, noiseIdx),
     elements,
     costs: costs(input.sensorId, settings.lensId, f * opticalCrop, settings.motion, optical.fixedAperture !== undefined),

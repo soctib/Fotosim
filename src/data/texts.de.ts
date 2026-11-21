@@ -205,7 +205,7 @@ export const de = {
       pixels: 'Mehr holt dieser Sensor nicht heraus – mehr Detail gibt es nur mit mehr Pixeln oder näher dran.',
       diffraction:
         'Am meisten kostet die Beugung bei {aperture}: Je weiter abgeblendet, desto weicher wird alles. Etwas weiter öffnen hilft, solange das Objektiv dabei nicht weicher wird.',
-      lens: 'Am meisten kostet das Objektiv – offen und an den Enden eines Zooms ist es am weichsten. Abblenden hilft etwas, ein besseres Objektiv mehr.',
+      lens: 'Am meisten kostet das winzige Handy-Objektiv – daran lässt sich nichts ändern.',
       defocus: 'Am meisten kostet die Unschärfe: Das Motiv liegt nicht genau im Fokus.',
       motion: 'Am meisten kostet die Bewegung des Motivs – eine kürzere Zeit hilft.',
       shake: 'Am meisten kostet die Verwacklung – kürzere Zeit, Stabilisator oder Stativ helfen.',
@@ -214,6 +214,18 @@ export const de = {
       film: 'Mehr hält dieser Film nicht fest – feineres Korn und mehr Detail hat ein langsamerer Film (niedrigere ISO).',
       scanner: 'Am meisten kostet der Scan: Auf dem Film steckt mehr, als dieser Scan herausholt.',
     },
+    /** Interchangeable lenses: what would make the lens draw sharper (model: lensBlurCause). */
+    becauseLens: {
+      wideOpen: 'Am meisten kostet das Objektiv: So weit offen ({aperture}) zeichnet es am weichsten – ein, zwei Stufen abblenden hilft.',
+      zoomEnd: 'Am meisten kostet das Objektiv: Am Ende seines Zoombereichs zeichnet es weicher – etwas zur Mitte hin zoomen hilft.',
+      design: {
+        kit: 'Am meisten kostet das Objektiv: Mehr gibt das Kit-Zoom nicht her – Profi-Zoom und Festbrennweite zeichnen schärfer.',
+        fastZoom: 'Am meisten kostet das Objektiv: Mehr gibt dieses Zoom nicht her – eine Festbrennweite zeichnet schärfer.',
+        prime:
+          'Am meisten kostet das Objektiv – und mehr gibt kein Objektiv her: Der {medium} löst feiner auf, als selbst sehr gute Objektive zeichnen. Bei so hoher Auflösung ist das normal.',
+      },
+    },
+    medium: { pixels: 'Sensor', film: 'Film' },
     /** Phones have a fixed aperture: diffraction is just the price of tiny pixels. */
     becauseDiffractionPhone:
       'Am meisten kostet die Beugung: Bei so winzigen Pixeln macht sie schon die offene Blende weich – die Grenze kleiner Sensoren.',

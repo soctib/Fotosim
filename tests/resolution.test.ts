@@ -8,6 +8,7 @@ import {
   diffractionBlurUm,
   effectiveResolution,
   filmBlurUm,
+  lensBlurCause,
   lensBlurUm,
   processingBlurUm,
   shakeBlurUm,
@@ -122,6 +123,23 @@ describe('contributions', () => {
     // Stopped far down only the residual is left.
     expect(lensBlurUm(CAMERA_LENSES.prime, 50, 16, 1)).toBeCloseTo(CAMERA_LENSES.prime.bestUm, 1);
     expect(lensBlurUm(CAMERA_LENSES.prime, 50, 5.6, 0.5)).toBeCloseTo(lensBlurUm(CAMERA_LENSES.prime, 50, 5.6, 1) / 2, 10);
+  });
+
+  it('names what would make the lens sharper: stopping down, zooming back, or only a better lens', () => {
+    const { kit, fastZoom, prime } = CAMERA_LENSES;
+    expect(lensBlurCause(kit, 50, 4.5)).toBe('wideOpen');
+    expect(lensBlurCause(fastZoom, 200, 8)).toBe('zoomEnd');
+    expect(lensBlurCause(fastZoom, 24, 8)).toBe('zoomEnd');
+    expect(lensBlurCause(fastZoom, 50, 4.5)).toBe('design');
+    expect(lensBlurCause(kit, 50, 11)).toBe('design');
+    expect(lensBlurCause(prime, 50, 1.4)).toBe('wideOpen');
+    expect(lensBlurCause(prime, 50, 5.6)).toBe('design');
+  });
+
+  it('derive() names the lens cause for camera lenses, not for phones', () => {
+    const d = (c: Partial<CameraSettings>) => derive({ ...BASE, ...c }, SUN);
+    expect(d({ sensorId: 'fullFrame', lensId: 'prime', focalLengthMm: 50, aperture: 1.4 }).lensCause).toBe('wideOpen');
+    expect(d({ sensorId: 'iphoneXR', focalLengthMm: focalOptions(SENSORS.iphoneXR)[0].realMm }).lensCause).toBeNull();
   });
 
   it('faster film resolves less', () => {
