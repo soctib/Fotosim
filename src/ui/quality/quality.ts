@@ -1,5 +1,6 @@
-// "Wofür reicht das Foto?" – how much real detail the photo holds, what costs it, and which
-// screens and prints it still looks good on. Pure output of derive().
+// "Wofür reicht das Foto?" – the effective resolution as a budget (how much of what the sensor or
+// film can deliver the photo reaches, and what each factor costs), and which screens and prints it
+// still looks good on. Pure output of derive().
 
 import { de as t, fill } from '../../data/texts.de';
 import type { Derived } from '../../model/derive';
@@ -18,11 +19,14 @@ export function mountQuality(root: HTMLDetailsElement, store: Store): void {
     <summary>${t.outputSize.title}</summary>
     <div class="quality-body">
       <div class="quality-detail">
-        <p class="quality-headline"><b data-role="mp"></b> ${t.resolution.headlineLabel}<small data-role="file"></small></p>
+        <p class="quality-headline"><b data-role="mp"></b> ${t.resolution.headlineLabel}</p>
+        <p class="quality-reached"><span data-role="reached"></span><small data-role="file"></small></p>
         <p class="quality-because" data-role="because"></p>
-        <h3>${t.resolution.sharesTitle}</h3>
-        <ul class="shares" data-role="shares"></ul>
-        <p class="out-note">${t.resolution.sharesNote}</p>
+        <div data-role="losses-block">
+          <h3>${t.resolution.lossesTitle}</h3>
+          <ul class="shares" data-role="losses"></ul>
+          <p class="out-note">${t.resolution.lossesNote}</p>
+        </div>
         <button type="button" class="link" data-role="more">${t.resolution.more}</button>
       </div>
       <div class="quality-output">
@@ -44,13 +48,23 @@ export function mountQuality(root: HTMLDetailsElement, store: Store): void {
     const r = d.resolution;
     $('mp').textContent = fill(t.resolution.megapixels, { value: formatMp(r.effectiveMp) });
     const nominal = formatMp(r.nominalMp);
+    $('reached').textContent = fill(r.base === 'film' ? t.resolution.reachedFilm : t.resolution.reached, {
+      pct: Math.round(r.reached * 100),
+      ceiling: formatMp(r.ceilingMp),
+    });
     $('file').textContent = d.sensor.isFilm
       ? fill(t.resolution.fileFilm, { nominal })
       : d.zoom.factor > 1
         ? fill(t.resolution.fileZoom, { nominal, factor: formatMp(d.zoom.factor) })
         : fill(t.resolution.file, { nominal });
-    $('because').textContent = fill(t.resolution.because[r.bottleneck], { aperture: formatAperture(d.settings.aperture) });
-    $('shares').innerHTML = shares(d);
+    const phone = !!d.sensor.phoneCameras;
+    $('because').textContent =
+      phone && r.mainLoss === 'diffraction'
+        ? t.resolution.becauseDiffractionPhone
+        : fill(t.resolution.because[r.mainLoss ?? r.base], { aperture: formatAperture(d.settings.aperture) });
+    const list = losses(d);
+    $('losses').innerHTML = list;
+    $('losses-block').hidden = !list;
     $('summary').textContent = summary(d);
     $('rows').innerHTML = rows(d);
     const normal = d.outputSize.results.find((x) => x.id === 'a4' && x.view === 'normal')!;
@@ -58,19 +72,13 @@ export function mountQuality(root: HTMLDetailsElement, store: Store): void {
   });
 }
 
-/**
- * The contributions as shares of the total blur. They add as squares (see model/resolution.ts),
- * so each one's share of the sum of squares is what removing it would win back, roughly.
- */
-function shares(d: Derived): string {
-  const r = d.resolution;
-  const total = r.totalBlurUm ** 2;
-  return r.contributions
-    .map((c) => ({ c, share: (c.um * c.um) / total }))
+/** What each factor costs, as a share of the ceiling (they add up with the share reached, see model/resolution.ts). */
+function losses(d: Derived): string {
+  return d.resolution.losses
     .filter(({ share }) => share >= 0.02)
     .map(
-      ({ c, share }) =>
-        `<li><span>${t.resolution.factors[c.factor]}</span><span class="share-bar" style="--share:${(share * 100).toFixed(1)}%"></span><span>${Math.round(share * 100)} %</span></li>`,
+      ({ factor, share }) =>
+        `<li><span>${t.resolution.factors[factor]}</span><span class="share-bar" style="--share:${(share * 100).toFixed(1)}%"></span><span>${Math.round(share * 100)} %</span></li>`,
     )
     .join('');
 }

@@ -77,6 +77,39 @@ describe('effectiveResolution()', () => {
   });
 });
 
+describe('budget: share of the ceiling reached, and what each factor costs', () => {
+  it('reached plus all losses make 100 %, and reached is effective / ceiling', () => {
+    const r = effectiveResolution({ frameWidthMm: 36, frameHeightMm: 24, pixelPitchUm: 4, samplingFactor: 1.1, blurs: { lens: 3, diffraction: 2.5 } });
+    expect(r.base).toBe('pixels');
+    expect(r.reached + r.losses.reduce((s, l) => s + l.share, 0)).toBeCloseTo(1, 10);
+    expect(r.reached).toBeCloseTo(r.effectiveMp / r.ceilingMp, 10);
+    expect(r.ceilingMp).toBeCloseTo(r.nominalMp / 1.21, 6); // the colour filter belongs to the ceiling
+    expect(r.losses.map((l) => l.factor)).toEqual(['lens', 'diffraction']);
+    expect(r.mainLoss).toBe('lens');
+  });
+
+  it('at the ceiling there is no main loss', () => {
+    const r = effectiveResolution({ frameWidthMm: 36, frameHeightMm: 24, pixelPitchUm: 6, samplingFactor: 1.1, blurs: { lens: 1 } });
+    expect(1 - r.reached).toBeLessThan(0.1);
+    expect(r.mainLoss).toBeNull();
+  });
+
+  it('film: the film is the ceiling, the scan a loss', () => {
+    const r = effectiveResolution({ frameWidthMm: 36, frameHeightMm: 24, pixelPitchUm: 11.7, samplingFactor: 1, scannerBlurUm: 3, blurs: { film: 7.7, lens: 2 } });
+    expect(r.base).toBe('film');
+    expect(r.ceilingMp).toBeCloseTo(36000 * 24000 / 7.7 ** 2 / 1e6, 6);
+    expect(r.mainLoss).toBe('scanner');
+  });
+
+  it('45 MP full frame with the default zoom at f/4.5: lens and diffraction cost about as much as each other', () => {
+    const r = res({ sensorId: 'fullFramePro', lensId: 'fastZoom', focalLengthMm: 50, aperture: 4.5 });
+    expect(r.ceilingMp).toBeCloseTo(45 / 1.21, 0);
+    expect(r.reached).toBeGreaterThan(0.5);
+    expect(r.reached).toBeLessThan(0.7);
+    expect(['lens', 'diffraction']).toContain(r.mainLoss);
+  });
+});
+
 describe('contributions', () => {
   it('diffraction grows with the f-number', () => {
     expect(diffractionBlurUm(16)).toBeCloseTo(2 * diffractionBlurUm(8), 10);

@@ -5,6 +5,11 @@
 // independent detail per b, so frame height / b effective pixels along the height, and
 // effective MP = frame area / b².
 //
+// Presentation as a budget: the ceiling is what the recording medium delivers with a perfect lens and
+// technique – the sensor's pixels (colour filter included) or the film's grain. Every other factor
+// costs a share of it. Since 1/MP grows with b², which is a plain sum, these shares and the share
+// reached add up to exactly 100 %: factor i costs b_i² / b² of the ceiling, the medium keeps b_0² / b².
+//
 // Consistency with the depth-of-field model: a blur of exactly one circle of confusion
 // (diagonal/1500) leaves 1500 effective pixels along the diagonal – the classic "sharp" standard.
 
@@ -26,6 +31,15 @@ export interface Contribution {
   factor: ResolutionFactor;
   um: number;
 }
+
+export interface Loss {
+  factor: ResolutionFactor;
+  /** Share of the ceiling this factor costs (0–1). */
+  share: number;
+}
+
+/** Below this total loss the photo counts as at the ceiling: nothing worth pointing at. */
+export const AT_CEILING_LOSS = 0.1;
 
 /**
  * A Bayer sensor (one colour per pixel) resolves a bit less than its pixel grid: demosaicing
@@ -132,6 +146,16 @@ export interface Resolution {
   linePairsPerHeight: number;
   /** Largest contribution. */
   bottleneck: ResolutionFactor;
+  /** The recording medium: the sensor's pixels, or the film (the scan is a loss like the lens). */
+  base: 'pixels' | 'film';
+  /** Effective MP the medium delivers with a perfect lens and technique. */
+  ceilingMp: number;
+  /** Share of the ceiling reached: effectiveMp / ceilingMp. */
+  reached: number;
+  /** What every other factor costs, as shares of the ceiling, largest first; with `reached` they sum to 1. */
+  losses: Loss[];
+  /** The largest loss – unless all losses together stay under AT_CEILING_LOSS. */
+  mainLoss: ResolutionFactor | null;
   /** All non-zero contributions, largest first. */
   contributions: Contribution[];
   totalBlurUm: number;
@@ -158,12 +182,23 @@ export function effectiveResolution(input: ResolutionInput): Resolution {
   const total = rss(contributions);
   const areaUm2 = W * H * 1e6;
   const nominalMp = areaUm2 / (p * p) / 1e6;
+  const base: Resolution['base'] = scan === undefined ? 'pixels' : 'film';
+  const baseUm = contributions.find((c) => c.factor === base)?.um ?? total;
+  const losses = contributions
+    .filter((c) => c.factor !== base)
+    .map((c) => ({ factor: c.factor, share: (c.um * c.um) / (total * total) }));
+  const reached = (baseUm * baseUm) / (total * total);
   return {
     effectiveMp: Math.min(nominalMp, areaUm2 / (total * total) / 1e6),
     nominalMp,
     pixelsAcross: (W * 1000) / p,
     linePairsPerHeight: (H * 1000) / total / 2,
     bottleneck: contributions[0].factor,
+    base,
+    ceilingMp: areaUm2 / (baseUm * baseUm) / 1e6,
+    reached,
+    losses,
+    mainLoss: losses.length && 1 - reached >= AT_CEILING_LOSS ? losses[0].factor : null,
     contributions,
     totalBlurUm: total,
     systemBlurUm: rss(contributions.filter((c) => SYSTEM_FACTORS.includes(c.factor))),

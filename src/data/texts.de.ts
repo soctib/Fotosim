@@ -181,12 +181,14 @@ export const de = {
   resolution: {
     title: 'Auflösung',
     megapixels: '{value} MP',
-    /** Box headline: effective megapixels, then what the file holds. */
-    headlineLabel: 'echte Details',
-    file: 'von {nominal} MP in der Datei',
-    fileZoom: 'von {nominal} MP, die nach {factor}× Digitalzoom übrig sind',
-    fileFilm: 'von {nominal} MP im Scan',
-    /** Factors in the shares list. */
+    /** Box headline: effective megapixels, then how close they come to the medium's ceiling. */
+    headlineLabel: 'effektive Auflösung',
+    reached: '{pct} % von dem, was der Sensor schafft: {ceiling} MP',
+    reachedFilm: '{pct} % von dem, was der Film schafft: {ceiling} MP',
+    file: 'Datei: {nominal} MP',
+    fileZoom: 'nach {factor}× Digitalzoom · Datei: {nominal} MP',
+    fileFilm: 'Scan: {nominal} MP',
+    /** Factors in the loss list (pixels and film are the ceiling, never a loss). */
     factors: {
       pixels: 'Pixelraster',
       diffraction: 'Beugung',
@@ -198,23 +200,26 @@ export const de = {
       film: 'Film',
       scanner: 'Scan',
     },
-    /** Infobox: one sentence on the bottleneck. */
+    /** One sentence on the largest loss; pixels/film: at the ceiling, nothing worth pointing at. */
     because: {
-      pixels: 'Hier setzt die Pixelzahl die Grenze – Objektiv und Blende holen schon fast alles heraus.',
+      pixels: 'Mehr holt dieser Sensor nicht heraus – mehr Detail gibt es nur mit mehr Pixeln oder näher dran.',
       diffraction:
-        'Am meisten kostet die Beugung bei {aperture}: Je weiter abgeblendet, desto weicher wird alles. Für das meiste Detail die Blende nur bis etwa f/5.6–8 schließen.',
-      lens: 'Hier ist das Objektiv die Grenze – offen und an den Enden eines Zooms ist es am weichsten. Abblenden hilft, ein besseres Objektiv mehr.',
-      defocus: 'Das Motiv liegt nicht genau in der Schärfe – das kostet hier am meisten.',
-      motion: 'Die Bewegung des Motivs kostet hier am meisten – eine kürzere Zeit hilft.',
-      shake: 'Verwacklung kostet hier am meisten – kürzere Zeit, Stabilisator oder Stativ helfen.',
+        'Am meisten kostet die Beugung bei {aperture}: Je weiter abgeblendet, desto weicher wird alles. Etwas weiter öffnen hilft, solange das Objektiv dabei nicht weicher wird.',
+      lens: 'Am meisten kostet das Objektiv – offen und an den Enden eines Zooms ist es am weichsten. Abblenden hilft etwas, ein besseres Objektiv mehr.',
+      defocus: 'Am meisten kostet die Unschärfe: Das Motiv liegt nicht genau im Fokus.',
+      motion: 'Am meisten kostet die Bewegung des Motivs – eine kürzere Zeit hilft.',
+      shake: 'Am meisten kostet die Verwacklung – kürzere Zeit, Stabilisator oder Stativ helfen.',
       processing:
-        'Die Rauschunterdrückung bügelt feine Details weg („Aquarell-Look“). Mehr Licht hilft am meisten; Handys filtern früher und kräftiger als Kameras.',
-      film: 'Der Film selbst löst nicht feiner auf. Ein langsamerer Film (niedrigere ISO) hat feineres Korn und hält mehr Detail fest.',
-      scanner: 'Der Scan ist der Flaschenhals: Auf dem Film steckt mehr, als dieser Scan herausholt.',
+        'Am meisten kostet die Rauschunterdrückung: Sie bügelt feine Details weg („Aquarell-Look“). Mehr Licht hilft am meisten; Handys filtern früher und kräftiger als Kameras.',
+      film: 'Mehr hält dieser Film nicht fest – feineres Korn und mehr Detail hat ein langsamerer Film (niedrigere ISO).',
+      scanner: 'Am meisten kostet der Scan: Auf dem Film steckt mehr, als dieser Scan herausholt.',
     },
-    sharesTitle: 'Wo Detail verloren geht',
-    sharesNote: 'Anteil jedes Faktors am Verlust. Ohne den größten gewinnt man am meisten zurück.',
-    more: 'Was heißt „echte Details“?',
+    /** Phones have a fixed aperture: diffraction is just the price of tiny pixels. */
+    becauseDiffractionPhone:
+      'Am meisten kostet die Beugung: Bei so winzigen Pixeln macht sie schon die offene Blende weich – die Grenze kleiner Sensoren.',
+    lossesTitle: 'Verlust durch',
+    lossesNote: 'Erreicht und Verluste ergeben zusammen 100 %.',
+    more: 'Was heißt „effektive Auflösung“?',
   },
 
   outputSize: {
@@ -238,7 +243,7 @@ export const de = {
     },
     verdicts: { sharp: 'gestochen scharf', ok: 'ordentlich', soft: 'weich' },
     grainy: 'körnig',
-    legend: '✓ gestochen scharf · ~ ordentlich · ✗ weich oder körnig. „Nötig“: echte Megapixel für ✓ aus 30 cm – bei Bildschirmen ihre eigenen Pixel.',
+    legend: '✓ gestochen scharf · ~ ordentlich · ✗ weich oder körnig. „Nötig“: effektive Megapixel für ✓ aus 30 cm – bei Bildschirmen ihre eigenen Pixel.',
     summaryClose: {
       sharp: 'Aus der Nähe gestochen scharf bis {size}.',
       ok: 'Aus der Nähe ordentlich bis {size}.',
@@ -386,7 +391,7 @@ export const de = {
     movement: 'Bewegungsunschärfe',
     exposure: 'Belichtung',
     noise: 'Rauschen',
-    resolution: 'Echte Details',
+    resolution: 'Effektive Auflösung',
     scanner: 'Scan',
     graph: 'Schärfekurve',
     graphSimple: 'Schärfentiefe',
@@ -428,7 +433,7 @@ export const de = {
     noise:
       'Rauschen hängt von ISO und Sensorgröße ab. Ein kleiner Sensor rauscht bei ISO 100 etwa so wie Vollformat bei viel höherer ISO. Handys gleichen einen Teil davon aus: Sie nehmen mehrere Bilder kurz hintereinander auf und verrechnen sie – neuere Handys mehr als ältere.',
     resolution:
-      'Echte Details zählen, wie viel feine Struktur vom Motiv im Fokus wirklich im Foto steckt. Selbst mit perfektem Objektiv sind das nur etwa 80 % der Pixel, denn jedes Pixel misst nur eine Farbe. Objektiv, Blende, Fokus und Bewegung kosten mehr – darum bringen doppelt so viele Megapixel weniger als doppelt so viel Detail. Nachschärfen macht Kanten kräftiger, aber kein Detail.',
+      'Die effektive Auflösung zählt, wie viel feine Struktur vom Motiv im Fokus wirklich im Foto steckt. Obergrenze ist, was der Sensor mit perfektem Objektiv schafft: etwa 80 % seiner Pixel, denn jedes Pixel misst nur eine Farbe. Objektiv, Blende, Fokus und Bewegung kosten davon ihren Anteil. Nicht verwechseln mit „effektiven Pixeln“ im Datenblatt – das ist nur die Pixelzahl der Datei.',
     scanner:
       'Ein Negativ wird erst durch den Scan zur Datei – und der Scan entscheidet oft, wie viel vom Film übrig bleibt. Der Standard-Scan vom Labor hat nur etwa 6 MP; ein Filmscanner oder eine abfotografierende Digitalkamera holt deutlich mehr heraus, ein Trommelscanner fast alles. Bei Mittelformat bringt der größere Film mehr Pixel bei gleicher Scan-Dichte.',
     graphSimple:

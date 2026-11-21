@@ -37,9 +37,12 @@ Light situation, plus one compact row per element: visible toggle, movement (per
   Shows the relative speed in km/h. Hand shake is not included – the shutter slider's ranges show that.
 
 ### 3b. "Wofür reicht das Foto?" box (under the camera image, foldable, hidden in simplified mode)
-- Headline: effective megapixels of the subject in focus ("15 MP echte Details"), and the file's pixels ("von 24 MP
-  in der Datei"; after digital zoom: what's left; film: the scan's).
-- One sentence on the bottleneck, then each factor's share of the loss (share of the summed squares).
+- Headline: effective resolution of the subject in focus ("21 MP effektive Auflösung"), as a share of the
+  medium's ceiling – what the sensor (colour filter included) or the film delivers with a perfect lens and
+  technique ("57 % von dem, was der Sensor schafft: 37 MP"), and the file's pixels (after zoom: what's left;
+  film: the scan's). Reaching the ceiling is never called a loss.
+- A tip on the largest loss (none below 10 % total), then "Verlust durch": each other factor's share of the
+  ceiling (b_i² / b²); with the share reached they sum to 100 %. Film: the scan is a loss.
 - Table of screens and prints: verdict up close (30 cm) and at normal distance (✓ / ~ / ✗), and the effective MP
   needed for ✓ up close (screens: their own pixels), with a one-sentence summary. A link opens the infobox's
   explanation of "echte Details".

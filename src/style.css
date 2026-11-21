@@ -1219,7 +1219,7 @@ header {
   font-size: 1.6rem;
   color: var(--accent);
 }
-.quality-headline small {
+.quality-reached small {
   display: block;
   color: var(--muted);
 }
