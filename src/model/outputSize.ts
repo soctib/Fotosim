@@ -55,6 +55,8 @@ export interface OutputResult {
   verdict: OutputVerdict;
   /** What pulled the verdict down; null when sharp. */
   reason: 'resolution' | 'noise' | null;
+  /** Effective megapixels needed to look sharp here (noise aside). */
+  sharpMp: number;
 }
 
 export interface OutputSize {
@@ -75,9 +77,14 @@ export function eyeLimitPixels(diagonalMm: number, viewMm: number): number {
   return diagonalMm / (viewMm * Math.tan(EYE_RESOLUTION_RAD));
 }
 
+/** Inverse of diagonalPixels(). */
+export function megapixelsForDiagonal(diagonalPx: number, aspect: number): number {
+  return diagonalPx ** 2 / (aspect + 1 / aspect) / 1e6;
+}
+
 const LEVELS: OutputVerdict[] = ['sharp', 'ok', 'soft'];
 
-function judge(have: number, sharpPx: number, okPx: number, noiseStops: number): Omit<OutputResult, 'id' | 'view'> {
+function judge(have: number, sharpPx: number, okPx: number, noiseStops: number): Pick<OutputResult, 'verdict' | 'reason'> {
   let level = have >= sharpPx ? 0 : have >= okPx ? 1 : 2;
   let reason: OutputResult['reason'] = level > 0 ? 'resolution' : null;
   const noise = classifyNoise(noiseStops);
@@ -102,7 +109,12 @@ export function outputSize(effectiveMp: number, aspect: number, noiseIndexStops:
       const w = Math.min(sw, sh * aspect);
       const screenPx = Math.hypot(w, w / aspect);
       const sharpPx = Math.min(screenPx, eyeLimitPixels(1, 1));
-      results.push({ id: target.id, view: 'normal', ...judge(have, sharpPx, Math.min(screenPx, COC_STANDARD_PX), noiseIndexStops) });
+      results.push({
+        id: target.id,
+        view: 'normal',
+        sharpMp: megapixelsForDiagonal(sharpPx, aspect),
+        ...judge(have, sharpPx, Math.min(screenPx, COC_STANDARD_PX), noiseIndexStops),
+      });
       continue;
     }
     const diagonal = Math.hypot(...target.mm);
@@ -111,10 +123,12 @@ export function outputSize(effectiveMp: number, aspect: number, noiseIndexStops:
       // Relative to normal viewing (distance = diagonal): > 1 means enlarged, which shows more noise.
       const enlargement = diagonal / viewMm;
       const noise = noiseIndexStops + 2 * Math.log2(Math.max(1, enlargement));
+      const sharpPx = eyeLimitPixels(diagonal, viewMm);
       results.push({
         id: target.id,
         view,
-        ...judge(have, eyeLimitPixels(diagonal, viewMm), COC_STANDARD_PX * enlargement, noise),
+        sharpMp: megapixelsForDiagonal(sharpPx, aspect),
+        ...judge(have, sharpPx, COC_STANDARD_PX * enlargement, noise),
       });
     }
   }

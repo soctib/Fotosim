@@ -180,13 +180,15 @@ export const de = {
 
   resolution: {
     title: 'Auflösung',
-    /** Bar value: effective of nominal megapixels. */
-    value: '{effective} von {nominal} MP',
     megapixels: '{value} MP',
-    /** Bar verdict: the factor that limits detail most. */
-    limit: 'Grenze: {factor}',
+    /** Box headline: effective megapixels, then what the file holds. */
+    headlineLabel: 'echte Details',
+    file: 'von {nominal} MP in der Datei',
+    fileZoom: 'von {nominal} MP, die nach {factor}× Digitalzoom übrig sind',
+    fileFilm: 'von {nominal} MP im Scan',
+    /** Factors in the shares list. */
     factors: {
-      pixels: 'Pixel',
+      pixels: 'Pixelraster',
       diffraction: 'Beugung',
       lens: 'Objektiv',
       defocus: 'Fokus',
@@ -210,15 +212,19 @@ export const de = {
       film: 'Der Film selbst löst nicht feiner auf. Ein langsamerer Film (niedrigere ISO) hat feineres Korn und hält mehr Detail fest.',
       scanner: 'Der Scan ist der Flaschenhals: Auf dem Film steckt mehr, als dieser Scan herausholt.',
     },
-    sharesTitle: 'Was am meisten Detail kostet',
+    sharesTitle: 'Wo Detail verloren geht',
+    sharesNote: 'Anteil jedes Faktors am Verlust. Ohne den größten gewinnt man am meisten zurück.',
+    more: 'Was heißt „echte Details“?',
   },
 
   outputSize: {
-    title: 'Wie groß kann ich das zeigen?',
+    title: 'Wofür reicht das Foto?',
     intro:
-      'Aus der Nähe (30 cm, Fotobuch, Abzug in der Hand) braucht ein großer Druck viele Pixel. Mit Abstand – so weit weg, wie das Bild groß ist – reicht für jede Größe dasselbe: Ein Poster von der anderen Raumseite braucht nicht mehr als ein A4-Blatt in der Hand.',
-    close: 'Nähe',
-    normal: 'Abstand',
+      'Aus 30 cm (Fotobuch, Abzug in der Hand) braucht ein großer Druck viele Pixel. Mit Abstand – so weit weg, wie das Bild groß ist – reicht für jede Größe dasselbe, etwa {mp} MP: Ein Poster von der anderen Raumseite braucht nicht mehr als ein A4-Blatt in der Hand.',
+    size: 'Größe',
+    close: 'aus 30 cm',
+    normal: 'mit Abstand',
+    need: 'nötig',
     targets: {
       phone: 'Handy',
       fullHd: 'Full-HD-Monitor',
@@ -232,7 +238,7 @@ export const de = {
     },
     verdicts: { sharp: 'gestochen scharf', ok: 'ordentlich', soft: 'weich' },
     grainy: 'körnig',
-    legend: '✓ gestochen scharf · ~ ordentlich · ✗ weich oder körnig',
+    legend: '✓ gestochen scharf · ~ ordentlich · ✗ weich oder körnig. „Nötig“: echte Megapixel für ✓ aus 30 cm – bei Bildschirmen ihre eigenen Pixel.',
     summaryClose: {
       sharp: 'Aus der Nähe gestochen scharf bis {size}.',
       ok: 'Aus der Nähe ordentlich bis {size}.',
@@ -380,7 +386,7 @@ export const de = {
     movement: 'Bewegungsunschärfe',
     exposure: 'Belichtung',
     noise: 'Rauschen',
-    resolution: 'Auflösung',
+    resolution: 'Echte Details',
     scanner: 'Scan',
     graph: 'Schärfekurve',
     graphSimple: 'Schärfentiefe',
@@ -422,7 +428,7 @@ export const de = {
     noise:
       'Rauschen hängt von ISO und Sensorgröße ab. Ein kleiner Sensor rauscht bei ISO 100 etwa so wie Vollformat bei viel höherer ISO. Handys gleichen einen Teil davon aus: Sie nehmen mehrere Bilder kurz hintereinander auf und verrechnen sie – neuere Handys mehr als ältere.',
     resolution:
-      '{because} Effektive Megapixel zählen das echte Detail vom Motiv im Fokus – die Pixelzahl ({nominal} MP) ist nur die Obergrenze. Nachschärfen macht Kanten kräftiger, bringt aber kein Detail zurück.',
+      'Echte Details zählen, wie viel feine Struktur vom Motiv im Fokus wirklich im Foto steckt. Selbst mit perfektem Objektiv sind das nur etwa 80 % der Pixel, denn jedes Pixel misst nur eine Farbe. Objektiv, Blende, Fokus und Bewegung kosten mehr – darum bringen doppelt so viele Megapixel weniger als doppelt so viel Detail. Nachschärfen macht Kanten kräftiger, aber kein Detail.',
     scanner:
       'Ein Negativ wird erst durch den Scan zur Datei – und der Scan entscheidet oft, wie viel vom Film übrig bleibt. Der Standard-Scan vom Labor hat nur etwa 6 MP; ein Filmscanner oder eine abfotografierende Digitalkamera holt deutlich mehr heraus, ein Trommelscanner fast alles. Bei Mittelformat bringt der größere Film mehr Pixel bei gleicher Scan-Dichte.',
     graphSimple:

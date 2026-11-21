@@ -25,6 +25,9 @@ export function formatMeterRange(near: number, far: number): string {
 }
 
 /** Plain number in the UI locale, for axis ticks. Default precision: one decimal below 1. */
+/** "0,12" below 1 MP, "4,3" below 10 MP, "24" above. */
+export const formatMp = (mp: number) => formatNumber(mp, mp < 1 ? 2 : mp < 10 ? 1 : 0);
+
 export function formatNumber(x: number, digits = x > 0 && x < 1 ? 1 : 0): string {
   return nf(digits).format(x);
 }

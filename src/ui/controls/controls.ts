@@ -30,8 +30,7 @@ import {
   setMode,
 } from '../../state/actions';
 import type { InfoKey, Store } from '../../state/store';
-import { formatMp } from '../bars/bars';
-import { formatMeters, formatNumber } from '../distance';
+import { formatMeters, formatMp, formatNumber } from '../distance';
 import { movementBlurredText } from '../motionText';
 
 const AF_TARGETS: ElementId[] = ['person1', 'person2', 'background'];

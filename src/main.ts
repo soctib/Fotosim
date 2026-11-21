@@ -10,6 +10,7 @@ import { mountElements } from './ui/elements/elements';
 import { mountGraph } from './ui/graph/graph';
 import { mountInfobox } from './ui/infobox/infobox';
 import { mountPreviewSummary } from './ui/previewSummary';
+import { mountQuality } from './ui/quality/quality';
 import { mountSimResize } from './ui/sim/resize';
 import { mountSim } from './ui/sim/sim';
 
@@ -32,6 +33,7 @@ app.innerHTML = `
           <section id="bars"></section>
         </div>
       </details>
+      <details id="quality" open></details>
       <section id="elements"></section>
     </div>
     <aside id="controls"></aside>
@@ -50,6 +52,7 @@ mountBars($('#bars'), store);
 mountSimResize($('.preview'));
 mountGraph($('#graph'), store);
 mountPreviewSummary($<HTMLDetailsElement>('.preview'), store);
+mountQuality($<HTMLDetailsElement>('#quality'), store);
 mountElements($('#elements'), store);
 mountControls($('#controls'), store);
 mountInfobox($<HTMLDetailsElement>('#infobox'), store);

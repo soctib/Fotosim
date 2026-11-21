@@ -35,10 +35,16 @@ Light situation, plus one compact row per element: visible toggle, movement (per
 - **Movement**: smear of the subject in focus (tracked target, else the visible element nearest the focus distance),
   log scale ¼×–16× the sharpness limit with a line at 1×; sharp ≤ 1, slight ≤ 2, visible ≤ 4, else strong.
   Shows the relative speed in km/h. Hand shake is not included – the shutter slider's ranges show that.
-- **Resolution** ("Auflösung"): effective megapixels of the subject in focus, log scale 0.5–100 MP, with the file's
-  pixel count as a mark; the verdict names the bottleneck ("Grenze: Beugung"). Its infobox lists each factor's share
-  and a table "Wie groß kann ich das zeigen?" (screens and prints, up close and at normal distance, ✓ / ~ / ✗) with a
-  one-sentence summary.
+
+### 3b. "Wofür reicht das Foto?" box (under the camera image, foldable, hidden in simplified mode)
+- Headline: effective megapixels of the subject in focus ("15 MP echte Details"), and the file's pixels ("von 24 MP
+  in der Datei"; after digital zoom: what's left; film: the scan's).
+- One sentence on the bottleneck, then each factor's share of the loss (share of the summed squares).
+- Table of screens and prints: verdict up close (30 cm) and at normal distance (✓ / ~ / ✗), and the effective MP
+  needed for ✓ up close (screens: their own pixels), with a one-sentence summary. A link opens the infobox's
+  explanation of "echte Details".
+- Replaces an earlier resolution bar: a fill on a fixed 0.5–100 MP scale said little; the value is the ratio of
+  detail to file pixels and what that is good for.
 
 ### 4. Camera image simulation ("killer feature")
 Shown together with the bars as one foldable group.
@@ -156,6 +162,7 @@ All formulas use mm for focal length/sensor, m for distances, s for shutter.
   prints up close (30 cm). Screens (phone, Full HD, 4K) at normal distance need at most their own pixels. ✓ meets
   the eye's limit, ~ the CoC standard (1500 px diagonal at normal distance, scaled alike – the graph's "sharp"),
   else ✗. Viewing closer than normal adds 2·log2(enlargement) to the noise index; "high" noise drops a level.
+  Each result also carries the effective MP needed for ✓ (`sharpMp`).
 - **derive.ts**: one function `(settings, scene) → Derived`. Everything the UI renders comes from here.
 
 ## Architecture
@@ -176,7 +183,7 @@ Unidirectional: input → `store.update()` → `resolveMode()` → `derive()` �
   camera controls in the next column. Wide screens (≥ 1400 px): third column with the infobox on top and the cost
   list (open) below; while the list is folded, the lens panel moves into the third column under the infobox.
   Narrower: infobox above the controls, cost list collapsible below them.
-- **Mobile**: graph, simulation + bars (pinned at the top while scrolling the rest), scene panel, controls, infobox, cost list (collapsible).
+- **Mobile**: graph, simulation + bars (pinned at the top while scrolling the rest), "Wofür reicht das Foto?" box, scene panel, controls, infobox, cost list (collapsible).
 - Pointer Events everywhere (mouse + touch identical).
 
 ## Milestones

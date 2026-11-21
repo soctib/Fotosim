@@ -22,6 +22,20 @@ describe('eye model', () => {
 });
 
 describe('outputSize()', () => {
+  it('says how many MP each size needs to look sharp', () => {
+    const o = outputSize(1, 1.5, 0);
+    expect(pick(o, 'a4', 'close').sharpMp).toBeCloseTo(8, 0);
+    expect(pick(o, 'p100x150', 'close').sharpMp).toBeGreaterThan(150);
+    // At normal distance every print needs the same ≈ 5.5 MP; a 4K screen its own pixels (3:2 fitted: 3240 × 2160).
+    expect(pick(o, 'a4', 'normal').sharpMp).toBeCloseTo(pick(o, 'p100x150', 'normal').sharpMp, 6);
+    expect(pick(o, 'a4', 'normal').sharpMp).toBeCloseTo(5.5, 0);
+    expect(pick(o, 'uhd', 'normal').sharpMp).toBeCloseTo(3.240 * 2.160, 1);
+    // The threshold really is where "sharp" starts.
+    const a4 = pick(o, 'a4', 'close').sharpMp;
+    expect(pick(outputSize(a4 * 1.01, 1.5, 0), 'a4', 'close').verdict).toBe('sharp');
+    expect(pick(outputSize(a4 * 0.99, 1.5, 0), 'a4', 'close').verdict).toBe('ok');
+  });
+
   it('a sharp 14 MP photo: A4 sharp up close, A3 ok, a poster from across the room sharp', () => {
     const o = outputSize(14, 1.5, 0);
     expect(pick(o, 'a4', 'close').verdict).toBe('sharp');

@@ -1047,7 +1047,6 @@ header {
 .bar-movement[data-cls='slight'] .bar-class,
 .bar-movement[data-cls='visible'] .bar-class { color: var(--warn); }
 .bar-movement[data-cls='strong'] .bar-class { color: var(--bad); }
-.bar-resolution .bar-fill { background: var(--accent); }
 /* Sharpness limit: above this line the subject no longer counts as sharp. */
 .bar-limit {
   position: absolute;
@@ -1086,14 +1085,14 @@ header {
   }
 }
 
-/* Phones: four upright bars would squeeze the camera image, so they lie flat in a strip below it. */
+/* Phones: three upright bars would squeeze the camera image, so they lie flat in a strip below it. */
 @media (max-width: 520px) {
   .preview-body {
     grid-template-columns: minmax(0, 1fr);
   }
   .bars {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 6px;
   }
   .bar {
@@ -1188,12 +1187,55 @@ header {
   margin: 0;
   font-size: 0.9rem;
 }
-.info-extra:empty {
-  display: none;
+
+/* ---- quality: real detail and output sizes ---- */
+
+.quality {
+  max-width: 770px; /* like the scene panel */
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  font-size: 0.85rem;
 }
-.info-extra h3 {
+.quality summary {
+  font-weight: 600;
+  cursor: pointer;
+}
+.quality-body {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 8px 24px;
+  margin-top: 6px;
+}
+.quality p {
+  margin: 0;
+}
+.quality h3 {
   margin: 10px 0 4px;
   font-size: 0.85rem;
+}
+.quality-headline b {
+  font-size: 1.6rem;
+  color: var(--accent);
+}
+.quality-headline small {
+  display: block;
+  color: var(--muted);
+}
+.quality-because {
+  margin-top: 6px !important;
+}
+.quality .link {
+  margin-top: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--curve);
+  font: inherit;
+  font-size: 0.8rem;
+  text-decoration: underline;
+  cursor: pointer;
 }
 .shares {
   list-style: none;
@@ -1223,7 +1265,7 @@ header {
 }
 .out-table th,
 .out-table td {
-  padding: 1px 10px 1px 0;
+  padding: 1px 14px 1px 0;
   text-align: left;
   font-weight: normal;
 }
@@ -1238,6 +1280,23 @@ header {
 .out-table .out-ok { color: var(--warn); }
 .out-table .out-soft { color: var(--bad); }
 .out-table .na { color: var(--muted); font-weight: normal; }
+.out-table thead th:last-child { text-align: right; }
+.out-table thead th,
+.out-table .out-need {
+  white-space: nowrap;
+}
+@media (max-width: 520px) {
+  .out-table th,
+  .out-table td {
+    padding-right: 8px;
+  }
+}
+.out-table .out-need {
+  text-align: right;
+  font-weight: normal;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
 .out-note {
   margin: 4px 0 0;
   font-size: 0.75rem;
@@ -1431,6 +1490,7 @@ header {
 /* ---- simplified mode: graph, camera image (with the light stepper) and three sliders only ---- */
 
 .simple #bars,
+.simple #quality,
 .simple #elements,
 .simple #costs,
 .simple .preview > summary,
