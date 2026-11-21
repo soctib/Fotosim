@@ -72,9 +72,9 @@ export function mountSim(root: HTMLElement, store: Store): void {
     <svg width="0" height="0" aria-hidden="true" style="position:absolute">
       <filter id="sim-shake" x="-10%" width="120%"><feGaussianBlur stdDeviation="0 0"/></filter>
       <filter id="sim-move-background" x="-10%" width="120%"><feGaussianBlur stdDeviation="0 0"/></filter>
-      <filter id="sim-pixelate" x="0" y="0" width="100%" height="100%">
-        <feFlood x="1" y="1" width="1" height="1"/>
-        <feComposite width="2" height="2"/>
+      <filter id="sim-pixelate" x="0" y="0" width="1" height="1" primitiveUnits="objectBoundingBox">
+        <feFlood/>
+        <feComposite x="0" y="0"/>
         <feTile result="samples"/>
         <feComposite in="SourceGraphic" in2="samples" operator="in"/>
         <feMorphology operator="dilate" radius="1"/>
@@ -213,7 +213,7 @@ export function mountSim(root: HTMLElement, store: Store): void {
     // Once one pixel of the file covers a few display pixels, show the pixels: sample each cell
     // once and fill the cell with it (last, like the sensor sampling the blurred image).
     const cell = pixelPx >= MIN_PIXEL_PX ? Math.max(2, Math.round(pixelPx)) : 0;
-    if (cell) setPixelate(pixelate, cell);
+    if (cell) setPixelate(pixelate, cell, W, H);
     const filters = [
       system >= MIN_VISIBLE_SIGMA ? `blur(${system.toFixed(2)}px)` : '',
       sigma > 0 ? 'url(#sim-shake)' : '',
@@ -279,15 +279,25 @@ function cropView(d: Derived, scenery: Scenery, W: number, H: number): CropView 
   return { z, tx: W / 2 - z * clamp(x, W), ty: H / 2 - z * clamp(y, H) };
 }
 
-/** Point the pixelate filter at a cell size: one sample in the middle of each cell, dilated over the cell. */
-function setPixelate(filter: SVGFilterElement, cell: number): void {
+/**
+ * Point the pixelate filter at a cell size (display px): one sample in the middle of each cell,
+ * dilated over the cell. Sub-regions are fractions of the image (objectBoundingBox): in pixel units
+ * WebKit (Safari) measures them from the page instead of the element, the sample misses and the
+ * whole image turns transparent.
+ */
+function setPixelate(filter: SVGFilterElement, cell: number, W: number, H: number): void {
   const [flood, crop, , , dilate] = [...filter.children];
-  const mid = String(Math.floor(cell / 2));
-  flood.setAttribute('x', mid);
-  flood.setAttribute('y', mid);
-  crop.setAttribute('width', String(cell));
-  crop.setAttribute('height', String(cell));
-  dilate.setAttribute('radius', String(Math.ceil(cell / 2)));
+  const fx = (px: number) => (px / W).toFixed(6);
+  const fy = (px: number) => (px / H).toFixed(6);
+  const mid = Math.floor(cell / 2);
+  flood.setAttribute('x', fx(mid));
+  flood.setAttribute('y', fy(mid));
+  flood.setAttribute('width', fx(1));
+  flood.setAttribute('height', fy(1));
+  crop.setAttribute('width', fx(cell));
+  crop.setAttribute('height', fy(cell));
+  const r = Math.ceil(cell / 2);
+  dilate.setAttribute('radius', `${fx(r)} ${fy(r)}`);
 }
 
 /** Camera-style AF frame (corner brackets) around the face, or the scenery's main object, in display pixels. */
