@@ -243,7 +243,7 @@ export const de = {
     },
     verdicts: { sharp: 'gestochen scharf', ok: 'ordentlich', soft: 'weich' },
     grainy: 'körnig',
-    legend: '✓ gestochen scharf · ~ ordentlich · ✗ weich oder körnig. „Nötig“: effektive Megapixel für ✓ aus 30 cm – bei Bildschirmen ihre eigenen Pixel.',
+    legend: '✓ gestochen scharf · ~ ordentlich · ✗ weich oder körnig. „Nötig“: effektive Megapixel für ✓ aus 30 cm – bei Bildschirmen ihre eigenen Pixel, aber nie mehr, als das Auge auflöst.',
     summaryClose: {
       sharp: 'Aus der Nähe gestochen scharf bis {size}.',
       ok: 'Aus der Nähe ordentlich bis {size}.',
