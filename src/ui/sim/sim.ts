@@ -28,7 +28,9 @@ const MAX_BLUR_PX = 60;
 /** Below this sigma (px) a blur filter changes nothing visible – skip it. */
 const MIN_VISIBLE_SIGMA = 0.3;
 /**
- * Exposure is shown as a brightness factor of 2^stops. The upper bound must be high enough that
+ * Exposure is shown as a brightness factor on the sRGB colours. Light per stop doubles in linear terms,
+ * but sRGB values are gamma-encoded (≈ linear^(1/2.2)), so one stop is a factor of 2^(1/2.2) ≈ 1.37 on
+ * them – multiplying sRGB by 2 per stop would clip mid-tones to white at "slightly over". The upper bound must be high enough that
  * even the darkest drawn colour (pupils, #111) clips to white – a lower cap freezes the image a
  * few stops over, with the pupils and dark outlines left floating in a white frame.
  *
@@ -37,6 +39,7 @@ const MIN_VISIBLE_SIGMA = 0.3;
  * leaves tinted ghost outlines. Both steps are linear, so the order only matters once colours clip.
  */
 const MAX_BRIGHTNESS = 2 ** 6;
+const DISPLAY_GAMMA = 2.2;
 const MIN_BRIGHTNESS = 0.03;
 /** Grain frequency of the noise overlay at 1× (per display pixel). */
 const GRAIN_FREQUENCY = 0.9;
@@ -143,7 +146,7 @@ export function mountSim(root: HTMLElement, store: Store): void {
     const zoomed = (svg: string) => (z === 1 ? svg : `<g transform="matrix(${z} 0 0 ${z} ${view.tx.toFixed(2)} ${view.ty.toFixed(2)})">${svg}</g>`);
 
     const sigmaAt = (m: number) => Math.min(MAX_BLUR_PX, (d.blurFractionAt(m) / z) * W * SIGMA_PER_DISC);
-    const gain = (el: DerivedElement) => Math.min(MAX_BRIGHTNESS, Math.max(MIN_BRIGHTNESS, 2 ** el.exposureOffsetStops));
+    const gain = (el: DerivedElement) => Math.min(MAX_BRIGHTNESS, Math.max(MIN_BRIGHTNESS, 2 ** (el.exposureOffsetStops / DISPLAY_GAMMA)));
     const moveSigma = (el: DerivedElement) => Math.min(MAX_BLUR_PX, el.movementBlurFractionOfWidth * W * SIGMA_PER_SMEAR);
 
     // Sky (or wall) and open ground are always furthest back; they share the background's blur, smear and light.
