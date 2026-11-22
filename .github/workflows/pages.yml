@@ -24,7 +24,9 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - run: npm ci
+      # Not `npm ci`: the lockfile (npm 11) lacks optional deps of rolldown's wasm binding, which
+      # npm ci on the runner rejects as out of sync. npm install still uses the locked versions.
+      - run: npm install --no-audit --no-fund
         env:
           # Playwright is only used locally for UI checks; the build doesn't need its browsers.
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
