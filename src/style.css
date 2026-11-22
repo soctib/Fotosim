@@ -41,6 +41,12 @@
   box-sizing: border-box;
 }
 
+/* No double-tap zoom: quick taps on buttons and steppers zoomed the page on iOS. Pinch zoom and
+   scrolling stay; elements with their own touch-action (graph, resize grip) narrow it further. */
+html {
+  touch-action: manipulation;
+}
+
 body {
   margin: 0;
   padding: 0 16px 24px;
