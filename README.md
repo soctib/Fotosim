@@ -13,6 +13,8 @@ Interaktiver Foto-Simulator für Einsteiger: Was passiert mit **Schärfe**, **Be
 
 Das Ergebnis ist **eine einzige HTML-Datei**. Sie läuft offline im Browser, auf Desktop und Handy.
 
+**Online ausprobieren:** https://soctib.github.io/Fotosim/ (wird bei jedem Push auf `main` neu gebaut).
+
 > Status: Gerüst und Rechenmodell stehen, die Oberfläche ist in Arbeit.
 
 ## Entwicklung
