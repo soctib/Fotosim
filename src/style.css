@@ -747,11 +747,6 @@ header {
   height: 100%;
 }
 
-/* Grain is in the file: above the (filtered) image, below the AF frame. */
-.sim-frame .noise {
-  z-index: 10;
-  pointer-events: none;
-}
 
 /* Only drawn shapes take taps (to set the autofocus); sky and empty areas fall through. */
 .sim-frame .layer {
@@ -815,9 +810,11 @@ header {
   }
 }
 
+/* Grain is in the file: above the (filtered) image, below the AF frame. Its tile comes from sim.ts. */
 .sim-frame .noise {
   z-index: 10;
   mix-blend-mode: overlay;
+  image-rendering: pixelated;
   pointer-events: none;
 }
 

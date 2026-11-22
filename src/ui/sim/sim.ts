@@ -41,8 +41,10 @@ const MIN_VISIBLE_SIGMA = 0.3;
 const MAX_BRIGHTNESS = 2 ** 6;
 const DISPLAY_GAMMA = 2.2;
 const MIN_BRIGHTNESS = 0.03;
-/** Grain frequency of the noise overlay at 1× (per display pixel). */
-const GRAIN_FREQUENCY = 0.9;
+/** Side of the pre-computed grain tile, in its own pixels (one per display pixel at 1×). */
+const GRAIN_TILE = 256;
+/** Grain contrast: standard deviation of the tile's grey values around mid-grey (0–1). */
+const GRAIN_SPREAD = 0.4;
 /** Show pixels once one pixel of the file covers this many display pixels (drawn as whole-pixel cells, at least 2). */
 const MIN_PIXEL_PX = 1.5;
 /** How long the AF frame stays visible after a one-shot tap-to-focus (matches the CSS animation). */
@@ -58,18 +60,7 @@ export function mountSim(root: HTMLElement, store: Store): void {
         <svg class="layer" data-layer="person2" xmlns="${SVG_NS}"></svg>
         <svg class="layer" data-layer="person1" xmlns="${SVG_NS}"></svg>
       </div>
-      <svg class="noise" xmlns="${SVG_NS}" aria-hidden="true">
-        <filter id="sim-noise">
-          <feTurbulence type="fractalNoise" baseFrequency="${GRAIN_FREQUENCY}" numOctaves="2" stitchTiles="stitch"/>
-          <!-- grey from the red channel, opaque, then stretched for contrast -->
-          <feColorMatrix type="matrix" values="1 0 0 0 0  1 0 0 0 0  1 0 0 0 0  0 0 0 0 1"/>
-          <feComponentTransfer>
-            <feFuncR type="linear" slope="4" intercept="-1.5"/><feFuncG type="linear" slope="4" intercept="-1.5"/>
-            <feFuncB type="linear" slope="4" intercept="-1.5"/>
-          </feComponentTransfer>
-        </filter>
-        <rect width="100%" height="100%" filter="url(#sim-noise)"/>
-      </svg>
+      <div class="noise" aria-hidden="true"></div>
       <svg class="af-overlay" xmlns="${SVG_NS}" aria-hidden="true"></svg>
     </div>
     <svg width="0" height="0" aria-hidden="true" style="position:absolute">
@@ -91,11 +82,11 @@ export function mountSim(root: HTMLElement, store: Store): void {
   const frame = root.querySelector<HTMLElement>('.sim-frame')!;
   // Optics and sampling (system blur, shake, pixels) filter the image; grain and the AF frame sit on top.
   const image = root.querySelector<HTMLElement>('.sim-image')!;
-  const noise = root.querySelector<SVGSVGElement>('.noise')!;
+  const noise = root.querySelector<HTMLElement>('.noise')!;
+  noise.style.backgroundImage = `url(${grainTile()})`;
   const shake = root.querySelector<SVGFEGaussianBlurElement>('#sim-shake feGaussianBlur')!;
   const moveBackground = root.querySelector<SVGFEGaussianBlurElement>('#sim-move-background feGaussianBlur')!;
   const pixelate = root.querySelector<SVGFilterElement>('#sim-pixelate')!;
-  const grain = root.querySelector<SVGElement>('#sim-noise feTurbulence')!;
   const caption = root.querySelector<HTMLElement>('.sim-caption')!;
   // Shown in simplified mode only (CSS), where the scene panel is hidden.
   mountLightStepper(root.querySelector<HTMLElement>('[data-role="light-stepper"]')!, store);
@@ -121,9 +112,19 @@ export function mountSim(root: HTMLElement, store: Store): void {
 
   let width = 0;
   let last: { d: Derived; scenery: Scenery } | null = null;
+  let frameRequest = 0;
+
+  // A slider can fire several updates per display frame; rebuilding and re-filtering the image for
+  // each one only delays the frame. Draw the latest state once per frame instead.
+  function schedule(d: Derived, scenery: Scenery): void {
+    last = { d, scenery };
+    frameRequest ||= requestAnimationFrame(() => {
+      frameRequest = 0;
+      render(last!.d, last!.scenery);
+    });
+  }
 
   function render(d: Derived, scenery: Scenery): void {
-    last = { d, scenery };
     frame.style.aspectRatio = `${d.sensor.widthMm} / ${d.sensor.heightMm}`;
     const W = frame.clientWidth;
     const H = (W * d.sensor.heightMm) / d.sensor.widthMm;
@@ -202,9 +203,7 @@ export function mountSim(root: HTMLElement, store: Store): void {
 
     // Quadratic so "low" noise stays nearly clean and "very high" is unmistakable.
     noise.style.opacity = Math.min(0.9, d.noise.amount ** 2 * 1.2).toFixed(3);
-    // Noise sits in the file's pixels: finer than a display pixel at normal size, enlarged with them once zoomed in.
     const pixelPx = W / d.resolution.pixelsAcross;
-    grain.setAttribute('baseFrequency', (GRAIN_FREQUENCY / Math.max(1, pixelPx)).toFixed(3));
 
     // Directional blur once the shutter is slower than the handheld limit.
     const k = d.shake.blurFactor;
@@ -217,6 +216,10 @@ export function mountSim(root: HTMLElement, store: Store): void {
     // once and fill the cell with it (last, like the sensor sampling the blurred image).
     const cell = pixelPx >= MIN_PIXEL_PX ? Math.max(2, Math.round(pixelPx)) : 0;
     if (cell) setPixelate(pixelate, cell, W, H);
+    // Noise sits in the file's pixels: one grain per display pixel at normal size (the file's pixels
+    // are finer than that), one per drawn pixel cell once they show – aligned with the cells. Drawn
+    // crisp (pixelated, in CSS): smoothing would blur the grain into soft blotches.
+    noise.style.backgroundSize = `${GRAIN_TILE * (cell || 1)}px`;
     const filters = [
       system >= MIN_VISIBLE_SIGMA ? `blur(${system.toFixed(2)}px)` : '',
       sigma > 0 ? 'url(#sim-shake)' : '',
@@ -236,11 +239,11 @@ export function mountSim(root: HTMLElement, store: Store): void {
     caption.textContent = parts.join(' · ');
   }
 
-  store.subscribe((s, d) => render(d, sceneryFor(s.scene.lightPresetId)));
+  store.subscribe((s, d) => schedule(d, sceneryFor(s.scene.lightPresetId)));
   new ResizeObserver(() => {
     if (frame.clientWidth !== width && last) {
       width = frame.clientWidth;
-      render(last.d, last.scenery);
+      schedule(last.d, last.scenery);
     }
   }).observe(frame);
 }
@@ -406,4 +409,29 @@ function drawPerson(
     )}
     ${part('nose', drawNose(perM * zoom))}
   </g>`;
+}
+
+let grainUrl = '';
+
+/**
+ * Grey grain as a small tile, made once: random values (sum of three uniforms ≈ Gaussian) around
+ * mid-grey, opaque, laid over the image with an overlay blend. A pre-made image tiles almost for
+ * free, where an SVG turbulence filter recomputes every pixel on each repaint.
+ */
+function grainTile(): string {
+  if (grainUrl) return grainUrl;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = GRAIN_TILE;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return '';
+  const img = ctx.createImageData(GRAIN_TILE, GRAIN_TILE);
+  // Three uniforms on [-0.5, 0.5] sum to a standard deviation of 0.5.
+  const scale = (GRAIN_SPREAD / 0.5) * 255;
+  for (let i = 0; i < img.data.length; i += 4) {
+    const g = Math.random() + Math.random() + Math.random() - 1.5;
+    img.data[i] = img.data[i + 1] = img.data[i + 2] = 128 + g * scale;
+    img.data[i + 3] = 255;
+  }
+  ctx.putImageData(img, 0, 0);
+  return (grainUrl = canvas.toDataURL());
 }

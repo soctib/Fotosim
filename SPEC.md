@@ -61,7 +61,7 @@ persons blur per part (nose, face/body, ears at their own distances, SVG filters
 nose can be sharp and the eyes not. Close persons drift to the image centre (the photographer aims at them).
 On top: `brightness()` per layer from its exposure offset (flash lights only near layers) – 2^(stops/2.2), since
 the factor works on gamma-encoded sRGB; 2^stops would clip mid-tones to white at "leicht überbelichtet".
-SVG `feTurbulence` overlay for noise (opacity from `noise.amount`); sizes and positions from a real perspective projection (`heightFractionPerM`).
+Noise overlay: a grey grain tile made once on a canvas, tiled crisp with an overlay blend (opacity from `noise.amount`) – an SVG `feTurbulence` filter would recompute every pixel on each repaint. The image redraws at most once per animation frame. Sizes and positions from a real perspective projection (`heightFractionPerM`).
 Directional blur for camera shake when `shake.blurFactor > 1`; each layer also smears sideways by its own movement blur.
 A whole-frame Gaussian from `resolution.systemBlurUm` (pixels, diffraction, lens, noise filter, film, scan) – below a
 display pixel at normal size, visible only when zoomed in. **Digital zoom**: the layers draw the uncropped photo and
