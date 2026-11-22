@@ -39,6 +39,8 @@ clamp the sim width to the available stage width (`resize.ts` already has `maxWi
 just not be re-applied on window resize) and/or raise the breakpoint. Check for horizontal
 scroll at every breakpoint.
 
+Edit by Human: This is a misundersanding. The gap between boxes is uneven, nothing overflows.
+
 ## 3. Background icon matching the scene
 
 **Problem:** the draggable background marker in the graph is always mountains + sun
@@ -85,7 +87,29 @@ Small touches that also teach something.
   - "Driving": TBD (see open questions).
 - No physics change; rendering only (`ui/sim/sim.ts`, graph heads in `ui/graph/graph.ts`).
 
-## 6. Camera panel (ambitious)
+## 6. Infobox reacts on hover
+
+**Problem:** the infobox explains whatever was last clicked, pressed or focused. To read about a
+control you have to touch it – and clicking a bar or a slider can change it as a side effect. The
+"Wofür reicht das Foto?" box already switches on hover (`pointerenter` in `ui/quality/quality.ts`);
+everything else doesn't.
+
+**Idea:** with a mouse, hovering is enough to show the matching text; touch keeps tap, keyboard
+keeps focus.
+
+- One shared helper (e.g. `explainOn(el, store, key)` in `ui/`) that wires `pointerenter`
+  (mouse/pen only), `pointerdown` and `focus`. It replaces the scattered `setInfo` listeners in
+  `controls/controls.ts` (`data-info`), `bars/bars.ts`, `graph/graph.ts`, `elements/elements.ts`,
+  `lightStepper.ts` and `quality/quality.ts`.
+- Graph: the key depends on what's under the pointer (focus line, AF marker, curve), so it needs
+  `pointermove` over the graph rather than one `pointerenter`.
+- On the way to a control the mouse sweeps over others and the text flickers through them – a short
+  delay before switching (≈ 150 ms) may help. TBD (see open questions).
+- The infobox keeps its fixed height, so changing texts on hover never shifts the layout.
+- Doesn't solve the infobox being out of view (scrolled away, or below the controls on narrower
+  layouts) – see open questions.
+
+## 7. Camera panel (ambitious)
 
 A foldable panel (like infobox and costs, fold state persisted) with a **generic, simplified
 camera seen from above**, showing the current settings the way a real camera would.
@@ -122,3 +146,7 @@ mode: TBD (see open questions). Tapping a part (dial, ring) shows the matching i
   is it shown in simplified mode?
 - Accent blue: which one, and does the curve colour change?
 - "Driving" persons: how to draw them – a car or bike outline, or simply the running pose?
+- Hover infobox: keep the last hovered text when the pointer leaves, or fall back to the last
+  clicked one? Delay before switching, and how long?
+- Infobox out of view: should hover (or tap) show the text near the pointer instead, e.g. a popover,
+  when the infobox isn't visible?
