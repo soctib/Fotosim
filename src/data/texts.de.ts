@@ -230,14 +230,10 @@ export const de = {
     becauseDiffractionPhone:
       'Am meisten kostet die Beugung: Bei so winzigen Pixeln macht sie schon die offene Blende weich – die Grenze kleiner Sensoren.',
     lossesTitle: 'Verlust durch',
-    lossesNote: 'Erreicht und Verluste ergeben zusammen 100 %.',
-    more: 'Was heißt „effektive Auflösung“?',
   },
 
   outputSize: {
     title: 'Wofür reicht das Foto?',
-    intro:
-      'Aus 30 cm (Fotobuch, Abzug in der Hand) braucht ein großer Druck viele Pixel. Mit Abstand – so weit weg, wie das Bild groß ist – reicht für jede Größe dasselbe, etwa {mp} MP: Ein Poster von der anderen Raumseite braucht nicht mehr als ein A4-Blatt in der Hand.',
     size: 'Größe',
     close: 'aus 30 cm',
     normal: 'mit Abstand',
@@ -255,7 +251,7 @@ export const de = {
     },
     verdicts: { sharp: 'gestochen scharf', ok: 'ordentlich', soft: 'weich' },
     grainy: 'körnig',
-    legend: '✓ gestochen scharf · ~ ordentlich · ✗ weich oder körnig. „Nötig“: effektive Megapixel für ✓ aus 30 cm – bei Bildschirmen ihre eigenen Pixel, aber nie mehr, als das Auge auflöst.',
+    legend: '✓ gestochen scharf · ~ ordentlich · ✗ weich oder körnig',
     summaryClose: {
       sharp: 'Aus der Nähe gestochen scharf bis {size}.',
       ok: 'Aus der Nähe ordentlich bis {size}.',
@@ -404,6 +400,7 @@ export const de = {
     exposure: 'Belichtung',
     noise: 'Rauschen',
     resolution: 'Effektive Auflösung',
+    output: 'Wofür reicht das Foto?',
     scanner: 'Scan',
     graph: 'Schärfekurve',
     graphSimple: 'Schärfentiefe',
@@ -445,7 +442,9 @@ export const de = {
     noise:
       'Rauschen hängt von ISO und Sensorgröße ab. Ein kleiner Sensor rauscht bei ISO 100 etwa so wie Vollformat bei viel höherer ISO. Handys gleichen einen Teil davon aus: Sie nehmen mehrere Bilder kurz hintereinander auf und verrechnen sie – neuere Handys mehr als ältere.',
     resolution:
-      'Die effektive Auflösung zählt, wie viel feine Struktur vom Motiv im Fokus wirklich im Foto steckt. Obergrenze ist, was der Sensor mit perfektem Objektiv schafft: etwa 80 % seiner Pixel, denn jedes Pixel misst nur eine Farbe. Objektiv, Blende, Fokus und Bewegung kosten davon ihren Anteil. Nicht verwechseln mit „effektiven Pixeln“ im Datenblatt – das ist nur die Pixelzahl der Datei.',
+      'Wie viel feine Struktur vom Motiv im Fokus wirklich im Foto steckt. Obergrenze: was der Sensor mit perfektem Objektiv schafft – etwa 80 % seiner Pixel, da jedes nur eine Farbe misst. Erreicht und Verluste ergeben zusammen 100 %.\n\n„Effektive Pixel“ im Datenblatt sind etwas anderes: nur die Pixelzahl der Datei.',
+    output:
+      'Aus 30 cm (Fotobuch, Abzug, Handy) braucht ein großer Druck viele Pixel. Mit Abstand (so weit, wie das Bild groß ist) genügt jeder Größe dasselbe: etwa {sharpMp} MP.\n\nBildschirme zeigen höchstens ihre eigenen Pixel (6,1″-Handy, nur aus der Hand; 24″ Full HD; 27″ 4K). Aus der Nähe fällt Rauschen mehr auf. „Nötig“: effektive MP für ✓ aus 30 cm.',
     scanner:
       'Ein Negativ wird erst durch den Scan zur Datei – und der Scan entscheidet oft, wie viel vom Film übrig bleibt. Der Standard-Scan vom Labor hat nur etwa 6 MP; ein Filmscanner oder eine abfotografierende Digitalkamera holt deutlich mehr heraus, ein Trommelscanner fast alles. Bei Mittelformat bringt der größere Film mehr Pixel bei gleicher Scan-Dichte.',
     graphSimple:

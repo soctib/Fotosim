@@ -61,6 +61,23 @@ describe('outputSize()', () => {
     expect(pick(o, 'uhd', 'normal').verdict).toBe('ok');
   });
 
+  it('a phone is seen from 30 cm only; monitors from both distances, up close never more than their pixels', () => {
+    const o = outputSize(1, 1.5, 0);
+    expect(o.results.filter((r) => r.id === 'phone').map((r) => r.view)).toEqual(['close']);
+    // 6.1″ phone, 3:2 photo across it: ≈ 1340 px diagonal at the eye's limit – under 1 MP.
+    expect(pick(o, 'phone', 'close').sharpMp).toBeCloseTo(0.83, 1);
+    // A 27″ 4K monitor from 30 cm shows all its pixels (3240 × 2160 for 3:2), more than from a distance.
+    expect(pick(o, 'uhd', 'close').sharpMp).toBeCloseTo(3.24 * 2.16, 2);
+    expect(pick(o, 'uhd', 'close').sharpMp).toBeGreaterThan(pick(o, 'uhd', 'normal').sharpMp);
+    expect(pick(o, 'fullHd', 'close').sharpMp).toBeCloseTo(pick(o, 'fullHd', 'normal').sharpMp, 6);
+  });
+
+  it('the close-up summary names prints, not screens', () => {
+    const o = outputSize(1, 1.5, 0);
+    expect(pick(o, 'phone', 'close').verdict).toBe('sharp');
+    expect(o.close?.id).not.toBe('phone');
+  });
+
   it('a blur of one CoC (1500 px diagonal) is "ok" at normal distance, like "sharp" in the graph', () => {
     const mp = 1500 ** 2 / (1.5 + 1 / 1.5) / 1e6;
     expect(pick(outputSize(mp * 1.01, 1.5, 0), 'a4', 'normal').verdict).toBe('ok');

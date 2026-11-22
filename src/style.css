@@ -1187,6 +1187,9 @@ header {
   margin: 0;
   font-size: 0.9rem;
 }
+.infobox p + p {
+  margin-top: 0.4em;
+}
 
 /* ---- quality: real detail and output sizes ---- */
 
@@ -1225,17 +1228,6 @@ header {
 }
 .quality-because {
   margin-top: 6px !important;
-}
-.quality .link {
-  margin-top: 6px;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--curve);
-  font: inherit;
-  font-size: 0.8rem;
-  text-decoration: underline;
-  cursor: pointer;
 }
 .shares {
   list-style: none;

@@ -25,9 +25,7 @@ export function mountQuality(root: HTMLDetailsElement, store: Store): void {
         <div data-role="losses-block">
           <h3>${t.resolution.lossesTitle}</h3>
           <ul class="shares" data-role="losses"></ul>
-          <p class="out-note">${t.resolution.lossesNote}</p>
         </div>
-        <button type="button" class="link" data-role="more">${t.resolution.more}</button>
       </div>
       <div class="quality-output">
         <p class="out-summary" data-role="summary"></p>
@@ -36,13 +34,16 @@ export function mountQuality(root: HTMLDetailsElement, store: Store): void {
           <tbody data-role="rows"></tbody>
         </table>
         <p class="out-note">${t.outputSize.legend}</p>
-        <p class="out-note" data-role="intro"></p>
       </div>
     </div>`;
   rememberFold(root, () => 'quality', () => true);
 
   const $ = (role: string) => root.querySelector<HTMLElement>(`[data-role="${role}"]`)!;
-  $('more').addEventListener('click', () => setInfo(store, 'resolution'));
+  // The help box explains whichever half the pointer is on (touch: whichever was tapped).
+  const explain = (selector: string, key: 'resolution' | 'output') =>
+    root.querySelector(selector)!.addEventListener('pointerenter', () => setInfo(store, key));
+  explain('.quality-detail', 'resolution');
+  explain('.quality-output', 'output');
 
   store.subscribe((_, d) => {
     const r = d.resolution;
@@ -63,8 +64,6 @@ export function mountQuality(root: HTMLDetailsElement, store: Store): void {
     $('losses-block').hidden = !list;
     $('summary').textContent = summary(d);
     $('rows').innerHTML = rows(d);
-    const normal = d.outputSize.results.find((x) => x.id === 'a4' && x.view === 'normal')!;
-    $('intro').textContent = fill(t.outputSize.intro, { mp: formatMp(normal.sharpMp) });
   });
 }
 

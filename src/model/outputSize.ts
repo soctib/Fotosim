@@ -4,7 +4,8 @@
 // G / (D · tan 1′) pixels of real detail along its diagonal. Two ways to look at a print:
 //  - up close (30 cm): photo book, a print in your hands – the requirement grows with the size;
 //  - at normal distance (≈ the diagonal, to take in the whole picture): ≈ 3400 px whatever the size.
-// Screens are seen at normal distance and can't show more than their own pixels.
+// Screens can't show more than their own pixels. Monitors are judged at both distances; a phone only
+// from 30 cm – that is how it is held ("as far as it is big" would be 15 cm).
 //
 // Verdicts: "sharp" meets the eye's limit; "ok" meets the classic circle-of-confusion standard
 // (diagonal/1500, the graph's "sharp") scaled the same way; below that "soft". Noise is judged at
@@ -28,6 +29,10 @@ interface ScreenTarget {
   kind: 'screen';
   /** Landscape pixels. */
   px: [number, number];
+  /** Screen diagonal (mm). */
+  diagonalMm: number;
+  /** Held in the hand: only seen from CLOSE_VIEW_MM. */
+  handheld?: true;
 }
 interface PrintTarget {
   id: OutputTargetId;
@@ -38,9 +43,9 @@ interface PrintTarget {
 export type OutputTarget = ScreenTarget | PrintTarget;
 
 export const OUTPUT_TARGETS: OutputTarget[] = [
-  { id: 'phone', kind: 'screen', px: [2532, 1170] },
-  { id: 'fullHd', kind: 'screen', px: [1920, 1080] },
-  { id: 'uhd', kind: 'screen', px: [3840, 2160] },
+  { id: 'phone', kind: 'screen', px: [2532, 1170], diagonalMm: 155, handheld: true }, // 6.1″
+  { id: 'fullHd', kind: 'screen', px: [1920, 1080], diagonalMm: 610 }, // 24″
+  { id: 'uhd', kind: 'screen', px: [3840, 2160], diagonalMm: 686 }, // 27″
   { id: 'p10x15', kind: 'print', mm: [150, 100] },
   { id: 'p13x18', kind: 'print', mm: [180, 130] },
   { id: 'a4', kind: 'print', mm: [297, 210] },
@@ -61,7 +66,7 @@ export interface OutputResult {
 
 export interface OutputSize {
   results: OutputResult[];
-  /** Largest print that is sharp up close, else the largest that's ok, else null. */
+  /** Largest print (not screen) that is sharp up close, else the largest that's ok, else null. */
   close: { id: OutputTargetId; verdict: OutputVerdict } | null;
   /** The verdict at normal distance (the same for every print size, see above) – the largest print's. */
   normal: OutputResult;
@@ -103,36 +108,34 @@ export function outputSize(effectiveMp: number, aspect: number, noiseIndexStops:
   const have = diagonalPixels(effectiveMp, aspect);
   const results: OutputResult[] = [];
   for (const target of OUTPUT_TARGETS) {
+    // Screens: the photo fitted into the screen, which caps what can be shown.
+    let diagonal: number;
+    let screenPx = Infinity;
     if (target.kind === 'screen') {
-      // The photo fitted into the screen.
       const [sw, sh] = target.px;
       const w = Math.min(sw, sh * aspect);
-      const screenPx = Math.hypot(w, w / aspect);
-      const sharpPx = Math.min(screenPx, eyeLimitPixels(1, 1));
-      results.push({
-        id: target.id,
-        view: 'normal',
-        sharpMp: megapixelsForDiagonal(sharpPx, aspect),
-        ...judge(have, sharpPx, Math.min(screenPx, COC_STANDARD_PX), noiseIndexStops),
-      });
-      continue;
+      screenPx = Math.hypot(w, w / aspect);
+      diagonal = (target.diagonalMm * screenPx) / Math.hypot(sw, sh);
+    } else {
+      diagonal = Math.hypot(...target.mm);
     }
-    const diagonal = Math.hypot(...target.mm);
-    for (const view of ['close', 'normal'] as const) {
+    const views: OutputView[] = target.kind === 'screen' && target.handheld ? ['close'] : ['close', 'normal'];
+    for (const view of views) {
       const viewMm = view === 'close' ? CLOSE_VIEW_MM : diagonal;
       // Relative to normal viewing (distance = diagonal): > 1 means enlarged, which shows more noise.
       const enlargement = diagonal / viewMm;
       const noise = noiseIndexStops + 2 * Math.log2(Math.max(1, enlargement));
-      const sharpPx = eyeLimitPixels(diagonal, viewMm);
+      const sharpPx = Math.min(screenPx, eyeLimitPixels(diagonal, viewMm));
       results.push({
         id: target.id,
         view,
         sharpMp: megapixelsForDiagonal(sharpPx, aspect),
-        ...judge(have, sharpPx, COC_STANDARD_PX * enlargement, noise),
+        ...judge(have, sharpPx, Math.min(screenPx, COC_STANDARD_PX * enlargement), noise),
       });
     }
   }
-  const closePrints = results.filter((r) => r.view === 'close');
+  const prints = new Set(OUTPUT_TARGETS.filter((x) => x.kind === 'print').map((x) => x.id));
+  const closePrints = results.filter((r) => r.view === 'close' && prints.has(r.id));
   const largest = (v: OutputVerdict) => closePrints.filter((r) => r.verdict === v).pop();
   const best = largest('sharp') ?? largest('ok');
   return {

@@ -48,8 +48,9 @@ Light situation, plus one compact row per element: visible toggle, movement (per
   else only a sharper lens – kit → Profi-Zoom/prime, Profi-Zoom → prime; with the prime, the medium simply
   outresolves any lens. Phones: their lens is fixed, nothing to change.
 - Table of screens and prints: verdict up close (30 cm) and at normal distance (✓ / ~ / ✗), and the effective MP
-  needed for ✓ up close (screens: their own pixels), with a one-sentence summary. A link opens the infobox's
-  explanation of "echte Details".
+  needed for ✓ up close, with a one-sentence summary and a one-line symbol legend. All other explanation lives
+  in the infobox: hovering (or tapping) the left half shows "Effektive Auflösung", the right half "Wofür reicht
+  das Foto?". Infobox texts may contain paragraphs ("\n\n").
 - Replaces an earlier resolution bar: a fill on a fixed 0.5–100 MP scale said little; the value is the ratio of
   detail to file pixels and what that is good for.
 
@@ -58,7 +59,8 @@ Shown together with the bars as one foldable group.
 Layers: sky/ground, background scenery, persons – stacked by distance. The backdrop and scenery follow the light situation (sunny/cloudy/overcast/dusk garden with a house, office, living room, night street, candle-lit table), so a beginner sees what kind of light the preset means; indoor scenery still stands at the background distance. Background blur from `blurFractionOfWidth × imageWidthPx`;
 persons blur per part (nose, face/body, ears at their own distances, SVG filters), so with a shallow depth of field the
 nose can be sharp and the eyes not. Close persons drift to the image centre (the photographer aims at them).
-On top: `brightness()` per layer from its exposure offset (flash lights only near layers),
+On top: `brightness()` per layer from its exposure offset (flash lights only near layers) – 2^(stops/2.2), since
+the factor works on gamma-encoded sRGB; 2^stops would clip mid-tones to white at "leicht überbelichtet".
 SVG `feTurbulence` overlay for noise (opacity from `noise.amount`); sizes and positions from a real perspective projection (`heightFractionPerM`).
 Directional blur for camera shake when `shake.blurFactor > 1`; each layer also smears sideways by its own movement blur.
 A whole-frame Gaussian from `resolution.systemBlurUm` (pixels, diffraction, lens, noise filter, film, scan) – below a
@@ -166,7 +168,8 @@ All formulas use mm for focal length/sensor, m for distances, s for shutter.
   uncropped DOF band as a dashed outline.
 - **Output size** (`outputSize.ts`): the eye resolves 1′, so an image of diagonal G seen from D needs
   G/(D·tan 1′) effective pixels along its diagonal – ≈ 3400 at normal distance (D ≈ G) for any size, more for big
-  prints up close (30 cm). Screens (phone, Full HD, 4K) at normal distance need at most their own pixels. ✓ meets
+  prints up close (30 cm). Screens need at most their own pixels; they have a size (6.1″ phone, 24″ Full HD, 27″ 4K) and are judged at
+  both distances – the phone only from 30 cm, how it is held. The close-up summary names prints only. ✓ meets
   the eye's limit, ~ the CoC standard (1500 px diagonal at normal distance, scaled alike – the graph's "sharp"),
   else ✗. Viewing closer than normal adds 2·log2(enlargement) to the noise index; "high" noise drops a level.
   Each result also carries the effective MP needed for ✓ (`sharpMp`).
