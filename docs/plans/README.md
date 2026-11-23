@@ -16,7 +16,13 @@ honestly, where it changes nothing (still subject, good light, small view: a pho
 | [white-balance](white-balance.md) | Colour temperature, auto vs fixed WB, film, mixed light with flash | – | effective-resolution (scanner) |
 | [perspective](perspective.md) | Face proportions depend on distance only, not on focal length | – | digital-zoom |
 | [focus-beyond-infinity](focus-beyond-infinity.md) | Zooms focus past ∞: nothing is sharp, dramatic on long lenses; focus stored in diopters | – | effective-resolution |
-| [ux-improvements](ux-improvements.md) | Graph scrollbar, scene icons, blue accent, new figurine + livelier dolls, hover infobox, phone mini graph, simple mode keeps your camera, top-view camera panel | – | focus-beyond-infinity |
+| [ux-polish](ux-polish.md) | Small fixes: linear-graph scrollbar, scene-matching background icon, blue accent | – | – |
+| [hover-infobox](hover-infobox.md) | Infobox follows the mouse on hover; one shared helper replaces scattered listeners | – | camera-panel |
+| [figurine](figurine.md) | New doll based on Personas (approved prototype): head, hair, nose, body, credit line | – | doll-life |
+| [doll-life](doll-life.md) | Smile when in focus, side view when moving, wave at the long lens | figurine | – |
+| [phone-mini-graph](phone-mini-graph.md) | Strip graph in the sticky phone preview once the real graph scrolls away | – | – |
+| [simple-mode-keeps-camera](simple-mode-keeps-camera.md) | Simplified mode keeps body, lens and mode; sliders chosen per mode and camera | – | – |
+| [camera-panel](camera-panel.md) | Top-view camera you operate directly: mode dial, seven-segment display, dials, zoom/focus rings | – | focus-beyond-infinity, lens-flaws, hover-infobox |
 | [cost-value](cost-value.md) | The cost panel says what each item buys *in the current situation* | – | gets richer with every other plan |
 | [webgl-renderer](webgl-renderer.md) | Camera image on the GPU – only if SVG filters get too slow (measure first; maybe never) | – | lens-flaws, dynamic-range, white-balance, rolling-shutter |
 
