@@ -1,0 +1,877 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Camera Top Views</title>
+<style>
+:root{
+  --bg:#f3f1ec; --fg:#1d1f22; --muted:#686c73; --card:#ffffff; --line:#dedad2;
+  --cam:#2c2f34; --cam-hi:#3d4148; --edge:#111316; --rubber:#1d1f23;
+  --lens:#2a2c30; --lens2:#36393e; --ring:#232528; --rib:#646973;
+  --metal:#b4b8be; --metal2:#8a8f96; --mark:#eeeeee; --mark2:#b9bcc2;
+  --accent:#e4572e; --auto:#3fae5a; --lcd:#c6d2bb; --lcd-fg:#1c2619;
+  --glass:#6d9cc4; --flash:#f2c84b; --phone:#d9dbde; --phone-back:#8e9aa8; --screen:#15171a;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#131417; --fg:#e8e8ea; --muted:#9a9ea6; --card:#1c1e22; --line:#30333a;
+    --cam:#474b53; --cam-hi:#5a5f68; --edge:#7b808a; --rubber:#33363c;
+    --lens:#43464d; --lens2:#51555c; --ring:#393c42; --rib:#8f949d;
+    --metal:#c3c7cc; --metal2:#949aa2; --mark:#f2f2f2; --mark2:#c5c8ce;
+    --lcd:#a9b99c; --lcd-fg:#121a10; --glass:#7fb0dc; --phone:#9ea2a8; --phone-back:#6f7c8b; --screen:#050607;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#131417; --fg:#e8e8ea; --muted:#9a9ea6; --card:#1c1e22; --line:#30333a;
+  --cam:#474b53; --cam-hi:#5a5f68; --edge:#7b808a; --rubber:#33363c;
+  --lens:#43464d; --lens2:#51555c; --ring:#393c42; --rib:#8f949d;
+  --metal:#c3c7cc; --metal2:#949aa2; --mark:#f2f2f2; --mark2:#c5c8ce;
+  --lcd:#a9b99c; --lcd-fg:#121a10; --glass:#7fb0dc; --phone:#9ea2a8; --phone-back:#6f7c8b; --screen:#050607;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:1200px;margin:0 auto;padding:24px 16px 64px}
+h1{font-size:22px;margin:0 0 4px}
+h2{font-size:17px;margin:34px 0 4px}
+h3{font-size:14px;margin:18px 0 8px;color:var(--muted);font-weight:600}
+p.lead{color:var(--muted);margin:0 0 14px;max-width:72ch}
+.grid{display:flex;flex-wrap:wrap;gap:10px;align-items:stretch}
+figure{margin:0;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 10px 8px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;max-width:100%}
+.row{display:flex;gap:8px;align-items:flex-end;justify-content:center}
+figure svg{display:block;max-width:100%;height:auto}
+figcaption{font-size:12.5px;color:var(--muted);text-align:center;max-width:240px;margin-top:6px;line-height:1.3;min-height:3.9em}
+figcaption b{color:var(--fg);font-weight:600;display:block}
+.scalebar{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);margin:4px 0 10px}
+.scalebar span{display:inline-block;height:6px;border:1.5px solid var(--muted);border-top:0}
+/* interactive */
+.live{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,300px);gap:16px;align-items:start;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+.live .stage{display:flex;justify-content:center}
+.live .stage svg{width:100%;max-width:440px;height:auto}
+.ctl{display:grid;gap:10px;font-size:13.5px}
+.ctl label{display:grid;gap:2px}
+.ctl .v{float:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+.ctl input[type=range]{width:100%;accent-color:var(--accent)}
+.ctl select{font:inherit;padding:4px;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:6px}
+.modes{display:flex;gap:4px;flex-wrap:wrap}
+.modes button{font:inherit;font-weight:600;min-width:40px;padding:5px 8px;border-radius:6px;border:1px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer}
+.modes button[aria-pressed=true]{background:var(--accent);color:#fff;border-color:var(--accent)}
+.front{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12.5px}
+.front svg{flex:none}
+@media (max-width:700px){.live{grid-template-columns:1fr}}
+/* svg parts */
+.b{fill:var(--cam);stroke:var(--edge);stroke-width:.4}
+.bh{fill:var(--cam-hi);stroke:var(--edge);stroke-width:.4}
+.rub{fill:var(--rubber);stroke:var(--edge);stroke-width:.3}
+.mt{fill:var(--metal);stroke:var(--metal2);stroke-width:.3}
+.mt2{fill:var(--metal2)}
+.ln{fill:var(--lens);stroke:var(--edge);stroke-width:.4}
+.ln2{fill:var(--lens2);stroke:var(--edge);stroke-width:.4}
+.rg{fill:var(--ring);stroke:var(--edge);stroke-width:.4}
+.rib{stroke:var(--rib)}
+.tk{stroke:var(--mark);stroke-width:.35}
+.tm{fill:var(--mark);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;font-weight:600}
+.tm2{fill:var(--mark2);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;font-weight:500}
+.lcd{fill:var(--lcd);stroke:var(--edge);stroke-width:.4}
+.tl{fill:var(--lcd-fg);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-weight:700}
+/* segment LCD: lit segments, faint unlit ones (like a real reflective LCD), printed labels */
+.sg1{fill:var(--lcd-fg)}
+.sg0{fill:var(--lcd-fg);opacity:.07}
+.tlab{fill:var(--lcd-fg);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;font-weight:700;letter-spacing:.02em}
+.lcd-act{stroke:var(--lcd-fg);stroke-width:.5;opacity:.55}
+.fld .hov{stroke:var(--lcd-fg);stroke-width:.55;opacity:0}
+@media (hover:hover){#liveStage:not(.dragging) .fld:not(.locked):hover .hov{opacity:.7}}
+/* while a control is held, its line and cursor stay until release, wherever the pointer goes */
+.fld.held:not(.locked) .hov{opacity:.7}
+#liveStage.dragging svg [data-ctl],#liveStage.dragging svg [data-ctl].locked{cursor:inherit}
+#liveStage svg [data-ctl].locked{cursor:not-allowed}
+#liveMsg:not(:empty){color:var(--accent);font-weight:600}
+.blink{animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:.15}}
+.btn{fill:var(--cam-hi);stroke:var(--edge);stroke-width:.35}
+/* interactive camera: only the controls take the pointer */
+#liveStage svg *{pointer-events:none}
+#liveStage svg [data-ctl]{pointer-events:all;cursor:ew-resize}
+#liveStage svg [data-ctl="mode"],#liveStage svg [data-ctl="iso"],#liveStage svg [data-ctl="flash"]{cursor:pointer}
+#liveStage svg{touch-action:none;user-select:none;-webkit-user-select:none}
+.hint{font-size:.85rem;color:var(--muted);margin:.4rem 0 0}
+.acc{fill:var(--accent)}
+.aut{fill:var(--auto)}
+.gl{fill:var(--glass);fill-opacity:.55;stroke:var(--glass);stroke-width:.5}
+.pup{stroke:var(--accent);stroke-width:.7;fill:none}
+.fl{fill:var(--flash)}
+.ph{fill:var(--phone);stroke:var(--edge);stroke-width:.3}
+.phb{fill:var(--phone-back);stroke:var(--edge);stroke-width:.3}
+.scr{fill:var(--screen)}
+.scrcard{fill:var(--screen);fill-opacity:.9;stroke:var(--muted);stroke-width:.4;stroke-dasharray:1.5 1}
+.ts{fill:#f4f4f4;font-family:system-ui,-apple-system,sans-serif;font-weight:600}
+.lab{fill:var(--muted);font-family:system-ui,-apple-system,sans-serif}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="cyl" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" stop-color="#000" stop-opacity=".38"/>
+      <stop offset=".22" stop-color="#fff" stop-opacity=".05"/>
+      <stop offset=".4" stop-color="#fff" stop-opacity=".16"/>
+      <stop offset=".62" stop-color="#fff" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000" stop-opacity=".42"/>
+    </linearGradient>
+    <radialGradient id="dome" cx=".4" cy=".38" r=".7">
+      <stop offset="0" stop-color="#fff" stop-opacity=".22"/>
+      <stop offset="1" stop-color="#000" stop-opacity=".25"/>
+    </radialGradient>
+  </defs>
+</svg>
+<main>
+  <h1>Camera panel – top-view drafts</h1>
+  <p class="lead">Every camera body and lens type in Fotosim's data, seen from above with the lens pointing away from the photographer. Bodies and lenses share one scale (mm), so sizes compare honestly. Dashed red line on a lens front = entrance pupil (focal length ÷ largest aperture) at the shown focal length.</p>
+  <div class="scalebar"><span id="bar100"></span> 100 mm</div>
+
+  <h2>1 · Bodies</h2>
+  <p class="lead">Phones are seen from their top edge: the camera bump faces the subject, the screen (dashed card, shown folded down) faces you.</p>
+  <div class="grid" id="bodies"></div>
+
+  <h2>2 · Lenses</h2>
+  <h3>Full frame – the concrete lenses behind “Kit-Zoom”, “Profi-Zoom” and “Festbrennweite” (prices.ts lens kinds)</h3>
+  <div class="grid" id="lensesFF"></div>
+  <h3>Other formats (used in the combinations below)</h3>
+  <div class="grid" id="lensesOther"></div>
+
+  <h2>3 · Combinations</h2>
+  <p class="lead">Realistic body + lens pairings with sample settings on the top display and rings. Zooms are shown at both ends to show the barrel extension.</p>
+  <div class="grid" id="combos"></div>
+
+  <h2>4 · Try it</h2>
+  <p class="lead">Operate the camera itself: drag the zoom and focus rings sideways, tap or drag the mode dial, drag the front dial (under the shutter button) and the rear dial (back edge), press ISO, or drag a value on the display. The sliders on the side stay in sync – the “traditional UI” half of the idea. A simple light meter (scene at EV 13) lets the camera pick the values it controls in A, P, Av and Tv; in M the display shows the meter bar.</p>
+  <div class="live">
+    <div><div class="stage" id="liveStage"></div><p class="hint" id="liveHint"></p><p class="hint" id="liveMsg" aria-live="polite"></p></div>
+    <div class="ctl">
+      <label>Objektiv
+        <select id="iLens"></select></label>
+      <div><div style="margin-bottom:4px">Modus</div><div class="modes" id="iModes"></div></div>
+      <label>Brennweite <span class="v" id="vF"></span><input type="range" id="iF" min="0" max="1000"></label>
+      <label>Fokus <span class="v" id="vD"></span><input type="range" id="iD" min="0" max="1000"></label>
+      <label>Blende <span class="v" id="vN"></span><input type="range" id="iN" min="0" max="20"></label>
+      <label>Belichtungszeit <span class="v" id="vT"></span><input type="range" id="iT" min="0" max="18"></label>
+      <label>ISO <span class="v" id="vI"></span><input type="range" id="iI" min="0" max="7"></label>
+      <label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="iFl"> Blitz aufgesteckt</label>
+      <div class="front" id="liveFront"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+'use strict';
+const RAD = Math.PI / 180;
+const r2 = n => Math.round(n * 100) / 100;
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const norm = a => ((a + 540) % 360) - 180;
+
+// ---------- bounds + primitives (1 user unit = 1 mm) ----------
+let B;
+const resetB = () => (B = { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity });
+const ext = (x0, y0, x1, y1) => {
+  B.x0 = Math.min(B.x0, x0, x1); B.x1 = Math.max(B.x1, x0, x1);
+  B.y0 = Math.min(B.y0, y0, y1); B.y1 = Math.max(B.y1, y0, y1);
+};
+const rect = (x, y, w, h, cls, rx = 0, at = '') => {
+  ext(x, y, x + w, y + h);
+  return `<rect x="${r2(x)}" y="${r2(y)}" width="${r2(w)}" height="${r2(h)}" rx="${rx}" class="${cls}" ${at}/>`;
+};
+const shade = (x, y, w, h, rx = 0) =>
+  `<rect x="${r2(x)}" y="${r2(y)}" width="${r2(w)}" height="${r2(h)}" rx="${rx}" fill="url(#cyl)"/>`;
+const circ = (cx, cy, r, cls, at = '') => {
+  ext(cx - r, cy - r, cx + r, cy + r);
+  return `<circle cx="${r2(cx)}" cy="${r2(cy)}" r="${r2(r)}" class="${cls}" ${at}/>`;
+};
+const txt = (x, y, s, fs, cls, at = '') =>
+  `<text x="${r2(x)}" y="${r2(y)}" font-size="${r2(fs)}" class="${cls}" text-anchor="middle" dy=".36em" ${at}>${s}</text>`;
+const trap = (cx, yRear, yFront, dRear, dFront, cls) => {
+  ext(cx - Math.max(dRear, dFront) / 2, yFront, cx + Math.max(dRear, dFront) / 2, yRear);
+  const p = [[cx - dRear / 2, yRear], [cx - dFront / 2, yFront], [cx + dFront / 2, yFront], [cx + dRear / 2, yRear]];
+  return `<path d="M${p.map(q => q.map(r2).join(',')).join('L')}Z" class="${cls}"/>`;
+};
+const flashIcon = (x, y, h, cls) => {
+  const k = h / 10;
+  const pts = [[1, 0], [-3, 5.6], [-0.3, 5.6], [-1.6, 10], [3, 3.6], [0.4, 3.6], [1.8, 0]].map(([a, b]) => `${r2(x + a * k)},${r2(y + b * k)}`);
+  return `<polygon points="${pts.join(' ')}" class="${cls}"/>`;
+};
+
+// ---------- formatting ----------
+const fmtT = t => (t >= 1 ? `${t}"` : `1/${Math.round(1 / t)}`);
+const fmtN = n => (n < 10 ? n.toFixed(1).replace(/\.0$/, '') : String(Math.round(n)));
+const fmtD = d => (d === Infinity ? '∞' : String(d).replace('.', ','));
+const MODE_LABEL = { auto: 'A', P: 'P', Av: 'Av', Tv: 'Tv', M: 'M' };
+const MODES = ['auto', 'P', 'Av', 'Tv', 'M'];
+
+// ---------- rings ----------
+const FOCUS_MARKS = [0.3, 0.5, 1, 2, 3, 5, 10, Infinity];
+const focusAng = d => (d === Infinity ? 0 : 150 * Math.sqrt(0.3 / d));
+const zoomAng = (L, f) => (100 * Math.log(f / L.f[0])) / Math.log(L.f[1] / L.f[0]);
+const SPEEDS = [1, 2, 4, 8, 15, 30, 60, 125, 250, 500];
+
+/** A ring seen from above: a cylinder band; marks at angle a are drawn at x = R·sin(a − cur). */
+function ring(ax, y, h, d, o) {
+  const R = d / 2;
+  let s = rect(ax - R, y, d, h, 'rg', 0.8, o.at || '') + shade(ax - R, y, d, h, 0.8);
+  const marks = o.marks || [];
+  const ribH = marks.length ? h * (o.ribFrac ?? 0.48) : h;
+  const cur = o.cur || 0;
+  for (let k = 0; k < 72; k++) {
+    const th = norm(k * 5 - cur);
+    if (Math.abs(th) > 86) continue;
+    const c = Math.cos(th * RAD), x = ax + R * Math.sin(th * RAD);
+    s += `<line x1="${r2(x)}" x2="${r2(x)}" y1="${r2(y + 0.7)}" y2="${r2(y + ribH - 0.7)}" class="rib" stroke-width="${r2(0.35 + 0.7 * c)}" stroke-opacity="${r2(0.25 + 0.75 * c)}"/>`;
+  }
+  if (marks.length) {
+    const zh = h - ribH;
+    const fs = Math.min(o.fs || 4.6, zh * 0.66);
+    const ty = y + ribH + zh * 0.44;
+    for (const m of marks) {
+      const th = norm(m.a - cur);
+      if (Math.abs(th) > 76) continue;
+      const c = Math.cos(th * RAD), x = ax + R * Math.sin(th * RAD);
+      s += `<g transform="translate(${r2(x)},${r2(ty)}) scale(${r2(c)},1)" opacity="${r2(0.3 + 0.7 * c)}">` +
+        `<text font-size="${r2(fs)}" class="${m.cls || 'tm'}" text-anchor="middle" dy=".36em">${m.t}</text></g>` +
+        `<line x1="${r2(x)}" x2="${r2(x)}" y1="${r2(y + h - 0.9)}" y2="${r2(y + h)}" class="tk" opacity="${r2(c)}"/>`;
+    }
+  }
+  return s;
+}
+const indexMark = (ax, y) =>
+  `<polygon points="${r2(ax - 1.5)},${r2(y + 2.6)} ${r2(ax + 1.5)},${r2(y + 2.6)} ${r2(ax)},${r2(y + 0.15)}" class="acc"/>`;
+
+// ---------- lenses ----------
+const S = (l, d, k, o = {}) => ({ l, d, k, ...o });
+const LENSES = {
+  // full frame (prices.ts lens kinds)
+  wideZoomBudget: { name: 'Weitwinkel-Zoom 16–35 mm f/4', ex: 'z.B. Sony FE 16–35 F4', f: [16, 35], N: [4, 4], ext: 0, zm: [16, 20, 24, 28, 35],
+    s: [S(6, 64, 'mount'), S(10, 80, 'barrel', { d0: 70 }), S(18, 80, 'zoom'), S(8, 80, 'barrel'), S(14, 80, 'focus'), S(22, 80, 'barrel'), S(12, 82, 'front', { d0: 80 })] },
+  kitZoom: { name: 'Kit-Zoom 28–70 mm f/3.5–5.6', ex: 'z.B. Sony FE 28–70', f: [28, 70], N: [3.5, 5.6], ext: 28, zm: [28, 35, 50, 70],
+    s: [S(6, 62, 'mount'), S(8, 72, 'barrel', { d0: 66 }), S(26, 72, 'zoom'), S(6, 72, 'barrel'), S(8, 66, 'inner'), S(12, 68, 'focus'), S(17, 68, 'front')] },
+  teleZoomBudget: { name: 'Telezoom 70–300 mm f/4.5–5.6', ex: 'z.B. Sony FE 70–300 G', f: [70, 300], N: [4.5, 5.6], ext: 50, zm: [70, 100, 135, 200, 300],
+    s: [S(6, 64, 'mount'), S(30, 80, 'barrel', { d0: 70 }), S(34, 84, 'zoom'), S(20, 84, 'barrel'), S(8, 78, 'inner'), S(16, 80, 'focus'), S(29, 82, 'front')] },
+  superTele: { name: 'Supertele-Zoom 150–600 mm f/5–6.3', ex: 'z.B. Sigma 150–600 C', f: [150, 600], N: [5, 6.3], ext: 70, zm: [150, 200, 300, 400, 500, 600],
+    s: [S(6, 68, 'mount'), S(30, 86, 'barrel', { d0: 76 }), S(22, 90, 'focus'), S(18, 92, 'barrel'), S(50, 95, 'zoom'), S(22, 95, 'barrel'), S(20, 92, 'inner'), S(92, 105, 'front', { d0: 98 })] },
+  wideZoom28: { name: 'Weitwinkel-Zoom 14–24 mm f/2.8', ex: 'z.B. Nikon Z 14–24/2.8 S', f: [14, 24], N: [2.8, 2.8], ext: 0, zm: [14, 16, 18, 20, 24], bulge: 3,
+    s: [S(6, 64, 'mount'), S(20, 84, 'barrel', { d0: 72 }), S(24, 88, 'zoom'), S(10, 88, 'barrel'), S(16, 88, 'focus'), S(30, 88, 'barrel'), S(18.5, 88, 'front')] },
+  standardZoom28: { name: 'Standardzoom 24–70 mm f/2.8', ex: 'z.B. Canon RF 24–70/2.8', f: [24, 70], N: [2.8, 2.8], ext: 30, zm: [24, 28, 35, 50, 70],
+    s: [S(6, 64, 'mount'), S(12, 86, 'barrel', { d0: 74 }), S(30, 88, 'zoom'), S(10, 88, 'barrel'), S(20, 88, 'focus'), S(8, 88, 'barrel'), S(8, 84, 'inner'), S(31.7, 88, 'front')] },
+  teleZoom28: { name: 'Telezoom 70–200 mm f/2.8', ex: 'innenzoomend, z.B. Sony FE 70–200 GM', f: [70, 200], N: [2.8, 2.8], ext: 0, zm: [70, 85, 105, 135, 200],
+    s: [S(6, 64, 'mount'), S(28, 80, 'barrel', { d0: 72 }), S(12, 86, 'collar'), S(10, 84, 'barrel'), S(32, 88, 'zoom'), S(14, 88, 'barrel'), S(26, 88, 'focus'), S(30, 88, 'barrel'), S(42, 88, 'front')] },
+  tele300: { name: 'Lichtstarkes Tele 300 mm f/2.8', ex: 'z.B. Sony FE 300 GM', f: [300, 300], N: [2.8, 2.8], ext: 0,
+    s: [S(6, 68, 'mount'), S(40, 92, 'barrel', { d0: 82 }), S(14, 100, 'collar'), S(30, 96, 'barrel', { t: '300 mm 1:2.8' }), S(28, 102, 'focus'), S(20, 126.5, 'barrel', { d0: 104 }), S(109, 126.5, 'front')] },
+  fastTele: { name: 'Lichtstarkes Supertele 400 mm f/2.8', ex: 'z.B. Sony FE 400 GM', f: [400, 400], N: [2.8, 2.8], ext: 0,
+    s: [S(6, 68, 'mount'), S(60, 96, 'barrel', { d0: 82 }), S(16, 108, 'collar'), S(40, 100, 'barrel', { t: '400 mm 1:2.8' }), S(30, 110, 'focus'), S(40, 110, 'barrel'), S(30, 158, 'barrel', { d0: 110 }), S(137, 158, 'front')] },
+  widePrime: { name: 'Weitwinkel-Festbrennweite 20 mm f/1.4', ex: 'z.B. Sigma 20/1.4 DG DN', f: [20, 20], N: [1.4, 1.4], ext: 0, bulge: 5,
+    s: [S(6, 64, 'mount'), S(20, 82, 'barrel', { d0: 70 }), S(22, 84, 'focus'), S(30, 86, 'barrel', { t: '20 mm 1:1.4' }), S(35.2, 88, 'front', { d0: 86 })] },
+  prime35: { name: 'Festbrennweite 35 mm f/1.4', ex: 'z.B. Sony FE 35 GM', f: [35, 35], N: [1.4, 1.4], ext: 0,
+    s: [S(6, 62, 'mount'), S(16, 74, 'barrel', { d0: 68 }), S(30, 76, 'focus'), S(20, 76, 'barrel', { t: '35 mm 1:1.4' }), S(24, 76, 'front')] },
+  prime50: { name: 'Festbrennweite 50 mm f/1.4', ex: 'z.B. Sony FE 50 GM', f: [50, 50], N: [1.4, 1.4], ext: 0,
+    s: [S(6, 62, 'mount'), S(16, 78, 'barrel', { d0: 68 }), S(30, 80.6, 'focus'), S(20, 80.6, 'barrel', { t: '50 mm 1:1.4' }), S(24, 80.6, 'front')] },
+  prime85: { name: 'Porträt-Festbrennweite 85 mm f/1.4', ex: 'z.B. Sony FE 85 GM II', f: [85, 85], N: [1.4, 1.4], ext: 0,
+    s: [S(6, 64, 'mount'), S(20, 82, 'barrel', { d0: 70 }), S(34, 84.7, 'focus'), S(22, 84.7, 'barrel', { t: '85 mm 1:1.4' }), S(25.3, 84.7, 'front')] },
+  prime135: { name: 'Tele-Festbrennweite 135 mm f/1.8', ex: 'z.B. Sony FE 135 GM', f: [135, 135], N: [1.8, 1.8], ext: 0,
+    s: [S(6, 64, 'mount'), S(28, 86, 'barrel', { d0: 72 }), S(36, 89.5, 'focus'), S(27, 89.5, 'barrel', { t: '135 mm 1:1.8' }), S(30, 89.5, 'front')] },
+  // other formats
+  apscKit: { name: 'APS-C Kit-Zoom 18–55 mm f/3.5–5.6', ex: '≈ 27–83 mm KB, z.B. Sony E 18–55', f: [18, 55], N: [3.5, 5.6], ext: 27, zm: [18, 24, 35, 55],
+    s: [S(5, 58, 'mount'), S(6, 62, 'barrel', { d0: 58 }), S(18, 62, 'zoom'), S(4, 62, 'barrel'), S(6, 58, 'inner'), S(9, 60, 'focus'), S(12, 62, 'front')] },
+  mft1240: { name: 'MFT Profi-Zoom 12–40 mm f/2.8', ex: '≈ 24–80 mm KB, z.B. OM 12–40 PRO', f: [12, 40], N: [2.8, 2.8], ext: 20, zm: [12, 17, 25, 40],
+    s: [S(5, 56, 'mount'), S(10, 68, 'barrel', { d0: 60 }), S(22, 69.9, 'zoom'), S(6, 69.9, 'barrel'), S(6, 64, 'inner'), S(15, 68, 'focus'), S(20, 69, 'front')] },
+  film50: { name: 'Kleinbild 50 mm f/1.4 (manuell)', ex: 'z.B. Nikkor 50/1.4 AI-S', f: [50, 50], N: [1.4, 1.4], ext: 0, am: [1.4, 2, 2.8, 4, 5.6, 8, 11, 16],
+    s: [S(5, 60, 'mount'), S(9, 64.5, 'aper'), S(3, 62, 'barrel'), S(18, 64.5, 'focus'), S(13.5, 62, 'front', { t: '50 mm 1:1.4' })] },
+  gf80: { name: 'Mittelformat 80 mm f/1.7', ex: '≈ 63 mm KB, z.B. Fujifilm GF 80/1.7', f: [80, 80], N: [1.7, 1.7], ext: 0, am: [1.7, 2, 2.8, 4, 5.6, 8, 11, 16],
+    s: [S(6, 76, 'mount'), S(10, 82, 'aper'), S(15, 86, 'barrel', { d0: 82 }), S(40, 88, 'focus'), S(28.2, 88, 'front', { t: '80 mm 1:1.7' })] },
+  m645_80: { name: '6×4,5 Normalobjektiv 80 mm f/2.8', ex: '≈ 50 mm KB, z.B. Mamiya Sekor C 80', f: [80, 80], N: [2.8, 2.8], ext: 0, am: [2.8, 4, 5.6, 8, 11, 16, 22],
+    s: [S(6, 62, 'mount'), S(10, 66, 'aper'), S(6, 66, 'barrel'), S(20, 67, 'focus'), S(10, 66, 'front')] },
+  h80: { name: '6×6 Planar 80 mm f/2.8 (Zentralverschluss)', ex: '≈ 45 mm KB, z.B. Hasselblad C 80', f: [80, 80], N: [2.8, 2.8], ext: 0, am: [2.8, 4, 5.6, 8, 11, 16, 22], speed: true,
+    s: [S(8, 70, 'mount'), S(12, 74, 'speed'), S(10, 74, 'aper'), S(6, 74, 'barrel'), S(20, 74, 'focus'), S(12, 70, 'front')] },
+  p67_105: { name: '6×7 Normalobjektiv 105 mm f/2.4', ex: '≈ 50 mm KB, z.B. Pentax 67 105/2.4', f: [105, 105], N: [2.4, 2.4], ext: 0, am: [2.4, 4, 5.6, 8, 11, 16, 22],
+    s: [S(7, 80, 'mount'), S(10, 84, 'aper'), S(5, 84, 'barrel'), S(26, 86, 'focus'), S(16, 84, 'front')] },
+};
+const FF_LENS_ORDER = ['wideZoomBudget', 'kitZoom', 'teleZoomBudget', 'superTele', 'wideZoom28', 'standardZoom28', 'teleZoom28', 'tele300', 'fastTele', 'widePrime', 'prime35', 'prime50', 'prime85', 'prime135'];
+const OTHER_LENS_ORDER = ['apscKit', 'mft1240', 'film50', 'gf80', 'm645_80', 'h80', 'p67_105'];
+
+const isZoom = L => L.f[1] > L.f[0];
+const lensF = (L, f) => (isZoom(L) ? clamp(f ?? L.f[0], L.f[0], L.f[1]) : L.f[0]);
+const zoomT = (L, f) => (isZoom(L) ? Math.log(f / L.f[0]) / Math.log(L.f[1] / L.f[0]) : 0);
+const maxN = (L, f) => L.N[0] + (L.N[1] - L.N[0]) * zoomT(L, f);
+const lensLen = (L, f) => L.s.reduce((a, s) => a + s.l, 0) + (L.ext || 0) * zoomT(L, f);
+
+function drawLens(L, st, ax, opts = {}) {
+  const f = lensF(L, st.focal);
+  const z = zoomT(L, f);
+  let y = 0, s = '', over = '';
+  for (const sec of L.s) {
+    const l = sec.l + (sec.k === 'inner' ? (L.ext || 0) * z : 0);
+    const yt = y - l, d = sec.d, d0 = sec.d0 ?? d;
+    const ringKinds = { zoom: 1, focus: 1, aper: 1, speed: 1 };
+    if (ringKinds[sec.k]) {
+      let o = {};
+      if (sec.k === 'zoom') o = { marks: L.zm.map(m => ({ a: zoomAng(L, m), t: m })), cur: zoomAng(L, f) };
+      if (sec.k === 'focus') o = { marks: FOCUS_MARKS.map(m => ({ a: focusAng(m), t: fmtD(m) })), cur: focusAng(st.focus ?? Infinity) };
+      if (sec.k === 'aper') {
+        const a = n => 40 * Math.log2(n / L.am[0]);
+        o = { marks: L.am.map(m => ({ a: a(m), t: fmtN(m), cls: 'tm' })), cur: a(clamp(st.N, L.am[0], L.am[L.am.length - 1])), ribFrac: 0.3 };
+      }
+      if (sec.k === 'speed') {
+        const a = den => 22 * Math.log2(den);
+        const den = clamp(Math.round(1 / st.shutter), 1, 500);
+        o = { marks: SPEEDS.map(m => ({ a: a(m), t: m, cls: 'tm2' })), cur: a(den), ribFrac: 0.3 };
+      }
+      if (opts.live && (sec.k === 'zoom' || sec.k === 'focus')) o.at = `data-ctl="${sec.k}"`;
+      s += ring(ax, yt, l, d, o);
+      if (o.marks) over += indexMark(ax, y);
+    } else {
+      const cls = sec.k === 'mount' ? 'mt' : sec.k === 'inner' ? 'ln2' : sec.k === 'collar' ? 'bh' : 'ln';
+      if (d0 !== d) s += trap(ax, y, yt, d0, d, cls) + `<path d="M${r2(ax - d0 / 2)},${r2(y)}L${r2(ax - d / 2)},${r2(yt)}L${r2(ax + d / 2)},${r2(yt)}L${r2(ax + d0 / 2)},${r2(y)}Z" fill="url(#cyl)"/>`;
+      else s += rect(ax - d / 2, yt, d, l, cls, sec.k === 'front' ? 1.2 : 0.4) + shade(ax - d / 2, yt, d, l);
+      if (sec.k === 'collar') s += rect(ax - d / 2 - 2, yt + l / 2 - 3, 4, 6, 'bh', 1) + rect(ax + d / 2 - 2, yt + l / 2 - 3, 4, 6, 'bh', 1);
+      if (sec.t) s += txt(ax, yt + l / 2, sec.t, Math.min(4.2, l * 0.42), 'tm2');
+    }
+    y = yt;
+  }
+  // front element
+  const dF = L.s[L.s.length - 1].d, bulge = L.bulge ?? 1.4;
+  ext(ax - dF / 2, y - bulge, ax + dF / 2, y);
+  s += `<path d="M${r2(ax - dF / 2 + 3)},${r2(y)}Q${r2(ax)},${r2(y - bulge * 2)} ${r2(ax + dF / 2 - 3)},${r2(y)}Z" class="gl"/>`;
+  if (opts.pupil !== false) {
+    const p = f / maxN(L, f), py = y + 1.8;
+    s += `<path d="M${r2(ax - p / 2)},${r2(py - 1)}v2M${r2(ax + p / 2)},${r2(py - 1)}v2" class="pup"/>` +
+      `<line x1="${r2(ax - p / 2)}" x2="${r2(ax + p / 2)}" y1="${r2(py)}" y2="${r2(py)}" class="pup" stroke-dasharray="1.6 1"/>`;
+  }
+  return s + over;
+}
+
+// ---------- bodies ----------
+const BODIES = {
+  iphoneXR: { name: 'iPhone XR (2018)', type: 'phone', w: 75.7, t: 8.3, dims: '75,7 × 8,3 mm',
+    bump: [{ x0: 21.8, w: 11, h: 1.0, cls: 'mt' }], lenses: [{ x: 27.3, d: 8.5, h: 0.4 }] },
+  iphone15ProMax: { name: 'iPhone 15 Pro Max (2023)', type: 'phone', w: 76.7, t: 8.25, dims: '76,7 × 8,25 mm (+4 mm Kamerabuckel)',
+    bump: [{ x0: 2.3, w: 36, h: 1.6, cls: 'phb' }], lenses: [{ x: 11.9, d: 15, h: 2.5 }, { x: 25.8, d: 15.5, h: 2.6 }] },
+  fairphone5: { name: 'Fairphone 5 (2023)', type: 'phone', w: 75.8, t: 9.6, dims: '75,8 × 9,6 mm',
+    bump: [{ x0: 11.9, w: 22, h: 1.3, cls: 'phb' }], lenses: [{ x: 22.9, d: 12, h: 0.7 }] },
+  oneInch: { name: 'Kompaktkamera (1 Zoll)', type: 'compact', w: 101.6, d: 35, lx: -14, dims: '102 × 41 mm', ex: 'z.B. Sony RX100 (24–70 mm KB)' },
+  mft: { name: 'Micro Four Thirds', type: 'ml', w: 125.3, d: 34, grip: 9, gripW: 30, hw: 38, hx: -8, eye: 7, dims: '125 × 50 mm', ex: 'z.B. OM System OM-5' },
+  apsc: { name: 'APS-C', type: 'ml', w: 116.3, d: 38, grip: 22, gripW: 32, hw: 36, hx: -4, eye: 8, dims: '116 × 69 mm', ex: 'z.B. Canon R50' },
+  fullFrame: { name: 'Vollformat digital (Mittelklasse)', type: 'ml', w: 134, d: 42, grip: 20, gripW: 36, hw: 44, hx: -6, eye: 7.5, dims: '134 × 70 mm', ex: 'z.B. Nikon Z5' },
+  fullFramePro: { name: 'Vollformat digital (Profi)', type: 'ml', w: 144, d: 50, grip: 24, gripW: 40, hw: 50, hx: -6, eye: 9, dims: '144 × 83 mm', ex: 'z.B. Nikon Z8' },
+  film35: { name: 'Kleinbild analog (Film)', type: 'slr', w: 142.5, d: 36, mb: 14, mbw: 66, pw: 58, eye: 5, dims: '143 × 55 mm', ex: 'z.B. Nikon FM2' },
+  mf4433: { name: 'Mittelformat digital (44×33)', type: 'ml', w: 150, d: 50, grip: 25, gripW: 42, hw: 58, hx: -8, eye: 12, dims: '150 × 87 mm', ex: 'z.B. Fujifilm GFX 100S' },
+  mf645: { name: 'Mittelformat 6×4,5 (Film)', type: 'slr', w: 150, d: 58, mb: 18, mbw: 80, pw: 68, eye: 6, back: 24, winder: { w: 30, f: 22 }, dims: '150 × 106 mm', ex: 'z.B. Mamiya 645 Pro' },
+  mf66: { name: 'Mittelformat 6×6 (Film)', type: 'hassy', w: 98, d: 72, mag: 50, dims: '98 (+16) × 122 mm', ex: 'z.B. Hasselblad 500C/M' },
+  mf67: { name: 'Mittelformat 6×7 (Film)', type: 'slr', w: 184, d: 64, mb: 24, mbw: 98, pw: 92, eye: 8, dims: '184 × 96 mm', ex: 'z.B. Pentax 67' },
+};
+const BODY_ORDER = ['iphoneXR', 'iphone15ProMax', 'fairphone5', 'oneInch', 'mft', 'apsc', 'fullFrame', 'fullFramePro', 'film35', 'mf4433', 'mf645', 'mf66', 'mf67'];
+
+function modeDial(cx, cy, r, mode, live) {
+  let s = circ(cx, cy, r + 0.8, 'rub', live ? 'data-ctl="mode"' : '') + circ(cx, cy, r, 'bh') + `<circle cx="${r2(cx)}" cy="${r2(cy)}" r="${r2(r)}" fill="url(#dome)"/>`;
+  s += `<circle cx="${r2(cx)}" cy="${r2(cy)}" r="${r2(r + 0.4)}" fill="none" class="rib" stroke-width=".8" stroke-dasharray=".5 .7"/>`;
+  const step = 62, ci = MODES.indexOf(mode);
+  MODES.forEach((m, i) => {
+    const a = (i - ci) * step;
+    s += `<g transform="rotate(${r2(a)} ${r2(cx)} ${r2(cy)})">` + txt(cx, cy + r * 0.72, MODE_LABEL[m], r * (MODE_LABEL[m].length > 1 ? 0.4 : 0.48), m === 'auto' ? 'aut' : 'tm') + '</g>';
+  });
+  s += `<polygon points="${r2(cx - 1.4)},${r2(cy + r + 3.4)} ${r2(cx + 1.4)},${r2(cy + r + 3.4)} ${r2(cx)},${r2(cy + r + 1)}" class="acc"/>`;
+  return s;
+}
+function speedDial(cx, cy, r, shutter) {
+  const labels = ['B', 1, 2, 4, 8, 15, 30, 60, 125, 250, 500, 1000];
+  let s = circ(cx, cy, r + 0.8, 'rub') + circ(cx, cy, r, 'mt') + `<circle cx="${r2(cx)}" cy="${r2(cy)}" r="${r2(r)}" fill="url(#dome)"/>`;
+  const den = Math.round(1 / shutter);
+  let ci = labels.findIndex(l => l === den);
+  if (ci < 0) ci = labels.reduce((b, l, i) => (typeof l === 'number' && Math.abs(Math.log(l / den)) < Math.abs(Math.log((labels[b] || 1) / den)) ? i : b), 1);
+  labels.forEach((l, i) => {
+    const a = (i - ci) * 52;
+    if (Math.abs(a) > 110) return;
+    s += `<g transform="rotate(${r2(a)} ${r2(cx)} ${r2(cy)})">` + txt(cx, cy + r * 0.64, l, r * (String(l).length > 3 ? 0.19 : String(l).length > 2 ? 0.23 : 0.28), 'tl', 'style="fill:#222"') + '</g>';
+  });
+  s += `<polygon points="${r2(cx - 1.4)},${r2(cy + r + 3.4)} ${r2(cx + 1.4)},${r2(cy + r + 3.4)} ${r2(cx)},${r2(cy + r + 1)}" class="acc"/>`;
+  return s;
+}
+function shutterButton(x, y) {
+  return circ(x, y, 6.2, 'b') + `<circle cx="${r2(x)}" cy="${r2(y)}" r="6.2" fill="none" class="rib" stroke-width=".7" stroke-dasharray=".6 .6"/>` +
+    circ(x, y, 3.8, 'mt') + `<circle cx="${r2(x)}" cy="${r2(y)}" r="3.8" fill="url(#dome)"/>`;
+}
+// ---------- segment LCD ----------
+// Seven-segment glyphs (a top, b upper right, c lower right, d bottom, e lower left, f upper left, g middle).
+const SEG = { 0: 'abcdef', 1: 'bc', 2: 'abdeg', 3: 'abcdg', 4: 'bcfg', 5: 'acdfg', 6: 'acdefg', 7: 'abc', 8: 'abcdefg', 9: 'abcdfg', F: 'aefg', '-': 'g' };
+const NARROW = { '.': 0.32, '/': 0.55, '"': 0.42 };
+const glyphW = (c, w) => (NARROW[c] ?? 1) * w;
+/** One glyph in a cell of width w, height h, top-left (x, y). Digits show their unlit segments faintly. */
+function glyph(c, x, y, w, h) {
+  const t = Math.max(0.35, w * 0.19), gap = t * 0.14, H = h / 2;
+  const hz = (y0, x0 = x + t / 2, x1 = x + w - t / 2) =>
+    `M${r2(x0 + gap)},${r2(y0)}l${r2(t / 2)},${r2(-t / 2)}H${r2(x1 - gap - t / 2)}l${r2(t / 2)},${r2(t / 2)}l${r2(-t / 2)},${r2(t / 2)}H${r2(x0 + gap + t / 2)}Z`;
+  const vt = (x0, y0, y1) =>
+    `M${r2(x0)},${r2(y0 + gap)}l${r2(t / 2)},${r2(t / 2)}V${r2(y1 - gap - t / 2)}l${r2(-t / 2)},${r2(t / 2)}l${r2(-t / 2)},${r2(-t / 2)}V${r2(y0 + gap + t / 2)}Z`;
+  if (c === '.') return `<rect x="${r2(x + w * 0.5 - t / 2)}" y="${r2(y + h - t)}" width="${r2(t)}" height="${r2(t)}" class="sg1"/>`;
+  if (c === '/') return `<path d="M${r2(x + w - t * 0.2)},${r2(y)}h${r2(-t)}L${r2(x + t * 0.2)},${r2(y + h)}h${r2(t)}Z" class="sg1"/>`;
+  if (c === '"') return `<path d="M${r2(x + w * 0.2)},${r2(y)}h${r2(t * 0.8)}l${r2(-t * 0.3)},${r2(h * 0.3)}h${r2(-t * 0.5)}ZM${r2(x + w * 0.62)},${r2(y)}h${r2(t * 0.8)}l${r2(-t * 0.3)},${r2(h * 0.3)}h${r2(-t * 0.5)}Z" class="sg1"/>`;
+  const on = SEG[c] || '';
+  const segs = { a: hz(y + t / 2), d: hz(y + h - t / 2), g: hz(y + H), f: vt(x + t / 2, y + t / 2, y + H), b: vt(x + w - t / 2, y + t / 2, y + H), e: vt(x + t / 2, y + H, y + h - t / 2), c: vt(x + w - t / 2, y + H, y + h - t / 2) };
+  const lit = Object.entries(segs).filter(([k]) => on.includes(k)).map(([, d]) => d).join('');
+  const unlit = c === 'F' ? '' : Object.entries(segs).filter(([k]) => !on.includes(k)).map(([, d]) => d).join('');
+  return (unlit ? `<path d="${unlit}" class="sg0"/>` : '') + `<path d="${lit}" class="sg1"/>`;
+}
+/** Right-aligned segment text ending at xr; cell size is fixed, so the value never changes size. */
+function segText(str, xr, y, w, h) {
+  const sp = w * 0.22;
+  let x = xr, s = '';
+  for (const c of [...str].reverse()) { const gw = glyphW(c, w); x -= gw; s = glyph(c, x, y, gw, h) + s; x -= sp; }
+  // slight italic, like real LCD digits
+  return `<g transform="translate(0 ${r2(y + h)}) skewX(-7) translate(0 ${r2(-y - h)})">${s}</g>`;
+}
+/** Width factor of a string in cell widths (times w gives mm), including the spacing. */
+const segK = str => [...str].reduce((k, c) => k + (NARROW[c] ?? 1), 0) + ([...str].length - 1) * 0.22;
+const lcdField = (id, x, y, w, h, body, o) => {
+  const locked = o.locked?.includes('lcd-' + id) ? ' locked' : '';
+  const held = o.held === 'lcd-' + id ? ' held' : '';
+  return `<g class="fld${locked}${held}"><g${o.blink === id ? ' class="blink"' : ''}>${body}</g>` +
+    (o.live ? `<line x1="${r2(x)}" x2="${r2(x + w)}" y1="${r2(y + h + 0.9)}" y2="${r2(y + h + 0.9)}" class="hov"/>` +
+      `<rect x="${r2(x - 1)}" y="${r2(y - 1)}" width="${r2(w + 2)}" height="${r2(h + 2)}" fill="transparent" data-ctl="lcd-${id}" class="${locked.trim()}"/>` : '') + '</g>';
+};
+/** Light meter bar as on real top displays: ticks −2…+2 EV, a marker for over/under exposure. */
+function meterBar(x0, x1, y, h, ev) {
+  const cx = (x0 + x1) / 2, half = (x1 - x0) / 2 - 1.2;
+  let s = `<line x1="${r2(x0 + 1.2)}" x2="${r2(x1 - 1.2)}" y1="${r2(y + h * 0.35)}" y2="${r2(y + h * 0.35)}" class="lcd-act" style="opacity:.9"/>`;
+  for (let i = -6; i <= 6; i++) {
+    const x = cx + (half * i) / 6, big = i % 3 === 0;
+    s += `<line x1="${r2(x)}" x2="${r2(x)}" y1="${r2(y + h * (big ? 0 : 0.18))}" y2="${r2(y + h * 0.35)}" class="lcd-act" style="opacity:.9"/>`;
+  }
+  const v = clamp(ev, -2.3, 2.3), mx = cx + (half * v) / 2;
+  s += `<polygon points="${r2(mx - h * 0.28)},${r2(y + h)} ${r2(mx + h * 0.28)},${r2(y + h)} ${r2(mx)},${r2(y + h * 0.48)}" class="sg1"/>`;
+  return s + `<text x="${r2(x0 - 0.2)}" y="${r2(y + h)}" font-size="${r2(h * 0.55)}" class="tlab">−</text><text x="${r2(x1 - h * 0.35)}" y="${r2(y + h)}" font-size="${r2(h * 0.55)}" class="tlab">+</text>`;
+}
+
+function lcdPanel(x, y, w, h, st, o = {}) {
+  let s = rect(x, y, w, h, 'lcd', 1.6);
+  const t = fmtT(st.shutter), n = fmtN(st.N), iso = String(st.iso);
+  const pad = 2.4, kT = segK('1/8000'), kN = segK('F5.6'), kI = segK('12800');
+  if (w >= 40) {
+    // Row 1: shutter (room for "1/8000") | aperture (room for "F5.6"). Row 2: ISO, meter, flash.
+    const cw = Math.min((w - 2 * pad) / (kT + kN + 1.3), (h * 0.46) / 1.8), ch = cw * 1.8;
+    const y1 = y + pad, tw = kT * cw, nw = kN * cw;
+    s += lcdField('t', x + pad, y1, tw, ch, segText(t, x + pad + tw, y1, cw, ch), o);
+    s += lcdField('n', x + w - pad - nw, y1, nw, ch, segText('F' + n, x + w - pad, y1, cw, ch), o);
+    const cw2 = cw * 0.62, ch2 = ch * 0.62, y2 = y + h - pad - ch2, lab = ch2 * 0.62;
+    const iw = kI * cw2, ix = x + pad + lab * 2.1;
+    s += `<text x="${r2(x + pad)}" y="${r2(y2 + ch2)}" font-size="${r2(lab)}" class="tlab">ISO</text>`;
+    s += lcdField('iso', ix, y2, iw, ch2, segText(iso, ix + iw, y2, cw2, ch2), o);
+    const fx = x + w - pad - ch2 * 0.4;
+    if (st.flash) s += flashIcon(fx, y2, ch2, 'sg1');
+    if (st.meter != null) s += meterBar(ix + iw + 2, fx - ch2 * 0.5 - 1, y2 + ch2 * 0.1, ch2 * 0.85, st.meter);
+  } else {
+    // Narrow panel: one value per row.
+    const cw = Math.min((w - 2 * pad) / kT, (h - 2 * pad) / (1.8 * 2.62 + 1)), ch = cw * 1.8;
+    const ch2 = ch * 0.62, rowGap = (h - 2 * pad - ch * 2 - ch2) / 2;
+    const xr = x + w - pad, y1 = y + pad, y2 = y1 + ch + rowGap, y3 = y2 + ch + rowGap;
+    s += lcdField('t', xr - kT * cw, y1, kT * cw, ch, segText(t, xr, y1, cw, ch), o);
+    s += lcdField('n', xr - kN * cw, y2, kN * cw, ch, segText('F' + n, xr, y2, cw, ch), o);
+    const cw2 = cw * 0.62, iw = kI * cw2;
+    s += `<text x="${r2(x + pad)}" y="${r2(y3 + ch2)}" font-size="${r2(ch2 * 0.62)}" class="tlab">ISO</text>`;
+    s += lcdField('iso', xr - iw, y3, iw, ch2, segText(iso, xr, y3, cw2, ch2), o);
+    if (st.flash) s += flashIcon(x + pad + 1.5, y1, ch * 0.8, 'sg1');
+  }
+  return s;
+}
+/** Command dial seen from above: only its ribbed edge shows; `ang` turns the ribs. */
+function cmdDial(cx, y, w, h, ang, ctl, locked) {
+  let s = rect(cx - w / 2, y, w, h, 'rub' + (locked ? ' locked' : ''), 1.2, ctl ? `data-ctl="${ctl}"` : '');
+  for (let k = 0; k < 30; k++) {
+    const th = norm(k * 12 - ang);
+    if (Math.abs(th) > 80) continue;
+    const c = Math.cos(th * RAD), x = cx + (w / 2 - 0.6) * Math.sin(th * RAD);
+    s += `<line x1="${r2(x)}" x2="${r2(x)}" y1="${r2(y + 0.5)}" y2="${r2(y + h - 0.5)}" class="rib" stroke-width="${r2(0.3 + 0.6 * c)}" stroke-opacity="${r2(0.3 + 0.7 * c)}"/>`;
+  }
+  return s;
+}
+function hotShoe(cx, cy, live) {
+  return rect(cx - 9, cy - 9, 18, 18, 'mt2', 1, live ? 'data-ctl="flash"' : '') + rect(cx - 7, cy - 9, 14, 18, 'b', 0.6) + rect(cx - 9, cy - 9, 2.2, 18, 'mt', 0.4) + rect(cx + 6.8, cy - 9, 2.2, 18, 'mt', 0.4);
+}
+/** Compact speedlite seen from above, its reflector facing the subject. */
+function speedlite(cx, cy, live) {
+  const w = 58, d = 40;
+  return rect(cx - w / 2 + 1.2, cy - d / 2 + 1.5, w, d, 'rub', 3, 'opacity=".5"') +
+    rect(cx - w / 2, cy - d / 2, w, d, 'bh', 3, live ? 'data-ctl="flash"' : '') + shade(cx - w / 2, cy - d / 2, w, d, 3) +
+    rect(cx - w / 2 + 3, cy - d / 2 - 1.2, w - 6, 4, 'fl', 1) +
+    flashIcon(cx, cy - 13, 11, 'tm2') + txt(cx, cy + 6, 'Blitz', 4.5, 'tm2');
+}
+function lugs(w, y) { return rect(-w / 2 - 2, y, 2.4, 6, 'mt', 1) + rect(w / 2 - 0.4, y, 2.4, 6, 'mt', 1); }
+
+/** Draws a body (and lens) and returns {svg, B}. y = 0 is the lens mount face; the lens points to −y. */
+function drawRig(bodyId, lensId, st) {
+  resetB();
+  const b = BODIES[bodyId], L = lensId ? LENSES[lensId] : null;
+  let s = '', top = '';
+  if (b.type === 'phone') return drawPhone(b, st);
+  if (b.type === 'ml') {
+    const bf = 0, ax = b.hx;
+    s += lugs(b.w, bf + b.d * 0.3);
+    s += rect(b.w / 2 - b.gripW, bf - b.grip, b.gripW, b.d + b.grip, 'b', 8);
+    s += rect(-b.w / 2, bf, b.w, b.d, 'b', 5);
+    s += rect(ax - 13, bf + b.d - 2, 26, b.eye + 2, 'rub', 3);
+    s += rect(ax - b.hw / 2, bf + 1, b.hw, b.d - 2, 'bh', 4);
+    s += hotShoe(ax, bf + b.d / 2, st.live && !st.flash);
+    // mode dial on the left shoulder
+    const left = -b.w / 2 + 3, right = ax - b.hw / 2 - 3;
+    const r = Math.min(12.5, (right - left) / 2 - 1, b.d / 2 - 4.5);
+    s += modeDial((left + right) / 2, bf + b.d / 2 - 1.5, r, st.mode, st.live);
+    // top LCD right of the hump
+    const lx0 = ax + b.hw / 2 + 4, lx1 = b.w / 2 - 5;
+    const ly0 = bf + (b.grip < 14 ? 9 : 4), ly1 = bf + b.d - 4;
+    const lh = Math.min(ly1 - ly0, (lx1 - lx0) >= 40 ? 20 : 26);
+    s += lcdPanel(lx0, ly0, lx1 - lx0, lh, st, { live: st.live, blink: st.blink, locked: st.locked, held: st.held });
+    const sbX = b.w / 2 - b.gripW / 2 + (b.grip >= 14 ? 0 : 4), sbY = b.grip >= 14 ? bf - b.grip / 2 + 1 : bf + 1;
+    // front command dial in the grip under the shutter button, rear dial at the back edge
+    s += cmdDial(sbX, bf - b.grip - 2.6, 18, 3.4, st.frontA || 0, st.live ? 'front' : '', st.locked?.includes('front'));
+    s += cmdDial(b.w / 2 - 17, bf + b.d - 0.8, 22, 3.6, st.rearA || 0, st.live ? 'rear' : '', st.locked?.includes('rear'));
+    // ISO button next to the display
+    const ibx = lx0, iby = ly0 + lh + 1.6, ibh = Math.max(3, Math.min(5, ly1 - iby + 2));
+    if (ly1 + 3 - iby > 3) s += rect(ibx, iby, 9, ibh, st.blink === 'iso' ? 'mt' : 'btn', 1, st.live ? 'data-ctl="iso"' : '') + txt(ibx + 4.5, iby + ibh / 2, 'ISO', Math.min(2.6, ibh * 0.6), 'tm2');
+    s += shutterButton(sbX, sbY);
+    if (L) s += drawLens(L, st, ax, { live: st.live });
+    else s += rect(ax - 30, -3, 60, 3, 'mt', 0.6);
+    if (st.flash) top += speedlite(ax, bf + b.d / 2, st.live);
+  } else if (b.type === 'compact') {
+    const ax = b.lx;
+    s += lugs(b.w, b.d * 0.3);
+    s += rect(-b.w / 2, 0, b.w, b.d, 'b', 6) + shade(-b.w / 2, 0, b.w, b.d, 6).replace('url(#cyl)', 'none');
+    // built-in zoom: telescoping tubes, extends towards the tele end
+    const z = Math.log(clamp(st.focal ?? 24, 24, 70) / 24) / Math.log(70 / 24);
+    let y = 0;
+    const tubes = [[3, 46, 'mt'], [7 + 5 * z, 41, 'ln'], [8 + 6 * z, 37, 'ln2'], [3, 35, 'ln']];
+    for (const [l, d, c] of tubes) { s += rect(ax - d / 2, y - l, d, l, c, 0.5) + shade(ax - d / 2, y - l, d, l); y -= l; }
+    s += `<path d="M${r2(ax - 14)},${r2(y)}Q${r2(ax)},${r2(y - 2.4)} ${r2(ax + 14)},${r2(y)}Z" class="gl"/>`;
+    ext(ax - 14, y - 2, ax + 14, y);
+    // pop-up flash (left), raised when on
+    if (st.flash) s += rect(-b.w / 2 + 5, 2, 24, 13, 'bh', 2) + rect(-b.w / 2 + 6, 1, 22, 3, 'fl', 1) + shade(-b.w / 2 + 5, 2, 24, 13, 2);
+    else s += rect(-b.w / 2 + 5, 3, 24, 12, 'b', 2);
+    const lx0 = -b.w / 2 + 32, lx1 = 15.5;
+    s += lcdPanel(lx0, 5, lx1 - lx0, 25, st);
+    s += circ(23.5, 8, 6.6, 'mt2') + rect(28.5, 6.5, 3, 3, 'mt2', 1) + shutterButton(23.5, 8).replace(/r="6.2"/g, 'r="4.6"');
+    s += modeDial(b.w / 2 - 11.5, 19.5, 9, st.mode);
+  } else if (b.type === 'slr') {
+    const bf = b.mb, ax = 0, backD = b.back || 0;
+    s += lugs(b.w, bf + b.d * 0.35);
+    if (b.winder) s += rect(b.w / 2 - b.winder.w, bf - b.winder.f, b.winder.w, b.d + b.winder.f, 'b', 8);
+    s += rect(-b.w / 2, bf, b.w, b.d, 'b', 4);
+    if (backD) s += rect(-b.w / 2 + 4, bf + b.d, b.w - 8, backD, 'rub', 3) + txt(-b.w / 2 + 22, bf + b.d + backD / 2, 'Film-Rückteil', 3.6, 'tm2');
+    s += rect(-b.mbw / 2, 0, b.mbw, bf + 2, 'b', 1.5);
+    // pentaprism: wider at the back, eyepiece behind
+    const py0 = bf - Math.min(10, bf - 2), py1 = bf + b.d + backD - 1;
+    s += rect(ax - 11, py1 - 1, 22, b.eye + 1, 'rub', 2);
+    s += trap(ax, py1, py0, b.pw, b.pw * 0.72, 'bh');
+    s += `<path d="M${r2(ax - b.pw * 0.36)},${r2(py0)}L${r2(ax)},${r2((py0 + py1) / 2)}L${r2(ax + b.pw * 0.36)},${r2(py0)}" fill="none" stroke="var(--edge)" stroke-width=".4"/>`;
+    s += hotShoe(ax, (py0 + py1) / 2 + 4);
+    // rewind crank left, with the film speed window
+    const rx = -b.w / 2 + Math.min(20, (b.w - b.pw) / 4 + 6), ry = bf + b.d / 2;
+    s += circ(rx, ry, 11, 'b') + circ(rx, ry, 9, 'mt') + `<path d="M${r2(rx)},${r2(ry)}L${r2(rx + 7)},${r2(ry + 9)}" stroke="var(--metal2)" stroke-width="2.4" stroke-linecap="round"/>`;
+    s += rect(rx - 9, ry - 16, 18, 6, 'lcd', 1) + `<text x="${r2(rx)}" y="${r2(ry - 13)}" font-size="3.4" class="tl" text-anchor="middle" dy=".36em">ISO ${st.iso}</text>`;
+    // shutter speed dial, advance lever with release button
+    const sx = b.w / 2 - Math.min(40, (b.w - b.pw) / 4 + 18), sy = bf + b.d / 2;
+    s += speedDial(sx, sy - 1, Math.min(13, b.d / 2 - 4.5), st.shutter);
+    const vx = b.w / 2 - 13, vy = bf + 9;
+    s += `<path d="M${r2(vx)},${r2(vy)}L${r2(vx - 22)},${r2(vy + b.d - 14)}" stroke="var(--metal)" stroke-width="4.5" stroke-linecap="round"/>`;
+    s += circ(vx, vy, 6, 'mt2') + circ(vx, vy, 3.3, 'mt') + `<circle cx="${r2(vx)}" cy="${r2(vy)}" r="3.3" fill="url(#dome)"/>`;
+    if (L) s += drawLens(L, st, ax);
+    else s += rect(ax - 28, -3, 56, 3, 'mt', 0.6);
+    if (st.flash) top += speedlite(ax, (py0 + py1) / 2 + 4);
+  } else if (b.type === 'hassy') {
+    const ax = 0;
+    s += rect(-b.w / 2, b.d, b.w, b.mag, 'mt', 3) + rect(-b.w / 2 + 3, b.d + 4, b.w - 6, b.mag - 8, 'b', 2);
+    s += rect(b.w / 2, b.d + 14, 6, 14, 'mt2', 1.5); // magazine crank
+    s += rect(b.w / 2 - 1, 14, 16, 44, 'b', 4) + shade(b.w / 2 - 1, 14, 16, 44, 4); // winding knob, seen edge-on
+    for (let i = 0; i < 9; i++) s += `<line x1="${r2(b.w / 2 + 1 + i * 1.6)}" x2="${r2(b.w / 2 + 1 + i * 1.6)}" y1="15" y2="57" class="rib" stroke-width=".5"/>`;
+    s += rect(-b.w / 2, 0, b.w, b.d, 'b', 3);
+    // folded waist-level finder
+    s += rect(-41, 4, 82, b.d - 7, 'bh', 3) + rect(-34, 10, 68, b.d - 19, 'b', 2) + circ(0, b.d / 2 - 1.5, 13, 'gl');
+    s += txt(0, b.d - 8, 'Lichtschachtsucher', 3.6, 'tm2');
+    s += rect(b.w / 2 - 20, -5, 8, 5, 'mt', 1.5); // front release
+    if (L) s += drawLens(L, st, ax);
+    else s += rect(ax - 32, -3, 64, 3, 'mt', 0.6);
+  }
+  return { svg: s + top, B: { ...B } };
+}
+
+function drawPhone(b, st) {
+  let s = '';
+  const w = b.w, t = b.t;
+  for (const p of b.bump) s += rect(p.x0, -p.h, p.w, p.h + 0.6, p.cls, 0.6);
+  for (const l of b.lenses) {
+    const base = b.bump.find(p => l.x >= p.x0 && l.x <= p.x0 + p.w);
+    const y0 = -(base ? base.h : 0);
+    s += rect(l.x - l.d / 2, y0 - l.h, l.d, l.h + 0.4, 'mt', 0.5) + `<path d="M${r2(l.x - l.d / 2 + 1.5)},${r2(y0 - l.h)}Q${r2(l.x)},${r2(y0 - l.h - 1.2)} ${r2(l.x + l.d / 2 - 1.5)},${r2(y0 - l.h)}Z" class="gl"/>`;
+    ext(l.x - l.d / 2, y0 - l.h - 1, l.x + l.d / 2, y0);
+  }
+  s += rect(-w / 2, 0, w, t, 'ph', t * 0.42);
+  s += rect(-w / 2 + 1.2, t - 1.1, w - 2.4, 1.1, 'scr', 0.5);
+  if (st.flash) {
+    const fx = b.lenses[0].x - 11;
+    s += `<path d="M${r2(fx - 4)},-1L${r2(fx - 9)},-12L${r2(fx + 9)},-12L${r2(fx + 4)},-1Z" class="fl" opacity=".5"/>`;
+    ext(fx - 9, -12, fx + 9, 0);
+  }
+  // screen, folded down towards the photographer
+  const cy = t + 4, ch = 30;
+  s += rect(-w / 2 + 1, cy, w - 2, ch, 'scrcard', 4);
+  s += txt(0, cy + 9, `${fmtT(st.shutter)} · f/${fmtN(b.fixedN || st.N)}`, 5.4, 'ts');
+  s += txt(0, cy + 17.5, `ISO ${st.iso}`, 4.6, 'ts');
+  if (st.flash) s += flashIcon(-3.5, cy + 21.5, 6, 'fl') + txt(5, cy + 24.5, 'an', 4, 'ts');
+  s += txt(0, cy + ch + 4.5, 'Display (umgeklappt)', 3.6, 'lab');
+  ext(-w / 2, cy, w / 2, cy + ch + 7);
+  return { svg: s, B: { ...B } };
+}
+BODIES.iphoneXR.fixedN = 1.8; BODIES.iphone15ProMax.fixedN = 1.8; BODIES.fairphone5.fixedN = 1.9;
+
+// ---------- page ----------
+let SCALE = 1.6; // px per mm in gallery
+function svgFor(r, y0, y1, pad = 4) {
+  const x0 = r.B.x0 - pad, x1 = r.B.x1 + pad;
+  const Y0 = (y0 ?? r.B.y0) - pad, Y1 = (y1 ?? r.B.y1) + pad;
+  const w = x1 - x0, h = Y1 - Y0;
+  return `<svg viewBox="${r2(x0)} ${r2(Y0)} ${r2(w)} ${r2(h)}" width="${r2(w * SCALE)}" height="${r2(h * SCALE)}" role="img">${r.svg}</svg>`;
+}
+function figure(rigs, caption) {
+  const y0 = Math.min(...rigs.map(r => r.B.y0)), y1 = Math.max(...rigs.map(r => r.B.y1));
+  return `<figure><div class="row">${rigs.map(r => svgFor(r, y0, y1)).join('')}</div><figcaption>${caption}</figcaption></figure>`;
+}
+function lensOnly(id) {
+  resetB();
+  const L = LENSES[id];
+  const f = L.f[1];
+  const svg = drawLens(L, { focal: f, focus: 3, N: L.N[1], shutter: 1 / 125 }, 0);
+  const r = { svg, B: { ...B } };
+  const len = Math.round(lensLen(L, L.f[0])), lenT = Math.round(lensLen(L, f));
+  const dmax = Math.max(...L.s.map(s => s.d));
+  const lenStr = len === lenT ? `${len}` : `${len}–${lenT}`;
+  const pupil = Math.round(f / L.N[1]);
+  return { r, cap: `<b>${L.name}</b>${L.ex}<br>${lenStr} × ⌀${Math.round(dmax)} mm · Pupille ${pupil} mm` };
+}
+
+const DEF = { mode: 'P', shutter: 1 / 125, N: 5.6, iso: 400, flash: false, focal: 24, focus: 3 };
+function build() {
+  SCALE = innerWidth < 640 ? 1.45 : 1.8;
+  document.getElementById('bar100').style.width = `${100 * SCALE}px`;
+  document.getElementById('bodies').innerHTML = BODY_ORDER.map(id => {
+    const b = BODIES[id];
+    const st = { ...DEF, ...(b.type === 'phone' ? { mode: 'auto', shutter: 1 / 120, iso: 64 } : {}), ...(b.type === 'slr' || b.type === 'hassy' ? { iso: 200, shutter: 1 / 125, N: 8 } : {}) };
+    return figure([drawRig(id, null, st)], `<b>${b.name}</b>${b.ex ? b.ex + '<br>' : ''}${b.dims}`);
+  }).join('');
+  document.getElementById('lensesFF').innerHTML = FF_LENS_ORDER.map(id => { const x = lensOnly(id); return figure([x.r], x.cap); }).join('');
+  document.getElementById('lensesOther').innerHTML = OTHER_LENS_ORDER.map(id => { const x = lensOnly(id); return figure([x.r], x.cap); }).join('');
+
+  const C = (body, lens, st) => drawRig(body, lens, { ...DEF, ...st });
+  const combos = [
+    [[C('oneInch', null, { mode: 'P', focal: 24, shutter: 1 / 125, N: 1.8, iso: 200 }), C('oneInch', null, { mode: 'P', focal: 70, shutter: 1 / 125, N: 2.8, iso: 400 })],
+      '<b>Kompaktkamera</b>Eingebautes Zoom bei 24 und 70 mm (KB)'],
+    [[C('apsc', 'apscKit', { mode: 'P', focal: 18, shutter: 1 / 125, N: 3.5, iso: 400, focus: 2 }), C('apsc', 'apscKit', { mode: 'P', focal: 55, shutter: 1 / 125, N: 5.6, iso: 800, focus: 2 })],
+      '<b>APS-C + Kit-Zoom 18–55</b>P · kurzes und langes Ende'],
+    [[C('mft', 'mft1240', { mode: 'Av', focal: 25, shutter: 1 / 250, N: 2.8, iso: 200, focus: 3 })],
+      '<b>MFT + Profi-Zoom 12–40/2.8</b>Av · 25 mm · f/2.8 · Fokus 3 m'],
+    [[C('fullFrame', 'standardZoom28', { mode: 'Av', focal: 24, shutter: 1 / 250, N: 2.8, iso: 200, focus: 3 }), C('fullFrame', 'standardZoom28', { mode: 'Av', focal: 50, shutter: 1 / 250, N: 2.8, iso: 200, focus: 3 }), C('fullFrame', 'standardZoom28', { mode: 'Av', focal: 70, shutter: 1 / 250, N: 2.8, iso: 200, focus: 3 })],
+      '<b>Vollformat + 24–70/2.8</b>Av · f/2.8 · 1/250 · ISO 200 · Fokus 3 m · bei 24, 50, 70 mm'],
+    [[C('fullFrame', 'prime50', { mode: 'M', shutter: 1 / 200, N: 2.8, iso: 400, focus: 2, flash: true })],
+      '<b>Vollformat + 50/1.4 + Aufsteckblitz</b>M · 1/200 · f/2.8 · ISO 400 · Fokus 2 m'],
+    [[C('fullFrame', 'superTele', { mode: 'Tv', focal: 150, shutter: 1 / 1000, N: 5, iso: 1600, focus: 10 }), C('fullFrame', 'superTele', { mode: 'Tv', focal: 600, shutter: 1 / 1000, N: 6.3, iso: 3200, focus: 10 })],
+      '<b>Vollformat + Supertele-Zoom 150–600</b>Tv · bei 150 und 600 mm'],
+    [[C('fullFramePro', 'teleZoom28', { mode: 'Tv', focal: 135, shutter: 1 / 1000, N: 2.8, iso: 800, focus: 10 })],
+      '<b>Vollformat Profi + 70–200/2.8</b>Tv · 135 mm · 1/1000 · Fokus 10 m (innenzoomend)'],
+    [[C('fullFramePro', 'fastTele', { mode: 'Tv', shutter: 1 / 2000, N: 2.8, iso: 1600, focus: Infinity })],
+      '<b>Vollformat Profi + 400/2.8</b>Tv · 1/2000 · Fokus ∞ · Frontlinse 158 mm'],
+    [[C('film35', 'film50', { mode: 'M', shutter: 1 / 125, N: 8, iso: 200, focus: 5 })],
+      '<b>Kleinbild-Film + 50/1.4</b>Zeitenrad 1/125 · Blendenring f/8 · Film ISO 200 · Fokus 5 m'],
+    [[C('mf4433', 'gf80', { mode: 'Av', shutter: 1 / 500, N: 2, iso: 100, focus: 2 })],
+      '<b>Mittelformat digital + GF 80/1.7</b>Av · f/2 · 1/500 · ISO 100 · Fokus 2 m'],
+    [[C('mf645', 'm645_80', { mode: 'M', shutter: 1 / 60, N: 5.6, iso: 400, focus: 3 })],
+      '<b>6×4,5 + 80/2.8</b>1/60 · f/5.6 · Film ISO 400'],
+    [[C('mf66', 'h80', { mode: 'M', shutter: 1 / 125, N: 11, iso: 100, focus: 10 })],
+      '<b>6×6 + Planar 80/2.8</b>Zeit und Blende am Objektiv: 1/125 · f/11'],
+    [[C('mf67', 'p67_105', { mode: 'M', shutter: 1 / 30, N: 4, iso: 160, focus: 1.5 })],
+      '<b>6×7 + 105/2.4</b>1/30 · f/4 · Film ISO 160 · Fokus 1,5 m'],
+  ];
+  document.getElementById('combos').innerHTML = combos.map(([rigs, cap]) => figure(rigs, cap)).join('');
+}
+
+// ---------- interactive ----------
+const LIVE_LENSES = [['kitZoom', 'Kit-Zoom 28–70 f/3.5–5.6'], ['standardZoom28', 'Profi-Zoom 24–70 f/2.8'], ['teleZoom28', 'Profi-Zoom 70–200 f/2.8'], ['superTele', 'Supertele-Zoom 150–600'], ['prime50', 'Festbrennweite 50 f/1.4'], ['fastTele', 'Supertele 400 f/2.8']];
+const STOPS = [1.4, 1.6, 1.8, 2, 2.2, 2.5, 2.8, 3.2, 3.5, 4, 4.5, 5, 5.6, 6.3, 7.1, 8, 9, 10, 11, 13, 14, 16, 18, 20, 22];
+const TIMES = [30, 15, 8, 4, 2, 1, 1 / 2, 1 / 4, 1 / 8, 1 / 15, 1 / 30, 1 / 60, 1 / 125, 1 / 250, 1 / 500, 1 / 1000, 1 / 2000, 1 / 4000, 1 / 8000];
+const ISOS = [100, 200, 400, 800, 1600, 3200, 6400, 12800];
+const live = { lens: 'standardZoom28', mode: 'Av', focal: 50, focus: 3, N: 2.8, shutter: 1 / 250, iso: 200, flash: false, isoEdit: false, shift: 0, frontA: 0, rearA: 0 };
+// ---- exposure: a fixed scene brightness; the camera sets whatever the mode leaves to it ----
+const SCENE_EV = 13;
+const nearestIdx = (arr, v) => arr.reduce((b, x, i) => (Math.abs(Math.log(x / v)) < Math.abs(Math.log(arr[b] / v)) ? i : b), 0);
+const sceneEv = () => SCENE_EV + Math.log2(live.iso / 100);
+const settingsEv = () => Math.log2((live.N * live.N) / live.shutter);
+function autoExpose() {
+  const L = LENSES[live.lens], nMax = maxN(L, live.focal), ev = sceneEv();
+  const okN = STOPS.filter(n => n >= nMax - 0.05);
+  if (live.mode === 'Av') live.shutter = TIMES[nearestIdx(TIMES, (live.N * live.N) / 2 ** ev)];
+  if (live.mode === 'Tv') live.N = okN[nearestIdx(okN, Math.sqrt(live.shutter * 2 ** ev))];
+  if (live.mode === 'P' || live.mode === 'auto') {
+    // program line: half the light to aperture, half to time, shifted by the rear dial in P
+    const av = clamp(ev / 2 - 1.5 - (live.mode === 'P' ? live.shift : 0), Math.log2(nMax * nMax), Math.log2(22 * 22));
+    live.N = okN[nearestIdx(okN, Math.sqrt(2 ** av))];
+    live.shutter = TIMES[nearestIdx(TIMES, (live.N * live.N) / 2 ** ev)];
+  }
+}
+const HINTS = {
+  auto: 'A (Automatik): Die Kamera wählt Zeit und Blende. Die Räder haben hier keine Funktion.',
+  P: 'P (Programm): Die Kamera wählt Zeit und Blende. Hinteres Rad: Programmverschiebung – andere Kombination, gleiche Helligkeit.',
+  Av: 'Av (Zeitautomatik): Du wählst die Blende (Räder oder Display), die Kamera die passende Zeit.',
+  Tv: 'Tv (Blendenautomatik): Du wählst die Zeit (Räder oder Display), die Kamera die passende Blende.',
+  M: 'M (Manuell): hinteres Rad = Zeit, vorderes Rad = Blende. Der Balken im Display zeigt Über- oder Unterbelichtung.',
+};
+let msgTimer;
+function say(t) { $('liveMsg').textContent = t; clearTimeout(msgTimer); msgTimer = setTimeout(() => ($('liveMsg').textContent = ''), 3000); }
+function stepShutter(d) { live.shutter = TIMES[clamp(TIMES.indexOf(live.shutter) + d, 0, TIMES.length - 1)]; }
+function stepN(d) {
+  const L = LENSES[live.lens], okN = STOPS.filter(n => n >= maxN(L, live.focal) - 0.05);
+  live.N = okN[clamp(okN.indexOf(live.N) + d, 0, okN.length - 1)];
+}
+function stepIso(d) { live.iso = ISOS[clamp(ISOS.indexOf(live.iso) + d, 0, ISOS.length - 1)]; }
+/** One click of a control in direction d (+1 = right). Returns false when it does nothing in this mode. */
+function click(ctl, d) {
+  const m = live.mode;
+  if (ctl === 'mode') { live.mode = MODES[(MODES.indexOf(m) + d + MODES.length) % MODES.length]; live.shift = 0; live.isoEdit = false; return true; }
+  if (live.isoEdit && (ctl === 'rear' || ctl === 'front' || ctl === 'lcd-iso')) { stepIso(d); return true; }
+  if (ctl === 'lcd-iso') { stepIso(d); return true; }
+  if (m === 'auto') { say('In A wählt die Kamera alles selbst.'); return false; }
+  if (ctl === 'rear' || ctl === 'front') {
+    if (m === 'P') { if (ctl === 'rear') { live.shift = clamp(live.shift + d, -4, 4); return true; } say('In P verschiebt das hintere Rad das Programm.'); return false; }
+    if (m === 'Av' || (m === 'M' && ctl === 'front')) { stepN(d); return true; }
+    stepShutter(d); return true;
+  }
+  if (ctl === 'lcd-t') { if (m === 'Tv' || m === 'M') { stepShutter(d); return true; } say(`In ${MODE_LABEL[m]} wählt die Kamera die Zeit.`); return false; }
+  if (ctl === 'lcd-n') { if (m === 'Av' || m === 'M') { stepN(d); return true; } say(`In ${MODE_LABEL[m]} wählt die Kamera die Blende.`); return false; }
+  return false;
+}
+function setupDrag() {
+  const stage = $('liveStage');
+  let drag = null;
+  stage.addEventListener('pointerdown', e => {
+    const t = e.target.closest('[data-ctl]');
+    if (!t) return;
+    const svg = stage.querySelector('svg');
+    drag = { ctl: t.dataset.ctl, x: e.clientX, x0: e.clientX, acc: 0, pxPerMm: svg.getScreenCTM().a, R: t.getBBox().width / 2, moved: false };
+    stage.setPointerCapture(e.pointerId);
+    stage.style.cursor = getComputedStyle(t).cursor;
+    stage.classList.add('dragging');
+    live.held = drag.ctl;
+    renderLive();
+    e.preventDefault();
+  });
+  stage.addEventListener('pointermove', e => {
+    if (!drag) return;
+    const dmm = (e.clientX - drag.x) / drag.pxPerMm;
+    drag.x = e.clientX;
+    if (Math.abs(e.clientX - drag.x0) > 4) drag.moved = true;
+    const L = LENSES[live.lens];
+    if (drag.ctl === 'focus' || drag.ctl === 'zoom') {
+      // the ring turns with the finger: marks under it move by dmm, i.e. dθ = dmm / R
+      const dth = (dmm / drag.R) * (180 / Math.PI);
+      if (drag.ctl === 'focus') {
+        const a = clamp(focusAng(live.focus) - dth, 0, 150);
+        live.focus = a < 0.4 ? Infinity : +(0.3 * (150 / a) ** 2).toFixed(2);
+      } else if (isZoom(L)) {
+        const a = clamp(zoomAng(L, live.focal) - dth, 0, 100);
+        live.focal = Math.round(L.f[0] * (L.f[1] / L.f[0]) ** (a / 100));
+      }
+      update();
+      return;
+    }
+    if (drag.ctl === 'iso' || drag.ctl === 'flash') return;
+    // dials, mode dial and display values click in steps
+    const step = drag.ctl === 'mode' ? 7 : drag.ctl.startsWith('lcd') ? 5 : 4;
+    if (drag.ctl === 'front') live.frontA -= dmm * 9;
+    if (drag.ctl === 'rear') live.rearA -= dmm * 9;
+    drag.acc += dmm;
+    while (Math.abs(drag.acc) >= step) { const d = Math.sign(drag.acc); drag.acc -= d * step; click(drag.ctl, d); }
+    update();
+  });
+  const end = e => {
+    if (!drag) return;
+    if (!drag.moved) {
+      if (drag.ctl === 'iso' || (drag.ctl === 'lcd-iso' && !live.isoEdit)) { live.isoEdit = !live.isoEdit; if (live.isoEdit) say('ISO: jetzt ein Rad drehen. Nochmal ISO drücken zum Beenden.'); }
+      else if (drag.ctl === 'mode') click('mode', 1);
+      else if (drag.ctl === 'flash') { live.flash = !live.flash; $('iFl').checked = live.flash; say(live.flash ? 'Blitz aufgesteckt.' : 'Blitz abgenommen.'); }
+      else click(drag.ctl, 0);
+    }
+    drag = null;
+    live.held = null;
+    stage.classList.remove('dragging');
+    stage.style.cursor = '';
+    update();
+  };
+  stage.addEventListener('pointerup', end);
+  stage.addEventListener('pointercancel', end);
+}
+function update() { syncSliders(); renderLive(); }
+const $ = id => document.getElementById(id);
+function setupLive() {
+  $('iLens').innerHTML = LIVE_LENSES.map(([id, n]) => `<option value="${id}">${n}</option>`).join('');
+  $('iLens').value = live.lens;
+  $('iModes').innerHTML = MODES.map(m => `<button type="button" data-m="${m}">${MODE_LABEL[m]}</button>`).join('');
+  $('iModes').addEventListener('click', e => { const m = e.target.dataset?.m; if (m) { live.mode = m; renderLive(); } });
+  $('iLens').addEventListener('change', () => { live.lens = $('iLens').value; const L = LENSES[live.lens]; live.focal = lensF(L, live.focal); syncSliders(); renderLive(); });
+  $('iF').addEventListener('input', () => { const L = LENSES[live.lens]; live.focal = Math.round(L.f[0] * Math.pow(L.f[1] / L.f[0], $('iF').value / 1000)); renderLive(); });
+  $('iD').addEventListener('input', () => { const a = 150 * (1 - $('iD').value / 1000); live.focus = a <= 0.01 ? Infinity : 0.3 / Math.pow(a / 150, 2); renderLive(); });
+  $('iN').addEventListener('input', () => { live.N = STOPS[+$('iN').value]; renderLive(); });
+  $('iT').addEventListener('input', () => { live.shutter = TIMES[+$('iT').value]; renderLive(); });
+  $('iI').addEventListener('input', () => { live.iso = ISOS[+$('iI').value]; renderLive(); });
+  $('iFl').addEventListener('change', () => { live.flash = $('iFl').checked; renderLive(); });
+  syncSliders();
+  setupDrag();
+}
+function syncSliders() {
+  const L = LENSES[live.lens];
+  $('iF').disabled = !isZoom(L);
+  $('iF').value = isZoom(L) ? Math.round(1000 * zoomT(L, live.focal)) : 0;
+  $('iD').value = Math.round(1000 * (1 - focusAng(live.focus) / 150));
+  $('iN').value = STOPS.indexOf(live.N) >= 0 ? STOPS.indexOf(live.N) : 6;
+  $('iT').value = TIMES.indexOf(live.shutter);
+  $('iI').value = ISOS.indexOf(live.iso);
+}
+function renderLive() {
+  const L = LENSES[live.lens];
+  live.focal = lensF(L, live.focal);
+  const nMax = maxN(L, live.focal);
+  if (live.N < nMax - 0.05) live.N = STOPS.find(n => n >= nMax - 0.05);
+  $('iN').value = STOPS.indexOf(live.N);
+  autoExpose();
+  syncSliders();
+  const locked = { auto: ['lcd-t', 'lcd-n', 'front', 'rear'], P: ['lcd-t', 'lcd-n', 'front'], Av: ['lcd-t'], Tv: ['lcd-n'], M: [] }[live.mode]
+    .filter(c => !(live.isoEdit && (c === 'front' || c === 'rear')));
+  const meter = live.mode === 'M' ? sceneEv() - settingsEv() : null;
+  const st = { ...live, live: true, blink: live.isoEdit ? 'iso' : '', locked, meter };
+  // fixed frame: union of short and long end, with flash, so the drawing doesn't jump
+  const a = drawRig('fullFrame', live.lens, { ...live, focal: L.f[1], flash: true, focus: 0.3 });
+  const b = drawRig('fullFrame', live.lens, { ...live, focal: L.f[0] });
+  const r = drawRig('fullFrame', live.lens, st);
+  $('liveHint').textContent = HINTS[live.mode];
+  const x0 = Math.min(a.B.x0, b.B.x0) - 4, x1 = Math.max(a.B.x1, b.B.x1) + 4, y0 = Math.min(a.B.y0, b.B.y0) - 4, y1 = Math.max(a.B.y1, b.B.y1) + 4;
+  $('liveStage').innerHTML = `<svg viewBox="${r2(x0)} ${r2(y0)} ${r2(x1 - x0)} ${r2(y1 - y0)}" role="img" style="max-height:${live.lens === 'fastTele' || live.lens === 'superTele' ? 720 : 560}px">${r.svg}</svg>`;
+  $('vF').textContent = `${live.focal} mm`;
+  $('vD').textContent = live.focus === Infinity ? '∞' : `${live.focus < 10 ? live.focus.toFixed(1).replace('.', ',') : Math.round(live.focus)} m`;
+  $('vN').textContent = `f/${fmtN(live.N)}`;
+  $('vT').textContent = `${fmtT(live.shutter)} s`;
+  $('vI').textContent = live.iso;
+  [...$('iModes').children].forEach(btn => btn.setAttribute('aria-pressed', btn.dataset.m === live.mode));
+  // front view: entrance pupil at the same scale as the drawing
+  const dF = Math.max(...L.s.map(s => s.d)), p = live.focal / live.N, R = dF / 2;
+  let poly = '';
+  for (let i = 0; i < 9; i++) { const t = (i / 9) * 2 * Math.PI + 0.2; poly += `${r2((p / 2) * Math.cos(t))},${r2((p / 2) * Math.sin(t))} `; }
+  const px = 96 / (dF + 8);
+  $('liveFront').innerHTML = `<svg viewBox="${r2(-R - 4)} ${r2(-R - 4)} ${r2(dF + 8)} ${r2(dF + 8)}" width="96" height="96"><circle r="${r2(R)}" class="ln"/><circle r="${r2(R - 4)}" class="rg"/><circle r="${r2(R - 7)}" class="gl" style="fill-opacity:.25"/><polygon points="${poly}" fill="var(--bg)" stroke="var(--accent)" stroke-width="${r2(0.8 / px * 1.6)}"/></svg>` +
+    `<span>Von vorn: Eintrittspupille ⌀ ${Math.round(p)} mm<br>(${live.focal} mm ÷ ${fmtN(live.N)}), Frontlinse ⌀ ${Math.round(dF)} mm</span>`;
+}
+
+build();
+setupLive();
+renderLive();
+let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(build, 150); });
+</script>
+</body>
+</html>

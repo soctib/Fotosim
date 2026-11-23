@@ -18,7 +18,7 @@ honestly, where it changes nothing (still subject, good light, small view: a pho
 | [white-balance](white-balance.md) | Colour temperature, auto vs fixed WB, film, mixed light with flash | – | effective-resolution (scanner) |
 | [perspective](perspective.md) | Face proportions depend on distance only, not on focal length | – | digital-zoom |
 | [focus-beyond-infinity](focus-beyond-infinity.md) | Zooms focus past ∞: nothing is sharp, dramatic on long lenses; focus stored in diopters | – | effective-resolution |
-| [ux-improvements](ux-improvements.md) | Graph scrollbar, layout overflow fix, scene icons, blue accent, livelier dolls, top-view camera panel | – | focus-beyond-infinity |
+| [ux-improvements](ux-improvements.md) | Graph scrollbar, layout overflow fix, scene icons, blue accent, new figurine + livelier dolls, hover infobox, phone mini graph, simple mode keeps your camera, top-view camera panel | – | focus-beyond-infinity |
 | [cost-value](cost-value.md) | The cost panel says what each item buys *in the current situation* | – | gets richer with every other plan |
 | [webgl-renderer](webgl-renderer.md) | Camera image on the GPU – only if SVG filters get too slow (measure first; maybe never) | – | lens-flaws, dynamic-range, white-balance, rolling-shutter |
 

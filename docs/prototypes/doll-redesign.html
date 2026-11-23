@@ -1,0 +1,468 @@
+<meta charset="utf-8">
+<title>Doll Iteration</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&family=JetBrains+Mono:wght@400&display=swap">
+<style>
+/* Layout: a contact sheet – one row per shooting situation, one frame per candidate, scrolling sideways on phones. */
+:root {
+  --bg: #f3f4f1;
+  --panel: #ffffff;
+  --fg: #1d2420;
+  --muted: #5e6a63;
+  --line: #d6dbd5;
+  --accent: #c2255c;
+  --good: #2f7d4f;
+  --warn: #a8641a;
+  --bad: #b3261e;
+  --scene: #dfe8ee;
+  --font-display: 'Space Grotesk', 'Avenir Next', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #151a17; --panel: #1e2521; --fg: #e6ebe7; --muted: #9aa69f; --line: #34403a;
+    --accent: #f06595; --good: #6cc48f; --warn: #e3a35a; --bad: #f2867f; --scene: #c9d6df;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #151a17; --panel: #1e2521; --fg: #e6ebe7; --muted: #9aa69f; --line: #34403a;
+  --accent: #f06595; --good: #6cc48f; --warn: #e3a35a; --bad: #f2867f; --scene: #c9d6df;
+  color-scheme: dark;
+}
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font: 15px/1.55 var(--font-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 24px 64px;
+}
+main { max-width: 1320px; margin: 0 auto; display: grid; gap: 40px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; line-height: 1.2; }
+h1 { font-size: 2rem; }
+h2 { font-size: 1.35rem; }
+h3 { font-size: 1.02rem; }
+p { margin: 0; max-width: 68ch; }
+section { display: grid; gap: 14px; min-width: 0; }
+.lede { display: grid; gap: 10px; }
+.muted { color: var(--muted); }
+.eyebrow { font: 500 0.72rem var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.verdict { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; display: grid; gap: 8px; }
+.verdict ul { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; max-width: 75ch; }
+
+/* contact sheet */
+.sheet-row { display: grid; gap: 8px; min-width: 0; }
+.sheet-row header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.settings { font: 0.78rem var(--font-mono); color: var(--muted); }
+.frames { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 6px; }
+.frame { flex: none; margin: 0; display: grid; gap: 4px; }
+.frame svg { display: block; border-radius: 6px; border: 1px solid var(--line); background: var(--scene); }
+.frame figcaption { font-size: 0.8rem; display: flex; justify-content: space-between; gap: 8px; }
+.frame .sig { font: 0.7rem var(--font-mono); color: var(--muted); }
+
+/* facts */
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
+table { border-collapse: collapse; width: 100%; min-width: 860px; font-size: 0.86rem; }
+th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+tbody tr:last-child th, tbody tr:last-child td { border-bottom: 0; }
+thead th { font-family: var(--font-display); font-size: 0.95rem; }
+tbody th { font-weight: 600; color: var(--muted); width: 130px; }
+.ok::before, .meh::before, .no::before { font-weight: 700; margin-right: 4px; }
+.ok::before { content: '✓'; color: var(--good); }
+.meh::before { content: '~'; color: var(--warn); }
+.no::before { content: '✗'; color: var(--bad); }
+.lic { font: 0.72rem var(--font-mono); padding: 1px 6px; border-radius: 999px; border: 1px solid currentColor; white-space: nowrap; }
+.lic.cc0 { color: var(--good); }
+.lic.by { color: var(--warn); }
+
+/* try it */
+.controls { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: end; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+.controls label { display: grid; gap: 2px; font-size: 0.78rem; color: var(--muted); }
+.controls select, .controls input[type=range] { font: inherit; font-size: 0.9rem; color: var(--fg); }
+.controls .check { display: flex; gap: 6px; align-items: center; color: var(--fg); font-size: 0.9rem; }
+.controls output { font: 0.8rem var(--font-mono); color: var(--fg); }
+select:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* gallery */
+.gallery { display: grid; gap: 14px; }
+.gal { margin: 0; display: grid; gap: 4px; }
+.gal-row { display: flex; gap: 6px; overflow-x: auto; }
+.gal-row svg { width: 88px; height: 88px; flex: none; background: #fff; border-radius: 6px; border: 1px solid var(--line); }
+.gal figcaption { font-size: 0.82rem; color: var(--muted); }
+.peeps-row svg { height: 140px; width: auto; flex: none; background: #fff; border-radius: 6px; border: 1px solid var(--line); padding: 4px; }
+
+/* the figurines' own colours: the scene is "the real world", same in both themes */
+.fig .legs { fill: #34405a; }
+.fig .skin { fill: #f1c27d; }
+.fig .hair { fill: #4a3222; }
+.fig .nose { fill: #dfa463; }
+.fig .nostril { fill: #8a5228; }
+.fig .freckle { fill: #b0703a; }
+.fig .nose-highlight { fill: #fff3dc; }
+.fig .sclera { fill: #fbfaf6; stroke: #c99a68; stroke-width: 0.12; }
+.fig .iris { fill: #d6a256; }
+.fig .iris.eye-simple { fill: #a9793c; }
+.fig .iris-rays { stroke: #5a3412; stroke-width: 0.08; opacity: 0.7; fill: none; }
+.fig .limbus { fill: none; stroke: #2a1a0d; stroke-width: 0.14; }
+.fig .pupil { fill: #111; }
+.fig .catchlight { fill: #fff; }
+.fig .lid { fill: none; stroke: #3a2516; stroke-width: 0.3; stroke-linecap: round; }
+.fig .ear { fill: #eab676; stroke: #c98d4f; stroke-width: 0.6; }
+.fig .mouth, .fig .arm { fill: none; stroke-linecap: round; }
+.fig .mouth { stroke: #8a3b2a; stroke-width: 1.4; }
+.fig .arm { stroke-width: 10; stroke: #c2255c; }
+.fig .shirt { fill: #c2255c; }
+.fig .ground { fill: #b9c6a5; }
+</style>
+<style>
+.fig .p2 .iris { fill: #9fd0f2; }
+.fig .p2 .iris.eye-simple { fill: #6aa6d4; }
+.fig .p2 .iris-rays { stroke: #1f4f7a; }
+.big { display: flex; gap: 14px; overflow-x: auto; padding-bottom: 6px; }
+.big figure { margin: 0; flex: none; display: grid; gap: 4px; }
+.big svg { display: block; border-radius: 8px; border: 1px solid var(--line); background: var(--scene); }
+.big figcaption { font-size: 0.8rem; }
+.palette { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 0.8rem; }
+.sw { width: 18px; height: 18px; border-radius: 4px; border: 1px solid var(--line); display: inline-block; }
+</style>
+
+<main>
+  <section class="lede">
+    <span class="eyebrow">Fotosim · figurine iteration · prototype</span>
+    <h1>Our doll, Personas head</h1>
+    <p>The Personas outline for head, neck and ears and its hair shapes and colours, with our own eyes, nose and
+      mouth kept. Three body drafts sit next to the current one. Every blurred frame uses the app's depth split:
+      ears 9 cm behind the eyes, face and body in the eye plane, nose tip 3 cm in front.</p>
+  </section>
+
+  <section class="verdict" aria-labelledby="v-h">
+    <h2 id="v-h">What changed</h2>
+    <ul>
+      <li><b>Head:</b> the Personas shape (a rounded capsule with ear bumps and a neck in one outline). The face gets a
+        lighter skin tone and the neck and ears the base tone, like the original. The ears get a small inner fold
+        so focusing on them has something to resolve.</li>
+      <li><b>Hair:</b> Personas shapes; person 2 gets a different style (pick one in the hair gallery below). The
+        highlight colours are pre-mixed, because the original blend mode does nothing inside a blurred group.</li>
+      <li><b>Kept:</b> our detailed eyes (iris, catchlight, lid) and mouth.</li>
+      <li><b>Nose (new):</b> our triangle with a flat shadow on its left half. The whole nose fades out from the tip
+        up to the bridge, so it blends into the face. The nostrils, freckles and highlight stay for the close-ups. The flat
+        nose is still shown next to it for comparison.</li>
+      <li><b>Bodies:</b> A keeps the current body. B has rounded shoulders, a neckline, sleeves with hands, trousers
+        with two legs, and shoes. C is B with short sleeves, bare forearms, jeans with cuffs and sneakers, and a narrower torso (shoulders ±19.6 cm instead of ±22.8 cm).</li>
+      <li>The Personas outlines are <b>CC BY 4.0</b> (Draftbit), so we need a credit line ("based on Personas by
+        Draftbit, modified").</li>
+    </ul>
+  </section>
+
+  <section aria-labelledby="line-h">
+    <h2 id="line-h">Lineup (no blur)</h2>
+    <p class="muted">Person 1 and person 2 in each body version, then the heads close up.</p>
+    <div class="big" id="lineup"></div>
+    <div class="big" id="heads" style="margin-top:10px"></div>
+  </section>
+
+  <section aria-labelledby="hair-h">
+    <h2 id="hair-h">Hair for person 2</h2>
+    <p class="muted">Every Personas hair shape on the new head, in person 2's colours. Tap one to use it everywhere on this page.</p>
+    <div class="big" id="hairs"></div>
+  </section>
+
+  <section aria-labelledby="sheet-h">
+    <h2 id="sheet-h">Contact sheet</h2>
+    <p class="muted">The small numbers are the blur σ in px for ears · face/body · nose tip.</p>
+    <div id="sheet" style="display:grid;gap:22px"></div>
+  </section>
+
+  <section aria-labelledby="try-h">
+    <h2 id="try-h">Try your own settings</h2>
+    <div class="controls">
+      <label for="t-focal">Focal length (full frame)
+        <select id="t-focal"><option>24</option><option>35</option><option>50</option><option selected>85</option><option>135</option><option>200</option></select></label>
+      <label for="t-n">Aperture
+        <select id="t-n"><option value="1.4" selected>f/1.4</option><option value="2">f/2</option><option value="2.8">f/2.8</option><option value="4">f/4</option><option value="5.6">f/5.6</option><option value="8">f/8</option><option value="16">f/16</option></select></label>
+      <label for="t-d">Distance to the eyes <output id="t-d-out"></output>
+        <input id="t-d" type="range" min="0" max="100" value="23"></label>
+      <label for="t-focus">Focus on
+        <select id="t-focus"><option value="ears">ears</option><option value="eyes" selected>eyes</option><option value="nose">nose tip</option></select></label>
+      <label for="t-view">Frame on
+        <select id="t-view"><option value="head" selected>head</option><option value="eye">one eye</option><option value="full">whole person</option></select></label>
+      <label for="t-z">Digital zoom
+        <select id="t-z"><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option><option value="8">8×</option></select></label>
+      <label for="t-eye">Eye spacing <output id="t-eye-out"></output>
+        <input id="t-eye" type="range" min="40" max="60" value="48"></label>
+      <label class="check" for="t-smile"><input id="t-smile" type="checkbox"> Smile</label>
+    </div>
+    <div class="frames" id="try"></div>
+  </section>
+
+  <section aria-labelledby="col-h">
+    <h2 id="col-h">Colours used</h2>
+    <div id="cols" style="display:grid;gap:8px"></div>
+  </section>
+</main>
+
+<script>
+const HAIR = {"long":"<path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M44 26c-1.8-2-3.13-4.5-3.97-7.47-1.87 2.28-4.55 3.6-8.03 3.97-5.83.61-10.82-.33-14.95-2.82A13.96 13.96 0 0 0 16 25v1.03c-.73.08-1.42.34-2 .73V25.5C14 16.39 21.16 9 30 9s16 7.39 16 16.5v1.26a4.47 4.47 0 0 0-2-.73V26Zm2 8.24v6.6c0 7.32-4.61 13.52-11 15.68V44.08A14.04 14.04 0 0 0 43.42 35h.08c.93 0 1.78-.28 2.5-.76Zm-32 6.6c0 7.37 4.68 13.6 11.13 15.73a1073 1073 0 0 0-.13-7.02v-5.47A14.04 14.04 0 0 1 16.58 35h-.08c-.93 0-1.79-.28-2.5-.76v6.6Z\" fill=\"HAIR\"/><path d=\"M40.03 18.53A18.47 18.47 0 0 0 44 26v.03c.73.08 1.42.34 2 .73V25.5C46 16.39 38.84 9 30 9s-16 7.39-16 16.5v1.26c.58-.4 1.27-.65 2-.73V25c0-1.88.37-3.68 1.05-5.32 4.13 2.5 9.12 3.43 14.95 2.82 3.48-.37 6.16-1.7 8.03-3.97Z\" fill=\"HAIRHI\" data-op=\".26\"/>","sideShave":"<path d=\"M35 11.92A14 14 0 0 1 44 25v1s-1.33-3.1-3.16-4.93c-1.84-1.82-3.34-.7-4.53-2.52-1.2-1.83-1.31-6.63-1.31-6.63Z\" fill=\"HAIR\" opacity=\".3\"/><path d=\"M30.65 23.09c-1.6 1.26-4.4 1.88-7.24 2.5-4.62 1.02-9.4 2.07-9.4 5.98V25.5C14 16.39 21.16 9 30 9c4.84 0 5.68 2.65 5.46 6.23-.2 3-.62 4.55-4.8 7.86ZM25 47a9.4 9.4 0 0 1-9.44 9.53L7.5 56.5s4-8.23 5-11.11l.06-.2c-.84.51-1.84.81-2.92.81H8.5s4.1-3.74 5.35-9.69c.1-1.23.15-2.07.15-2.07a4.48 4.48 0 0 0 2.58.76A14.04 14.04 0 0 0 25 44.08V47Z\" fill=\"HAIR\"/>","shortCombover":"<path d=\"M40.26 12.63a7.93 7.93 0 0 1 4.6 8.35L44 27c-2.83-1.7-4.7-5.55-5.6-11.56a9.24 9.24 0 0 1-5.7 2.77c-1.82.2-3.39.29-4.7.29-3 0-5.67-.5-8-1.5 0 3.67-1.33 7.17-4 10.5l-.92-8.53A9 9 0 0 1 24.03 9H41c0 1.28-.26 2.51-.74 3.63Z\" fill=\"HAIR\"/><path d=\"M40.26 12.63c.48-1.12.74-2.35.74-3.63H24.03a9 9 0 0 0-8.95 9.97L16 27.5c2.67-3.33 4-6.83 4-10.5 2.33 1 5 1.5 8 1.5 1.31 0 2.88-.1 4.7-.29a9.24 9.24 0 0 0 7.56-5.58ZM44.88 20.84a7.91 7.91 0 0 0-2.42-6.73 9.29 9.29 0 0 1-3.45 4.5c1.04 4.22 2.7 7.01 5 8.39l.85-6.02.02-.14Z\" fill=\"HAIRHI\" data-op=\".26\"/>","curlyHighTop":"<path d=\"M31.8 7a2 2 0 0 1 3.8 0h.57a2 2 0 0 1 3.83.67l.22.1a2 2 0 0 1 3.13 2.3l.15.17a2 2 0 0 1 1.77 3.41c.05.16.09.31.12.47a2 2 0 0 1 .02 3.75l-.05.32a2 2 0 0 1-.02 3.63 2 2 0 0 1 .16.85 1.8 1.8 0 0 1-1.22 2.92L44 27.5c-.44-.66-.84-1.48-1.2-2.46a1.8 1.8 0 0 1-.45-.8 2 2 0 0 1-.56-2.68l-.02-.1a2 2 0 0 1-.96-2.94 2 2 0 0 1-2.44-.32 2 2 0 0 1-3.72.06l-.31.03a2 2 0 0 1-3.58.2h-.23a2 2 0 0 1-3.52-.1l-.4-.03a2 2 0 0 1-3.68-.17 2 2 0 0 1-3.04-.22l-.03.16a2 2 0 0 1-.7 3.35 2 2 0 0 1-1.4 3.1c-.5.97-1.09 1.94-1.76 2.9l-.19-1.92a1.8 1.8 0 0 1-.34-3.47V22a2 2 0 0 1-.39-3.9l-.01-.14a2 2 0 0 1 .07-3.92c0-.06.02-.12.04-.17a2 2 0 0 1 1.46-3.63A2 2 0 0 1 19.7 7.9v-.1a2 2 0 0 1 3.84-.8h.05a2 2 0 0 1 3.82 0h.18a2 2 0 0 1 3.82 0h.38Z\" fill=\"HAIR\"/><mask id=\"hairCurlyHighTop-a\" style=\"mask-type:luminance\" maskUnits=\"userSpaceOnUse\" x=\"13\" y=\"5\" width=\"34\" height=\"23\"><path d=\"M31.8 7a2 2 0 0 1 3.8 0h.57a2 2 0 0 1 3.83.67l.22.1a2 2 0 0 1 3.13 2.3l.15.17a2 2 0 0 1 1.77 3.41c.05.16.09.31.12.47a2 2 0 0 1 .02 3.75l-.05.32a2 2 0 0 1-.02 3.63 2 2 0 0 1 .16.85 1.8 1.8 0 0 1-1.22 2.92L44 27.5c-.44-.66-.84-1.48-1.2-2.46a1.8 1.8 0 0 1-.45-.8 2 2 0 0 1-.56-2.68l-.02-.1a2 2 0 0 1-.96-2.94 2 2 0 0 1-2.44-.32 2 2 0 0 1-3.72.06l-.31.03a2 2 0 0 1-3.58.2h-.23a2 2 0 0 1-3.52-.1l-.4-.03a2 2 0 0 1-3.68-.17 2 2 0 0 1-3.04-.22l-.03.16a2 2 0 0 1-.7 3.35 2 2 0 0 1-1.4 3.1c-.5.97-1.09 1.94-1.76 2.9l-.19-1.92a1.8 1.8 0 0 1-.34-3.47V22a2 2 0 0 1-.39-3.9l-.01-.14a2 2 0 0 1 .07-3.92c0-.06.02-.12.04-.17a2 2 0 0 1 1.46-3.63A2 2 0 0 1 19.7 7.9v-.1a2 2 0 0 1 3.84-.8h.05a2 2 0 0 1 3.82 0h.18a2 2 0 0 1 3.82 0h.38Z\" fill=\"#fff\"/></mask><g mask=\"url(#hairCurlyHighTop-a)\"><path d=\"M13 5h34v23H13z\" fill=\"HAIRHI\" data-op=\".26\"/></g>","bobCut":"<path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M44 26a17.63 17.63 0 0 1-3.35-5.6A32.92 32.92 0 0 1 30 22.04c-4.85 0-9.14-.83-12.9-2.5A13.95 13.95 0 0 0 16 25v1.03c-.73.08-1.42.34-2 .73v-1.38C14 16.33 21.16 9 30 9s16 7.33 16 16.38v1.38a4.47 4.47 0 0 0-2-.73V26Zm-9 20.06v-1.98A14.04 14.04 0 0 0 43.42 35h.08c.93 0 1.78-.28 2.5-.76v6.38c0 .47-.02.95-.06 1.41A34.63 34.63 0 0 1 35 46.06Zm-20.94-4.03A34.63 34.63 0 0 0 25 46.06v-1.98A14.04 14.04 0 0 1 16.58 35h-.08c-.93 0-1.79-.28-2.5-.76v6.38c0 .47.02.95.06 1.41Z\" fill=\"HAIR\"/><path d=\"M30 9c-8.84 0-16 7.33-16 16.38v1.38c.58-.4 1.27-.65 2-.73V25c0-1.94.4-3.8 1.1-5.47a31.35 31.35 0 0 0 12.9 2.5c3.9 0 7.46-.54 10.65-1.62A17.63 17.63 0 0 0 44 26v.03c.73.08 1.42.34 2 .73v-1.38C46 16.33 38.84 9 30 9Z\" fill=\"HAIRHI\" data-op=\".26\"/>","curly":"<path d=\"m44 26-.02-.02-.3.02a2 2 0 0 1-1.8-2.88 2 2 0 0 1-2.73-2.1 2 2 0 0 1-3.3.56h-.02a1.99 1.99 0 0 1-2 2.05 2 2 0 0 1-1.75-1.04 2 2 0 0 1-3.92.33 2 2 0 0 1-3.87-.6c-.04 0-.09 0-.13-.02a2 2 0 0 1-3.67-.98c-.3-.1-.57-.2-.85-.32.02.09.02.17.02.26a2 2 0 0 1-2.74 1.86A2 2 0 0 1 16 25.8v.23a4.5 4.5 0 0 0 .58 8.97A14.04 14.04 0 0 0 25 44.08v3.06c-.25-.2-.47-.42-.65-.68-.49-.13-.96-.29-1.43-.46a3.46 3.46 0 0 1-4.54-2.3 20.9 20.9 0 0 1-.98-.7 3.46 3.46 0 0 1-3.83-3.8c-.17-.21-.34-.43-.5-.66a3.46 3.46 0 0 1-2.66-5.07l-.14-.39a3.47 3.47 0 0 1-1.08-5.96v-.01a3.47 3.47 0 0 1 .47-6.2 3.47 3.47 0 0 1 2.28-5.79 3.47 3.47 0 0 1 3.87-4.86 3.47 3.47 0 0 1 5.15-3.5 3.47 3.47 0 0 1 5.94-1.83 3.47 3.47 0 0 1 6.22 0 3.47 3.47 0 0 1 5.94 1.83 3.47 3.47 0 0 1 5.14 3.5 3.47 3.47 0 0 1 3.87 4.86 3.47 3.47 0 0 1 2.28 5.8 3.47 3.47 0 0 1 .47 6.19 3.47 3.47 0 0 1-1.08 5.97l-.14.4a3.47 3.47 0 0 1-2.66 5.06c-.16.23-.33.45-.5.66A3.46 3.46 0 0 1 42.6 43l-.98.7a3.46 3.46 0 0 1-4.54 2.3c-.47.17-.94.33-1.43.46-.18.26-.4.49-.65.68v-3.06A14.04 14.04 0 0 0 43.42 35h.08a4.5 4.5 0 0 0 .5-8.97V26Z\" fill=\"HAIR\"/><mask id=\"hairCurly-a\" style=\"mask-type:luminance\" maskUnits=\"userSpaceOnUse\" x=\"7\" y=\"3\" width=\"46\" height=\"45\"><path d=\"m44 26-.02-.02-.3.02a2 2 0 0 1-1.8-2.88 2 2 0 0 1-2.73-2.1 2 2 0 0 1-3.3.56h-.02a1.99 1.99 0 0 1-2 2.05 2 2 0 0 1-1.75-1.04 2 2 0 0 1-3.92.33 2 2 0 0 1-3.87-.6c-.04 0-.09 0-.13-.02a2 2 0 0 1-3.67-.98c-.3-.1-.57-.2-.85-.32.02.09.02.17.02.26a2 2 0 0 1-2.74 1.86A2 2 0 0 1 16 25.8v.23a4.5 4.5 0 0 0 .58 8.97A14.04 14.04 0 0 0 25 44.08v3.06c-.25-.2-.47-.42-.65-.68-.49-.13-.96-.29-1.43-.46a3.46 3.46 0 0 1-4.54-2.3 20.9 20.9 0 0 1-.98-.7 3.46 3.46 0 0 1-3.83-3.8c-.17-.21-.34-.43-.5-.66a3.46 3.46 0 0 1-2.66-5.07l-.14-.39a3.47 3.47 0 0 1-1.08-5.96v-.01a3.47 3.47 0 0 1 .47-6.2 3.47 3.47 0 0 1 2.28-5.79 3.47 3.47 0 0 1 3.87-4.86 3.47 3.47 0 0 1 5.15-3.5 3.47 3.47 0 0 1 5.94-1.83 3.47 3.47 0 0 1 6.22 0 3.47 3.47 0 0 1 5.94 1.83 3.47 3.47 0 0 1 5.14 3.5 3.47 3.47 0 0 1 3.87 4.86 3.47 3.47 0 0 1 2.28 5.8 3.47 3.47 0 0 1 .47 6.19 3.47 3.47 0 0 1-1.08 5.97l-.14.4a3.47 3.47 0 0 1-2.66 5.06c-.16.23-.33.45-.5.66A3.46 3.46 0 0 1 42.6 43l-.98.7a3.46 3.46 0 0 1-4.54 2.3c-.47.17-.94.33-1.43.46-.18.26-.4.49-.65.68v-3.06A14.04 14.04 0 0 0 43.42 35h.08a4.5 4.5 0 0 0 .5-8.97V26Z\" fill=\"#fff\"/></mask><g mask=\"url(#hairCurly-a)\"><path d=\"M7 3h46v44H7z\" fill=\"HAIRHI\" data-op=\".26\"/></g>","pigtails":"<path d=\"M39 11.84A5 5 0 0 1 44.04 7a4.99 4.99 0 0 1 5.03 5.18c.02 3.2.7 7.08 1.93 9.82a20.56 20.56 0 0 1-6.22-2.9A16.67 16.67 0 0 1 46 25.38v1.38a4.47 4.47 0 0 0-2-.73V26c-1.8-2-3.13-4.5-3.97-7.47-1.87 2.28-4.55 3.6-8.03 3.97-5.83.61-10.82-.33-14.95-2.82A13.96 13.96 0 0 0 16 25v1.03c-.73.08-1.42.34-2 .73v-1.38c0-2.22.43-4.35 1.22-6.28A20.56 20.56 0 0 1 9 22a26.57 26.57 0 0 0 1.92-10.06A4.99 4.99 0 0 1 15.96 7 5 5 0 0 1 21 11.84a15.67 15.67 0 0 1 18 0Z\" fill=\"HAIR\"/><path d=\"M39.01 11.58c4.2 2.96 7 8.19 7 14.13v1.05a4.47 4.47 0 0 0-2-.73V26c-1.82-2-3.14-4.5-3.98-7.47-1.87 2.28-4.55 3.6-8.03 3.97-5.83.61-10.82-.33-14.95-2.82A13.96 13.96 0 0 0 16 25v1.03c-.73.08-1.42.34-2 .73V25.7c0-5.94 2.79-11.17 6.99-14.13v.26a15.67 15.67 0 0 1 18 0l.01-.26Z\" fill=\"HAIRHI\" data-op=\".26\"/><path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M21 9a5 5 0 0 0-4.39 7.4 16.14 16.14 0 0 1 7.55-6.27A4.98 4.98 0 0 0 21 9Zm23 5a5 5 0 0 0-8.16-3.87 16.14 16.14 0 0 1 7.55 6.27c.39-.7.6-1.53.6-2.4Z\" fill=\"#F55D81\"/>","curlyBun":"<path d=\"M30 2.5a2 2 0 0 0-1.8 1.11 2 2 0 0 0-3.42 1.06 2 2 0 0 0-2.96 2.02 2 2 0 0 0-2.23 2.8 2 2 0 0 0-1.31 3.33A2 2 0 0 0 18 16.4a2 2 0 0 0-.55 2.38 14 14 0 0 1 25.08 0A2 2 0 0 0 42 16.4a2 2 0 0 0-.27-3.58 2 2 0 0 0-1.3-3.33 2 2 0 0 0-2.24-2.8 2 2 0 0 0-2.96-2.02 2 2 0 0 0-3.43-1.06A2 2 0 0 0 30 2.51Z\" fill=\"HAIR\"/><path d=\"M43.93 23.63A14 14 0 0 0 31 15h-2a14 14 0 0 0-12.93 8.63 14 14 0 0 1 27.86 0Z\" fill=\"#F55D81\"/>","buzzcut":"<path d=\"M44 25v3c-1.33-1.67-2.67-4.67-4-9-2.66 1.33-6 2-10 2s-7.34-.67-10-2c-1.33 3.67-2.67 6.33-4 8v-2a14 14 0 1 1 28 0Z\" fill=\"HAIRHI\" data-op=\".2\"/>","bobBangs":"<path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M44 26c-2.18-2.42-3.65-5.54-4.42-9.36a19.6 19.6 0 0 1-9.08 7.86c-4.67 2-9.5 2.33-14.5 1v.53c-.73.08-1.42.34-2 .73V25.5C14 16.39 21.16 9 30 9s16 7.39 16 16.5v1.26a4.47 4.47 0 0 0-2-.73V26Zm-9 21.31v-3.23A14.04 14.04 0 0 0 43.42 35h.08c.93 0 1.78-.28 2.5-.76V45a38.74 38.74 0 0 1-11 2.31ZM14 45a38.74 38.74 0 0 0 11 2.31v-3.23A14.04 14.04 0 0 1 16.58 35h-.08c-.93 0-1.79-.28-2.5-.76V45Z\" fill=\"HAIR\"/><path d=\"M30 9c-8.84 0-16 7.39-16 16.5v1.26c.58-.4 1.27-.65 2-.73v-.53c5 1.33 9.83 1 14.5-1a19.6 19.6 0 0 0 9.08-7.86c.77 3.82 2.24 6.94 4.42 9.36v.03c.73.08 1.42.34 2 .73V25.5C46 16.39 38.84 9 30 9Z\" fill=\"HAIRHI\" data-op=\".26\"/>","bald":"<path d=\"M26.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM19.38 21.77c.37.19.82.04 1-.33a15.05 15.05 0 0 1 2-3.06c.76-.88 1.63-1.62 2.63-2.2a.75.75 0 0 0-.75-1.3 11.86 11.86 0 0 0-3 2.52c-.85.99-1.58 2.11-2.2 3.37a.75.75 0 0 0 .33 1Z\" fill=\"HAIRHI\" data-op=\".2\"/>","balding":"<path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"m16.97 25.55 2.7-8.55H18a3 3 0 0 0-2.98 3.31l.65 6.2c.6 0 1.12-.39 1.3-.95ZM41.34 17h-1.67l2.7 8.55c.18.56.7.95 1.3.95l.65-6.19a3 3 0 0 0-2.98-3.3Z\" fill=\"HAIR\"/><path d=\"M26.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM19.38 21.77c.37.19.82.04 1-.33a15.05 15.05 0 0 1 2-3.06c.76-.88 1.63-1.62 2.63-2.2a.75.75 0 0 0-.75-1.3 11.86 11.86 0 0 0-3 2.52c-.85.99-1.58 2.11-2.2 3.37a.75.75 0 0 0 .33 1Z\" fill=\"HAIRHI\" data-op=\".2\"/>","cap":"<path opacity=\".2\" d=\"M30 17c3.88 0 7.55-.37 11 4.22l-1.9 6.5c-.61 1.22-1.64 1.55-2.46.79-2.1-1.92-4.3-2.88-6.64-2.88-2.33 0-4.55.96-6.64 2.89-.82.76-1.85.43-2.46-.8L19 21.22c3.45-4.6 7.12-4.22 11-4.22Z\" fill=\"#000\"/><path d=\"M27.3 11.2a3 3 0 0 1 5.4 0c6.1.96 10.82 5.24 11.3 12.72a27.7 27.7 0 0 0-3.96-1.3l-.94.6a2 2 0 0 1-2.46.46 13.86 13.86 0 0 0-13.28 0 2 2 0 0 1-2.46-.46l-.94-.6c-1.4.35-2.72.78-3.96 1.3.48-7.48 5.2-11.76 11.3-12.71Z\" fill=\"#F29C65\"/><path d=\"M19.96 22.62c-1.4.35-2.72.78-3.96 1.3C16.55 15.37 22.63 11 30 11s13.45 4.37 14 12.92a27.7 27.7 0 0 0-3.96-1.3L41 22c-3.45-2.67-7.12-4-11-4s-7.55 1.33-11 4l.96.62Z\" fill=\"HAIRLO\" data-op=\".28\"/><path d=\"m39.45 23-.35.22a2 2 0 0 1-2.46.46 13.86 13.86 0 0 0-13.28 0 2 2 0 0 1-2.46-.46l-.35-.23c.87.07 2.19-.47 2.81-.81a13.86 13.86 0 0 1 13.28 0c.62.34 1.94.88 2.8.81Z\" fill=\"HAIRHI\" data-op=\".2\"/>","bunUndercut":"<circle cx=\"30\" cy=\"12\" r=\"4\" fill=\"#5A45FF\"/><path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"m33.72 12.84-.05 7.66c3.72-.75 5.83-1.25 6.33-1.5 1.33 4.33 2.67 7.33 4 9v-3a14 14 0 0 0-7.06-12.16c0-.02-1.08-.02-3.22 0ZM20 19c.5.25 2.6.75 6.33 1.5v-7.66h-3.27A14 14 0 0 0 16 25v3c1.33-1.67 2.67-4.67 4-9Z\" fill=\"HAIR\" opacity=\".3\"/><path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M30 6c-2.1 0-3.81 2.01-3.99 4.57-.72.41-1.44.94-2.14 1.58a3 3 0 0 0-.96 1.93l-.21 2.2a3.87 3.87 0 0 0 3.02 4.14c1.73.39 3.16.58 4.29.58 1.12 0 2.5-.18 4.17-.55a4 4 0 0 0 3.13-4.09l-.1-2.17a3 3 0 0 0-1.04-2.14 12.1 12.1 0 0 0-2.18-1.5C33.8 7.98 32.08 6 30 6Zm0 3.5a8 8 0 0 0-3.67.9 4 4 0 0 1 7.33-.03A8.25 8.25 0 0 0 30 9.5Z\" fill=\"HAIR\"/><path d=\"M26.02 10.56C26.19 8 27.9 6 30 6c2.07 0 3.77 1.96 3.98 4.47a11 11 0 0 0-.36-.17 4 4 0 0 0-7.28.09l-.32.17Z\" fill=\"HAIRLO\" data-op=\".22\"/>","fade":"<mask id=\"hairFade-b\" style=\"mask-type:alpha\" maskUnits=\"userSpaceOnUse\" x=\"16\" y=\"12\" width=\"28\" height=\"15\"><path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M16 27v-2a14 14 0 0 1 7.5-12.4v.14c.09 1.68.16 3.3-.4 4.53-.7 1.57-1.78 2.45-2.72 3.21l-.62.52c-.7.61-2.44 2.49-3.76 6Zm28 0v-2a14 14 0 0 0-7.5-12.4v.14c-.09 1.68-.16 3.3.4 4.53.7 1.57 1.78 2.45 2.72 3.21l.62.52c.7.61 2.44 2.49 3.76 6Z\" fill=\"url(#hairFade-a)\"/></mask><g mask=\"url(#hairFade-b)\"><path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"m16 27-.2-14.4h7.7l.06 14.4H16Zm20.72 0H44l-.07-14.4H36.5l.22 14.4Z\" fill=\"HAIR\"/></g><path d=\"M22.3 17.95c0-3.6 2.72-6.63 6.3-7L38 10a6.84 6.84 0 0 1-6.49 9h-8.15c-.58 0-1.05-.47-1.05-1.05Z\" fill=\"HAIR\"/><defs><linearGradient id=\"hairFade-a\" x1=\"16\" y1=\"12.6\" x2=\"16\" y2=\"27\" gradientUnits=\"userSpaceOnUse\"><stop/><stop offset=\"1\" stop-opacity=\".01\"/></linearGradient></defs>","beanie":"<path d=\"M17 19.8a14 14 0 0 1 26 0l.24.2a1 1 0 0 1 .34.54l.62 2.64a.5.5 0 0 1-.77.52C38.99 20.57 34.5 19 30 19S21 20.57 16.58 23.7a.5.5 0 0 1-.77-.52l.62-2.64a1 1 0 0 1 .34-.55l.24-.19Z\" fill=\"#E15C66\"/><path d=\"M30 15c6.45 0 12.01 4.04 13.25 5 .16.14.28.32.33.53l.62 2.6c.1.46-.44.83-.83.57C41.06 22.18 35.57 19 30 19c-5.57 0-11.05 3.18-13.36 4.7-.4.26-.93-.1-.82-.56l.6-2.6c.05-.21.17-.4.34-.53 1.23-.96 6.8-5 13.24-5Z\" fill=\"HAIRLO\" data-op=\".26\"/>","straightBun":"<path d=\"M20.2 15a10 10 0 1 1 19.6 0c-2.53-2.47-5.98-4-9.8-4-3.82 0-7.27 1.53-9.8 4Z\" fill=\"HAIR\"/><path d=\"M43.93 23.63A14 14 0 0 0 31 15h-2a14 14 0 0 0-12.93 8.63 14 14 0 0 1 27.86 0Z\" fill=\"#F55D81\"/>","extraLong":"<path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M44 26c-1.8-2-3.13-4.5-3.97-7.47-1.87 2.28-4.55 3.6-8.03 3.97-5.83.61-10.82-.33-14.95-2.82A13.96 13.96 0 0 0 16 25v1.03c-.73.08-1.42.34-2 .73V25.5C14 16.39 21.16 9 30 9s16 7.39 16 16.5v1.26a4.47 4.47 0 0 0-2-.73V26Zm2 8.24v22.28H35V44.08A14.04 14.04 0 0 0 43.42 35h.08c.93 0 1.78-.28 2.5-.76ZM14 56.57h11.13L25 49.55v-5.47A14.04 14.04 0 0 1 16.58 35h-.08c-.93 0-1.79-.28-2.5-.76v22.33Z\" fill=\"HAIR\"/><path d=\"M40.03 18.53A18.47 18.47 0 0 0 44 26v.03c.73.08 1.42.34 2 .73V25.5C46 16.39 38.84 9 30 9s-16 7.39-16 16.5v1.26c.58-.4 1.27-.65 2-.73V25c0-1.88.37-3.68 1.05-5.32 4.13 2.5 9.12 3.43 14.95 2.82 3.48-.37 6.16-1.7 8.03-3.97Z\" fill=\"HAIRHI\" data-op=\".26\"/>","shortComboverChops":"<path d=\"m15.79 25.56-.71-6.6A9 9 0 0 1 24.03 9H41c0 1.28-.26 2.51-.74 3.63a7.93 7.93 0 0 1 4.6 8.35L44 27v4.22a14 14 0 0 1-.48 3.42l-2.52.54A1 1 0 0 1 39.8 34l1.9-9.12c-1.57-2.09-2.68-5.24-3.31-9.44a9.24 9.24 0 0 1-5.7 2.77c-1.82.2-3.39.29-4.7.29-3 0-5.67-.5-8-1.5 0 2.6-.67 5.1-2 7.52L19.98 34a1 1 0 0 1-1.2 1.18l-2.51-.54a14 14 0 0 1-.48-3.42v-5.66Z\" fill=\"HAIR\"/><path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M19.98 34 18 24.52c1.33-2.42 2-4.93 2-7.52 2.33 1 5 1.5 8 1.5 1.31 0 2.88-.1 4.7-.29A9.24 9.24 0 0 0 41 9H24.03a9 9 0 0 0-8.95 9.97l.7 6.59v5.66a14 14 0 0 0 .49 3.42l2.52.54A1 1 0 0 0 19.98 34ZM44 31.22V27l.86-6.02.02-.14a7.91 7.91 0 0 0-2.42-6.73 9.29 9.29 0 0 1-3.45 4.5 17.22 17.22 0 0 0 2.7 6.27L39.8 34A1 1 0 0 0 41 35.18l2.52-.54a14 14 0 0 0 .48-3.42Z\" fill=\"HAIRHI\" data-op=\".26\"/>","mohawk":"<path d=\"M30.03 8a6.51 6.51 0 0 1 4.85 2.05c.56.54.96 1.32 1.1 2.14l.67 4.16c.35 1.94-.7 3.67-2.53 4.09-1.62.37-3 .55-4.12.55-1.13 0-2.55-.2-4.24-.58-1.84-.42-2.84-2.2-2.38-4.14l.79-4.2c.16-.74.53-1.43 1.03-1.93C25.83 9.5 27.3 8 30.03 8Z\" fill=\"HAIR\"/><path d=\"M34.88 10.05c.56.54.96 1.32 1.1 2.14l.67 4.16c.35 1.94-.7 3.67-2.53 4.09-1.62.37-3 .55-4.12.55-1.13 0-2.55-.2-4.24-.58-1.84-.42-2.84-2.2-2.38-4.14l.79-4.2c.16-.74.53-1.43 1.03-1.93.26-.27.67-.69 1.25-1.08-.31.48-1.45.98-1.45 2.43V15a3.06 3.06 0 0 0 2.02 3.51c1.18.34 2.18.5 2.98.5.79 0 1.76-.16 2.9-.47 1.28-.35 2.35-1.89 2.1-3.53v-3c0-1.5-1.1-2.54-1.5-3l-.14-.14c.73.42 1.22.9 1.52 1.2Z\" fill=\"HAIRHI\" data-op=\".26\"/>"};
+const PALETTE = {"skin":["eeb4a4","e7a391","e5a07e","d78774","b16a5b","92594b","623d36"],"hair":["362c47","6c4545","e15c66","e16381","f27d65","f29c65","dee1f5"]};
+
+// ---------- colour helpers: the Personas overlay highlight, pre-mixed ----------
+const hex = (h) => [0, 2, 4].map((i) => parseInt(h.slice(1 + i, 3 + i), 16) / 255);
+const toHex = (c) => '#' + c.map((v) => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')).join('');
+/** mix-blend-mode: overlay with a white (top=1) or black (top=0) layer at opacity a. */
+function overlay(base, top, a) {
+  return toHex(hex(base).map((b) => {
+    const o = b < 0.5 ? 2 * b * top : 1 - 2 * (1 - b) * (1 - top);
+    return b + (o - b) * a;
+  }));
+}
+const shade = (h, k) => toHex(hex(h).map((v) => v * k));
+
+// ---------- people ----------
+const PEOPLE = {
+  p1: { skin: '#e5a07e', hair: '#6c4545', style: 'shortCombover', shirt: '#c2255c', legs: '#34405a', jeans: '#4a6fa5', shoes: '#3a3340' },
+  p2: { skin: '#b16a5b', hair: '#362c47', style: 'bobCut', shirt: '#7048e8', legs: '#3d3a4a', jeans: '#5b7fb8', shoes: '#5a3a2e' },
+};
+function tones(p) {
+  return {
+    face: overlay(p.skin, 1, 0.36),
+    neck: p.skin,
+    earIn: shade(p.skin, 0.8),
+    nose: shade(p.skin, 0.94),
+    nostril: shade(p.skin, 0.55),
+    noseShade: shade(p.skin, 0.8),
+    freckle: shade(p.skin, 0.72),
+    noseHi: overlay(p.skin, 1, 0.75),
+    hairHi: overlay(p.hair, 1, 0.26),
+    hairLo: overlay(p.hair, 0, 0.36),
+    sleeve: shade(p.shirt, 0.86),
+    mouth: shade(p.skin, 0.5),
+  };
+}
+
+// ---------- our eyes / nose (as in src/ui/sim/sim.ts) ----------
+const EYE_DETAIL_MIN_PX = 3;
+function drawEye(x, y, pxPerCm) {
+  const irisR = 1.0;
+  const white = `<ellipse class="sclera" cx="${x}" cy="${y}" rx="2.3" ry="1.45"/>`;
+  if (irisR * pxPerCm < EYE_DETAIL_MIN_PX) return `${white}<circle class="iris eye-simple" cx="${x}" cy="${y}" r="${irisR}"/>`;
+  const rays = Array.from({ length: 18 }, (_, i) => {
+    const a = (i / 18) * Math.PI * 2, c = Math.cos(a), s = Math.sin(a);
+    return `M${(x + c * 0.5).toFixed(3)},${(y + s * 0.5).toFixed(3)} L${(x + c * 0.92).toFixed(3)},${(y + s * 0.92).toFixed(3)}`;
+  }).join(' ');
+  return `<g>${white}<circle class="iris" cx="${x}" cy="${y}" r="${irisR}"/><path class="iris-rays" d="${rays}"/>
+    <circle class="limbus" cx="${x}" cy="${y}" r="${irisR - 0.04}"/><circle class="pupil" cx="${x}" cy="${y}" r="0.42"/>
+    <circle class="catchlight" cx="${x + 0.32}" cy="${y - 0.34}" r="0.19"/>
+    <path class="lid" d="M${x - 2.4},${y + 0.15} Q${x},${y - 2.1} ${x + 2.4},${y + 0.15}"/></g>`;
+}
+function drawNose(pxPerCm, t, old) {
+  const f = (a, b) => (old ? a : b);
+  const shape = `<path d="M0,-165 L-2.4,-158.6 Q0,-157.2 2.4,-158.6 Z" fill="${f('#dfa463', t?.nose)}"/>`;
+  if (pxPerCm < EYE_DETAIL_MIN_PX) return shape;
+  const fr = [[-1.1, -160.4], [-0.5, -161.6], [0.6, -160.9], [1.2, -159.9], [0.1, -162.6], [-1.5, -159.3]];
+  return `${shape}<ellipse cx="-0.95" cy="-158.15" rx="0.5" ry="0.26" fill="${f('#8a5228', t?.nostril)}"/><ellipse cx="0.95" cy="-158.15" rx="0.5" ry="0.26" fill="${f('#8a5228', t?.nostril)}"/>
+    ${fr.map(([x, y]) => `<circle cx="${x}" cy="${y}" r="0.13" fill="${f('#b0703a', t?.freckle)}"/>`).join('')}<ellipse cx="0.25" cy="-159.3" rx="0.42" ry="0.3" fill="${f('#fff3dc', t?.noseHi)}"/>`;
+}
+function drawShadedNose(pxPerCm, t, gid) {
+  // Our triangle nose: a flat shadow on one half, and the whole nose fading out from the tip up to
+  // the bridge (vertical opacity mask), so it blends into the face instead of sitting on it.
+  const body = `<g mask="url(#${gid}m)"><path d="M0,-165 L-2.4,-158.6 Q0,-157.2 2.4,-158.6 Z" fill="${t.nose}"/>
+    <path d="M0,-165 L-2.4,-158.6 Q-1.3,-157.95 0,-157.9 Z" fill="${t.noseShade}"/></g>`;
+  if (pxPerCm < EYE_DETAIL_MIN_PX) return body;
+  const fr = [[-1.1, -160.4], [-0.5, -161.6], [0.6, -160.9], [1.2, -159.9], [0.1, -162.6], [-1.5, -159.3]];
+  // Nostrils: flat, tilted outward, kept inside the nose outline (clipped) so they never poke out below.
+  const nostril = (x, a) => `<ellipse cx="${x}" cy="-158.32" rx="0.52" ry="0.2" transform="rotate(${a} ${x} -158.32)" fill="${t.nostril}"/>`;
+  return `${body}<g clip-path="url(#${gid}c)">${nostril(-0.95, 16)}${nostril(0.95, -16)}</g>
+    ${fr.map(([x, y]) => `<circle cx="${x}" cy="${y}" r="0.13" fill="${t.freckle}" opacity="0.8"/>`).join('')}<ellipse cx="0.6" cy="-159.1" rx="0.42" ry="0.3" fill="${t.noseHi}" opacity="0.8"/>`;
+}
+const mouthPath = (smile) => (smile ? 'M-4.6,-156.6 Q0,-151.4 4.6,-156.6' : 'M-3.8,-155.8 Q0,-153 3.8,-155.8');
+
+// ---------- the current doll ----------
+const OLD_BODY = (shirt) => `<path d="M-15,0 L-12,-88 L12,-88 L15,0 L5,0 L0,-60 L-5,0 Z" fill="#34405a"/>
+  <path d="M-21,-140 Q-30,-110 -26,-82" stroke="${shirt}" stroke-width="10" stroke-linecap="round" fill="none"/>
+  <path d="M21,-140 Q30,-110 26,-82" stroke="${shirt}" stroke-width="10" stroke-linecap="round" fill="none"/>
+  <rect x="-22" y="-146" width="44" height="64" rx="12" fill="${shirt}"/>`;
+function oldDoll(pid, px, smile) {
+  const p = PEOPLE[pid];
+  return {
+    ears: `<ellipse cx="-11.6" cy="-163" rx="2.8" ry="4.2" fill="#eab676" stroke="#c98d4f" stroke-width="0.6"/><ellipse cx="11.6" cy="-163" rx="2.8" ry="4.2" fill="#eab676" stroke="#c98d4f" stroke-width="0.6"/>`,
+    body: `${OLD_BODY(p.shirt)}<rect x="-4.5" y="-152" width="9" height="8" fill="#f1c27d"/><circle cx="0" cy="-163" r="11.5" fill="#f1c27d"/>
+      <path d="M-11.8,-163 Q-12,-178 0,-177 Q12,-178 11.8,-163 Q8,-171 0,-171 Q-8,-171 -11.8,-163 Z" fill="#4a3222"/>
+      ${drawEye(-4.2, -165, px)}${drawEye(4.2, -165, px)}
+      <path d="${mouthPath(smile)}" stroke="#8a3b2a" stroke-width="1.4" fill="none" stroke-linecap="round"/>`,
+    nose: drawNose(px, null, true),
+  };
+}
+
+// ---------- the new head (Personas outline, 64-unit grid → cm) ----------
+// Head 28 units wide → 23 cm like the current doll; the Personas eye line (y 28.5) sits at our -165 cm.
+const SC = 23 / 28;
+const HEAD_TF = `translate(${(-32 * SC).toFixed(3)} ${(-165 - 28.5 * SC).toFixed(3)}) scale(${SC.toFixed(4)})`;
+const HEAD = 'M37 46.08V52a5 5 0 0 1-10 0v-5.92A14.04 14.04 0 0 1 18.58 37h-.08a4.5 4.5 0 0 1-.5-8.97V27a14 14 0 1 1 28 0v1.03a4.5 4.5 0 0 1-.58 8.97A14.04 14.04 0 0 1 37 46.08Z';
+const FACE = 'M32 13a14 14 0 0 1 14 14v6a14 14 0 1 1-28 0v-6a14 14 0 0 1 14-14Z';
+const EAR_FOLD = 'M17.6 30.2q-1.9 2.3.1 4.9M46.4 30.2q1.9 2.3-.1 4.9';
+let uid = 0;
+function hairSvg(style, p, t) {
+  return HAIR[style]
+    .replaceAll('HAIRHI', t.hairHi).replaceAll('HAIRLO', t.hairLo).replaceAll('HAIR', p.hair)
+    .replace(/ data-op="[^"]*"/g, '');
+}
+function newHead(pid, px, smile, eyeX, styleOverride, flatNose) {
+  const p = PEOPLE[pid], t = tones(p), n = `h${uid++}`;
+  const style = styleOverride || p.style;
+  const T = (x) => `<g transform="${HEAD_TF}">${x}</g>`;
+  return {
+    defs: `<clipPath id="${n}e"><rect x="0" y="0" width="18.3" height="64"/><rect x="45.7" y="0" width="30" height="64"/></clipPath>
+      <clipPath id="${n}f"><rect x="18.3" y="0" width="27.4" height="64"/></clipPath>
+      <linearGradient id="${n}nsg" gradientUnits="userSpaceOnUse" x1="0" y1="-157.4" x2="0" y2="-165"><stop offset="0" stop-color="#fff"/><stop offset="0.3" stop-color="#fff"/><stop offset="1" stop-color="#000"/></linearGradient>
+      <clipPath id="${n}nsc"><path d="M0,-165 L-2.4,-158.6 Q0,-157.2 2.4,-158.6 Z" transform="translate(0 -0.08)"/></clipPath>
+      <mask id="${n}nsm" maskUnits="userSpaceOnUse" x="-4" y="-166" width="8" height="10"><rect x="-4" y="-166" width="8" height="10" fill="url(#${n}nsg)"/></mask>`,
+    ears: T(`<g clip-path="url(#${n}e)"><path d="${HEAD}" fill="${t.neck}"/><path d="${EAR_FOLD}" stroke="${t.earIn}" stroke-width="0.7" fill="none" stroke-linecap="round"/></g>`),
+    head: T(`<g clip-path="url(#${n}f)"><path d="${HEAD}" fill="${t.neck}"/></g><path d="${FACE}" fill="${t.face}"/>`),
+    hair: T(`<g transform="translate(2 2)">${hairSvg(style, p, t)}</g>`),
+    face: `${drawEye(-eyeX, -165, px)}${drawEye(eyeX, -165, px)}
+      <path d="${mouthPath(smile)}" stroke="${t.mouth}" stroke-width="1.3" fill="none" stroke-linecap="round"/>`,
+    nose: flatNose ? drawNose(px, t, false) : drawShadedNose(px, t, `${n}ns`),
+  };
+}
+
+// ---------- bodies (cm, origin at the feet) ----------
+const stroke = (d, c, w) => `<path d="${d}" stroke="${c}" stroke-width="${w}" stroke-linecap="round" fill="none"/>`;
+const mirror = (s) => `${s}<g transform="scale(-1 1)">${s}</g>`;
+const SHIRT_B = 'M-4.6,-147 Q0,-140 4.6,-147 C11,-146.6 18.5,-145.4 21.2,-139.5 Q22.8,-136 22.8,-130 L22,-90 Q22,-85 17,-85 L-17,-85 Q-22,-85 -22,-90 L-22.8,-130 Q-22.8,-136 -21.2,-139.5 C-18.5,-145.4 -11,-146.6 -4.6,-147 Z';
+const SHIRT_C = 'M-4.6,-147 Q0,-140 4.6,-147 C10,-146.6 16.2,-145.4 18.4,-139.5 Q19.6,-136 19.6,-130 L18.8,-90 Q18.8,-85 14.6,-85 L-14.6,-85 Q-18.8,-85 -18.8,-90 L-19.6,-130 Q-19.6,-136 -18.4,-139.5 C-16.2,-145.4 -10,-146.6 -4.6,-147 Z';
+const BODIES = {
+  A: { name: 'A · current body', under: (p, t) => OLD_BODY(p.shirt), over: () => '' },
+  B: {
+    name: 'B · soft',
+    under: (p, t) =>
+      `<path d="M-15.5,-90 L-14.5,-7 L-3.8,-7 L-0.7,-68 L0.7,-68 L3.8,-7 L14.5,-7 L15.5,-90 Z" fill="${p.legs}"/>
+       ${mirror(`<path d="M-15.6,-8 H-3.6 Q-2,-8 -2,-5.6 V-1.6 Q-2,0 -3.6,0 H-16.8 Q-18.6,0 -18.6,-1.8 V-3.4 Q-18.6,-8 -15.6,-8 Z" fill="${p.shoes}"/>`)}
+       ${mirror(stroke('M-19.6,-137.5 Q-26.8,-118 -25.4,-95', t.sleeve, 8.6))}
+       ${mirror(`<circle cx="-25.3" cy="-90.6" r="3.9" fill="${p.skin}"/>`)}`,
+    over: (p) => `<path d="${SHIRT_B}" fill="${p.shirt}"/>`,
+  },
+  C: {
+    name: 'C · t-shirt & jeans',
+    under: (p, t) =>
+      `<path d="M-15.5,-90 L-14.8,-6 L-3.6,-6 L-0.7,-68 L0.7,-68 L3.6,-6 L14.8,-6 L15.5,-90 Z" fill="${p.jeans}"/>
+       ${mirror(`<rect x="-15.2" y="-10.5" width="11.8" height="3.4" rx="0.8" fill="${shade(p.jeans, 1.18)}"/>`)}
+       ${mirror(`<path d="M-15,-7.5 H-4 Q-2.2,-7.5 -2.2,-5.2 V-2.4 H-18.4 V-3.6 Q-18.4,-7.5 -15,-7.5 Z" fill="${p.shoes}"/><rect x="-18.6" y="-2.6" width="16.6" height="2.6" rx="1" fill="#f4f1ea"/>`)}
+       ${mirror(stroke('M-20.3,-124 Q-23.3,-108 -22.2,-95', p.skin, 6.2))}
+       ${mirror(`<circle cx="-22.1" cy="-91" r="3.6" fill="${p.skin}"/>`)}
+       ${mirror(stroke('M-17,-138.4 Q-20.4,-130 -21,-121.5', t.sleeve, 9.4))}`,
+    over: (p) => `<path d="${SHIRT_C}" fill="${p.shirt}"/>`,
+  },
+};
+function newDoll(body, pid, px, smile, eyeX = 4.8, style, flatNose) {
+  const p = PEOPLE[pid], t = tones(p), h = newHead(pid, px, smile, eyeX, style, flatNose), b = BODIES[body];
+  return { defs: h.defs, ears: h.ears, body: `${b.under(p, t)}${h.head}${b.over(p, t)}${h.hair}${h.face}`, nose: h.nose };
+}
+
+// ---------- blur model (as in compare.html / src/model) ----------
+const DEPTH = { ears: 0.09, body: 0, nose: -0.03 };
+const SIGMA_PER_DISC = 0.5, MAX_BLUR_PX = 60;
+function frameSvg(c, s, W, H = Math.round((W * 2) / 3)) {
+  const f = s.f / 1000, sensorW = 0.036 / s.z;
+  const fieldM = (sensorW * (s.d - f)) / f;
+  const pxPerCm = W / fieldM / 100;
+  const focusM = s.d + (s.focus === 'eyes' ? 0 : DEPTH[s.focus]);
+  const sigma = (off) => {
+    if (s.sharp) return 0;
+    const d = s.d + off;
+    const disc = ((f * f) / (s.n * (focusM - f))) * (Math.abs(d - focusM) / d);
+    return Math.min(MAX_BLUR_PX, (disc / sensorW) * W * SIGMA_PER_DISC);
+  };
+  const [cx, cy] = s.view === 'full' ? [0, -88] : s.view === 'eye' ? [c.eyeX ?? 4.8, -165] : [0, -163];
+  const p = c.parts(pxPerCm, s);
+  const id = `c${uid++}`;
+  const tf = `translate(${(W / 2 - cx * pxPerCm).toFixed(2)} ${(H / 2 - cy * pxPerCm).toFixed(2)}) scale(${pxPerCm.toFixed(4)})`;
+  const sg = { ears: sigma(DEPTH.ears), body: sigma(0), nose: sigma(DEPTH.nose) };
+  const layer = (k) => sg[k] < 0.05 ? `<g transform="${tf}">${p[k]}</g>` : `<filter id="${id}${k}" filterUnits="userSpaceOnUse" x="0" y="0" width="${W}" height="${H}"><feGaussianBlur stdDeviation="${sg[k].toFixed(2)}"/></filter>
+    <g filter="url(#${id}${k})"><g transform="${tf}">${p[k]}</g></g>`;
+  const ground = `<rect class="ground" x="-2000" y="0" width="4000" height="2000"/>`;
+  const svg = `<svg class="fig" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${c.name}">
+    <defs>${p.defs || ''}</defs><g transform="${tf}">${ground}</g><g class="${c.pid || ''}">${layer('ears')}${layer('body')}${layer('nose')}</g></svg>`;
+  return { svg, sg };
+}
+function frame(c, s, W) {
+  const { svg, sg } = frameSvg(c, s, W);
+  return `<figure class="frame"><div>${svg}</div><figcaption><span>${c.name}</span><span class="sig">${sg.ears.toFixed(1)} · ${sg.body.toFixed(1)} · ${sg.nose.toFixed(1)}</span></figcaption></figure>`;
+}
+
+const state = { eyeX: 4.8, p2style: PEOPLE.p2.style };
+const cand = (body, pid) => body === 'old'
+  ? { name: `Current · ${pid === 'p1' ? 'person 1' : 'person 2'}`, pid, eyeX: 4.2, parts: (px, s) => oldDoll(pid, px, s.smile) }
+  : { name: `${BODIES[body].name} · ${pid === 'p1' ? 'p1' : 'p2'}`, pid, eyeX: state.eyeX,
+      parts: (px, s) => newDoll(body, pid, px, s.smile, state.eyeX, pid === 'p2' ? state.p2style : undefined) };
+
+// ---------- render ----------
+const narrow = matchMedia('(max-width: 520px)').matches;
+const W = narrow ? 240 : 252;
+function twoUp(body, cap) {
+  // Both persons side by side, unblurred, whole figure.
+  const H = narrow ? 300 : 340, Wd = narrow ? 210 : 240, ppc = H / 200;
+  // Clip ids differ per call, so build each person once and use its own defs.
+  const parts = ['p1', 'p2'].map((pid) => cand(body, pid).parts(ppc * 2.2, { smile: false }));
+  const g = (p, pid, dx) => `<g class="${pid}" transform="translate(${Wd / 2 + dx} ${H - 14}) scale(${ppc})">${p.ears}${p.body}${p.nose}</g>`;
+  return `<figure><svg class="fig" width="${Wd}" height="${H}" viewBox="0 0 ${Wd} ${H}"><defs>${parts.map((p) => p.defs || '').join('')}</defs>
+    <rect class="ground" x="0" y="${H - 14}" width="${Wd}" height="14"/>${g(parts[0], 'p1', -Wd / 4.4)}${g(parts[1], 'p2', Wd / 4.4)}</svg><figcaption>${cap}</figcaption></figure>`;
+}
+function renderAll() {
+  document.getElementById('lineup').innerHTML =
+    twoUp('old', 'Current doll') + ['A', 'B', 'C'].map((b) => twoUp(b, BODIES[b].name)).join('');
+  const headS = { f: 85, n: 16, d: 1.0, focus: 'eyes', view: 'head', z: 1, sharp: true };
+  const flat = { name: 'New head · p1 · flat nose (before)', pid: 'p1', eyeX: state.eyeX, parts: (px, s) => newDoll('C', 'p1', px, s.smile, state.eyeX, undefined, true) };
+  document.getElementById('heads').innerHTML = [cand('old', 'p1'), flat, cand('C', 'p1'), cand('C', 'p2')]
+    .map((c) => `<figure>${frameSvg(c, headS, narrow ? 200 : 230, narrow ? 200 : 230).svg}<figcaption>${c.name.replace('C · t-shirt & jeans · ', 'New head · shaded nose · ')}</figcaption></figure>`).join('');
+  document.getElementById('hairs').innerHTML = Object.keys(HAIR).filter((k) => !['bald', 'cap', 'beanie'].includes(k)).map((k) => {
+    const c = { name: k, pid: 'p2', parts: (px, s) => newDoll('B', 'p2', px, false, state.eyeX, k) };
+    const sel = k === state.p2style ? ' style="outline:2px solid var(--accent, #4c6ef5);border-radius:8px"' : '';
+    return `<figure data-hair="${k}"${sel} role="button" tabindex="0">${frameSvg(c, headS, 120, 130).svg}<figcaption>${k}</figcaption></figure>`;
+  }).join('');
+  const sheetCands = [cand('old', 'p1'), flat, cand('C', 'p1'), cand('C', 'p2')];
+  const bodyCands = [cand('old', 'p1'), cand('A', 'p1'), cand('B', 'p1'), cand('C', 'p1'), cand('B', 'p2'), cand('C', 'p2')];
+  const ROWS = [
+    { title: 'Portrait, focus on the eyes', s: { f: 85, n: 1.4, d: 1.2, focus: 'eyes', view: 'head', z: 1 }, c: sheetCands },
+    { title: 'Portrait, focus on the nose tip', s: { f: 85, n: 1.4, d: 1.2, focus: 'nose', view: 'head', z: 1 }, c: sheetCands },
+    { title: 'Portrait, focus on the ears', s: { f: 85, n: 1.4, d: 1.2, focus: 'ears', view: 'head', z: 1 }, c: sheetCands },
+    { title: 'Smile', s: { f: 85, n: 8, d: 1.2, focus: 'eyes', view: 'head', z: 1, smile: true }, c: sheetCands },
+    { title: 'Digital zoom on one eye', s: { f: 85, n: 4, d: 1.2, focus: 'eyes', view: 'eye', z: 8 }, c: sheetCands },
+    { title: 'Whole person at 4 m', s: { f: 50, n: 2.8, d: 4, focus: 'eyes', view: 'full', z: 1 }, c: bodyCands },
+    { title: 'Far away, 15 m', s: { f: 50, n: 8, d: 15, focus: 'eyes', view: 'full', z: 1 }, c: bodyCands },
+  ];
+  const st = (s) => `${s.f} mm · f/${s.n} · ${s.d} m · focus ${s.focus === 'nose' ? 'nose tip' : s.focus}${s.z > 1 ? ` · zoom ${s.z}×` : ''}`;
+  document.getElementById('sheet').innerHTML = ROWS.map((r) => `
+    <div class="sheet-row"><header><h3>${r.title}</h3><span class="settings">${st(r.s)}</span></header>
+    <div class="frames">${r.c.map((c) => frame(c, r.s, W)).join('')}</div></div>`).join('');
+  renderTry();
+  const sw = (c, l) => `<span class="sw" style="background:${c}" title="${c}"></span>${l} <code>${c}</code>`;
+  document.getElementById('cols').innerHTML = ['p1', 'p2'].map((pid) => {
+    const p = PEOPLE[pid], t = tones(p);
+    return `<div class="palette"><b>${pid === 'p1' ? 'Person 1' : 'Person 2'}:</b> ${sw(t.face, 'face')} ${sw(p.skin, 'neck, ears, hands')} ${sw(t.nose, 'nose')} ${sw(p.hair, 'hair')} ${sw(t.hairHi, 'hair light')} ${sw(p.shirt, 'shirt')}</div>`;
+  }).join('') + `<p class="muted">Skin and hair tones come from the Personas palette (skin ${PALETTE.skin.join(', ')}; hair ${PALETTE.hair.join(', ')}).</p>`;
+}
+const el = (id) => document.getElementById(id);
+const distM = (v) => +(0.5 * Math.pow(40, v / 100)).toFixed(2);
+function renderTry() {
+  const s = { f: +el('t-focal').value, n: +el('t-n').value, d: distM(+el('t-d').value), focus: el('t-focus').value, view: el('t-view').value, z: +el('t-z').value, smile: el('t-smile').checked };
+  el('t-d-out').textContent = `${s.d} m`;
+  el('try').innerHTML = [cand('old', 'p1'), cand('A', 'p1'), cand('B', 'p1'), cand('C', 'p2')].map((c) => frame(c, s, narrow ? 260 : 252)).join('');
+}
+for (const id of ['t-focal', 't-n', 't-d', 't-focus', 't-view', 't-z', 't-smile']) el(id).addEventListener('input', renderTry);
+el('t-eye').addEventListener('input', () => {
+  state.eyeX = +el('t-eye').value / 10;
+  el('t-eye-out').textContent = `±${state.eyeX.toFixed(1)} cm`;
+  renderAll();
+});
+el('t-eye-out').textContent = `±${state.eyeX.toFixed(1)} cm`;
+el('hairs').addEventListener('click', (e) => {
+  const f = e.target.closest('[data-hair]');
+  if (!f) return;
+  state.p2style = f.dataset.hair;
+  renderAll();
+});
+renderAll();
+</script>
