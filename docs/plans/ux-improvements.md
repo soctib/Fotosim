@@ -21,27 +21,7 @@ Reaching the 50 m background from a 0–3 m view takes many drags.
 - Small tick marks on the track for the visible elements and the focus, so you can jump to them.
 - Hidden in log mode (everything fits there anyway).
 
-## 2. Layout overflow in the three-column view
-
-**Problem:** at some window widths the right column (infobox, costs) is cut off at the screen edge
-(screenshot: the infobox and cost panel run past the right edge, next to the controls).
-
-**To investigate:** the wide layout (`@media (min-width: 1400px)` in `style.css`) needs at least
-stage + 300 px + 340 px + gaps + page padding. Suspects:
-
-- the stage doesn't shrink below its content: the resizable camera image (`--sim-width`, saved by
-  `ui/sim/resize.ts`) plus the bars beside it can be wider than the space left;
-- the 1400 px breakpoint doesn't include the page padding or a visible scrollbar;
-- the lens panel moving into the info column while the cost list is folded (`main.ts`).
-
-**Fix direction:** reproduce with Playwright at 1400–1500 px with a large saved sim width; then
-clamp the sim width to the available stage width (`resize.ts` already has `maxWidth()`, it may
-just not be re-applied on window resize) and/or raise the breakpoint. Check for horizontal
-scroll at every breakpoint.
-
-Edit by Human: This is a misundersanding. The gap between boxes is uneven, nothing overflows.
-
-## 3. Background icon matching the scene
+## 2. Background icon matching the scene
 
 **Problem:** the draggable background marker in the graph is always mountains + sun
 (`drawElement` in `ui/graph/graph.ts`), also indoors and at night.
@@ -58,7 +38,7 @@ Edit by Human: This is a misundersanding. The gap between boxes is uneven, nothi
 The graph gets the scenery via the store state (`lightPresetId`), not from the sim module directly –
 a small `graphIcon` field on `Scenery` and a lookup are enough.
 
-## 4. Blue as the accent colour
+## 3. Blue as the accent colour
 
 **Problem:** `--accent` (orange, `#d9480f` / dark `#ff8a4c`) is almost the same as `--warn`
 (`#e8590c`). Active mode button, slider fill and the focus marker look like warnings.
@@ -72,7 +52,7 @@ a small `graphIcon` field on `Scenery` and a lookup are enough.
   marker in the graph, the infobox border.
 - Check contrast (text on the accent, accent on the panel background) in both themes.
 
-## 5. Livelier dolls
+## 4. Livelier dolls
 
 Small touches that also teach something.
 
@@ -114,7 +94,7 @@ Small touches that also teach something.
   - Quiet lesson: the long lens is what makes someone far away feel close enough to wave at.
 - No physics change; rendering only (`ui/sim/sim.ts`, graph heads in `ui/graph/graph.ts`).
 
-## 6. Infobox reacts on hover
+## 5. Infobox reacts on hover
 
 **Problem:** the infobox explains whatever was last clicked, pressed or focused. To read about a
 control you have to touch it – and clicking a bar or a slider can change it as a side effect. The
@@ -136,7 +116,7 @@ keeps focus.
 - Doesn't solve the infobox being out of view (scrolled away, or below the controls on narrower
   layouts) – see open questions.
 
-## 7. Mini graph above the preview (phone only)
+## 6. Mini graph above the preview (phone only)
 
 **Problem:** on a phone the camera image sticks to the top while you scroll to the controls, but
 the sharpness graph scrolls away. Moving focus, aperture or a person, you see the picture change
@@ -162,7 +142,7 @@ sticky preview, above the camera image, only once the real graph is out of view.
 - Keep the sticky block short: the strip plus the image must still leave room for the controls
   on small phones (≈ 560 px tall, the sticky query's lower bound).
 
-## 8. Simplified mode keeps your camera
+## 7. Simplified mode keeps your camera
 
 **Problem:** entering simplified mode always applies the fixed setup (`applySimple` in
 `state/actions.ts`): full frame, pro zoom, Av, auto ISO, sun. Someone who picked a phone or a kit
@@ -197,7 +177,7 @@ make sense for them.
 - SPEC "Simplified mode" changes with it; infobox texts may need a line for Tv/M in the simple
   view.
 
-## 9. Camera panel (ambitious)
+## 8. Camera panel (ambitious)
 
 A **camera seen from above that you operate directly** – a second view of the controls, not just a
 picture of them. Prototype (approved look and interaction):
