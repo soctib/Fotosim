@@ -55,7 +55,8 @@ Light situation, plus one compact row per element: visible toggle, movement (per
   detail to file pixels and what that is good for.
 
 ### 4. Camera image simulation ("killer feature")
-Shown together with the bars as one foldable group.
+Shown together with the bars as one foldable group. On phones (portrait) it sticks to the top while the
+controls scroll; folded away, the sharpness graph sticks instead (only outside simplified mode, which keeps it open).
 Layers: sky/ground, background scenery, persons – stacked by distance. The backdrop and scenery follow the light situation (sunny/cloudy/overcast/dusk garden with a house, office, living room, night street, candle-lit table), so a beginner sees what kind of light the preset means; indoor scenery still stands at the background distance. Background blur from `blurFractionOfWidth × imageWidthPx`;
 persons blur per part (nose, face/body, ears at their own distances, SVG filters), so with a shallow depth of field the
 nose can be sharp and the eyes not. Close persons drift to the image centre (the photographer aims at them).

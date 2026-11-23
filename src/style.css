@@ -226,6 +226,14 @@ header {
     background: var(--bg);
     padding: 6px 0;
   }
+  /* Preview folded away: the graph sticks instead. (Simplified mode keeps the preview open.) */
+  body:not(.simple) .layout:has(.preview:not([open])) #graph {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--bg);
+    padding: 6px 0;
+  }
 }
 
 /* ---- graph ---- */
