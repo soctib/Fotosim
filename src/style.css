@@ -836,6 +836,15 @@ header {
   height: 100%;
 }
 
+/*
+ * Each layer (sky, scenery, each person) gets its own compositing layer. Otherwise every redraw
+ * repaints the whole stack in software, re-running every layer's blur – a defocused person at high
+ * digital zoom is many times slower in WebKit. The image is pixel-identical; the whole-frame filters
+ * on .sim-image (blur, shake, pixelate) still apply.
+ */
+.sim-frame .layer {
+  will-change: filter;
+}
 
 /* Only drawn shapes take taps (to set the autofocus); sky and empty areas fall through. */
 .sim-frame .layer,

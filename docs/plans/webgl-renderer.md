@@ -58,15 +58,20 @@ Try these before rewriting anything:
 4. While a slider is being dragged, skip the expensive filters (distortion, CA, pixelation, maybe
    use a lower blur cap) and draw them on release. A blurry or straight-lined frame during a drag is
    hardly noticed.
-5. A compositing layer per image layer (`will-change: filter` on each `.sim-frame .layer`). Measured
-   on branch `perf/composited-layers` (before dynamic range and the figurine): 20× zoom, person out
-   of focus, 130 → 32 ms per two frames, pixel-identical. *Not merged* – rebase, re-measure with the
-   current rendering, confirm on a real iPhone (composited filters run off the main thread, so rAF
-   timings understate them).
+5. A compositing layer per image layer (`will-change: filter` on each `.sim-frame .layer`). *Done.*
+   WebKit, 390 px, DPR 2, focus drag, median / p90 frame interval: 20× zoom with the person out of
+   focus 109 / 119 → 61 / 85 ms; night with a crushed sky (iPhone XR, its screen-blended grain)
+   113 / 175 → 19 / 27 ms; normal and backlit states unchanged at ≈ 17 ms. Pixel-identical (seeded
+   grain), tap-to-focus unchanged. Still to confirm on a real iPhone: composited filters run off the
+   main thread, so rAF timings understate them.
+6. Tried and dropped: each person part as its own element with a CSS `blur()` instead of the SVG
+   filter (Nov 2026 experiment). Faster in headless WebKit (17 ms at 20×), but frame edges faded at
+   heavy blur (parts clipped before blurring) and the zoomed blur cap would have had to change the
+   image. Worth revisiting only if 20× zoom still matters after steps 3–4.
 
 ## When
 
-Do this plan only if, after steps 3–5 and with lens-flaws in place, a mid-range phone (or WebKit at
+Do this plan only if, after steps 3–4 and with lens-flaws in place, a mid-range phone (or WebKit at
 4× CPU throttling) stays under ~30 fps while dragging in a normal situation. Not for edge cases
 like 20× zoom with everything out of focus.
 
