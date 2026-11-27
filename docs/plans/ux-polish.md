@@ -47,7 +47,8 @@ a small `graphIcon` field on `Scenery` and a lookup are enough.
   clearly different blue (brighter, more saturated) or move the curve to a neutral grey-blue – TBD
   (see open questions); compare both in light and dark mode.
 - Check every use of `--accent`: mode buttons, `accent-color` on inputs, focus outlines, the focus
-  marker in the graph, the infobox border.
+  marker in the graph, the infobox border, and the camera panel (active "Kamera | Regler" button,
+  `.cam-msg` warnings, `.cam .acc` / `.pup` / `.iris` in the drawing).
 - Check contrast (text on the accent, accent on the panel background) in both themes.
 
 ## Open questions

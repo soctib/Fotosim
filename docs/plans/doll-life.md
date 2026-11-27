@@ -2,8 +2,12 @@
 
 **Blocked by:** nothing (builds on the figurine in `ui/sim/figurine.ts`). **Works with:** –
 
-Small touches that also teach something. No physics change; rendering only (`ui/sim/sim.ts`, graph
-heads in `ui/graph/graph.ts`). Each item can be done on its own.
+Small touches that also teach something. No physics change; rendering only (`ui/sim/figurine.ts`,
+`ui/sim/sim.ts`, graph heads in `ui/graph/graph.ts`). Each item can be done on its own.
+
+**Prototype first.** As with the figurine (`docs/prototypes/doll-redesign.html`), the smile, the side
+view in stride and the waving arm need an approved prototype before any code: the figurine has no
+side view yet, and the look has to work at every blur level and in the graph's profile heads.
 
 ## 1. Smile when in focus
 

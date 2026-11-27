@@ -30,11 +30,16 @@ beginner surprise.
 ## Rendering
 
 Mismatch → RGB channel gains via a blackbody approximation → a colour matrix in each layer's
-existing filter chain.
+existing filter chain. Since dynamic range, sky and scenery use plain CSS filter functions
+(brightness/invert pairs, no SVG filter) and persons an `feComponentTransfer`; CSS has no colour
+matrix, so sky and scenery would need an SVG filter reference (`url(#…)`) or channel gains built from
+CSS functions – measure the WebKit cost first (see webgl-renderer).
 
 ## UI
 
-- WB dropdown in the camera panel; film cameras show it locked with a note. Simplified mode: Auto, hidden.
+- WB dropdown in the slider view's "Kamera" section; in the top-view camera panel a WB field on the
+  top display (digital bodies; phones on their screen card). Film cameras: daylight film, shown locked
+  with a note. Simplified mode: Auto, hidden.
 - Short caption note when the cast is strong ("deutlich orange").
 - Infobox: colour temperature, why the shade looks blue, why auto WB kills sunset mood, mixed light.
 

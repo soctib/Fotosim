@@ -3,7 +3,7 @@
 Concept documents for planned features. No code – each describes the idea, the model, the data it
 needs, what the UI shows and how it touches the other plans. They can be implemented in any order;
 hard blockers are marked **Blocked by**, soft links **Works with**. Implemented plans are deleted;
-their features (effective resolution, digital zoom, output size, dynamic range, the figurine, the camera panel) are described in SPEC.md.
+their features (effective resolution, digital zoom, output size, dynamic range, the figurine, the camera panel, film speed and ISO dial) are described in SPEC.md.
 
 Common theme: show **why some gear costs more and what it changes in the picture** – and, just as
 honestly, where it changes nothing (still subject, good light, small view: a phone is fine).
@@ -21,7 +21,7 @@ honestly, where it changes nothing (still subject, good light, small view: a pho
 | [phone-mini-graph](phone-mini-graph.md) | Strip graph in the sticky phone preview once the real graph scrolls away | – | – |
 | [simple-mode-keeps-camera](simple-mode-keeps-camera.md) | Simplified mode keeps body, lens and mode; sliders chosen per mode and camera | – | – |
 | [cost-value](cost-value.md) | The cost panel says what each item buys *in the current situation* | – | gets richer with every other plan |
-| [webgl-renderer](webgl-renderer.md) | Camera image on the GPU – only if SVG filters get too slow (measure first; maybe never) | – | lens-flaws, dynamic-range, white-balance, rolling-shutter |
+| [webgl-renderer](webgl-renderer.md) | Camera image on the GPU – only if SVG filters get too slow (measure first; maybe never) | – | lens-flaws, white-balance, rolling-shutter |
 
 Suggested order (by how much it explains about price): lens-flaws → rolling-shutter → cost-value → white-balance → perspective → focus-beyond-infinity.
 
@@ -39,3 +39,5 @@ Suggested order (by how much it explains about price): lens-flaws → rolling-sh
 - **Sensor generation**: newer sensors (BSI, stacked, dual gain) are about one stop cleaner at the same size. Would split noise per body, not per format.
 - **Autofocus hit rate**: sports bodies keep moving subjects in focus more reliably; today AF is always perfect.
 - **Burst rate / buffer**: a price driver, but it doesn't show in a single image.
+- **Push/pull processing**: set the ISO dial off the film on purpose (400 film at 1600) and have the lab develop longer – underexposure rescued at the price of contrast and coarser grain. Builds directly on the film ISO dial (`model/film.ts`).
+- **Leaf shutter vs. focal plane**: the 6×6 already syncs flash at 1/500 s; the same split could explain why leaf-shutter cameras are loved for fill flash, and pair with rolling-shutter (a leaf shutter has no skew).

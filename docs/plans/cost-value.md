@@ -1,7 +1,7 @@
 # Cost panel: what the money buys here
 
-**Blocked by:** nothing – works today with noise, DOF and shake. **Works with:** every other plan;
-each one adds a dimension (resolution, dynamic range, lens flaws, rolling shutter).
+**Blocked by:** nothing – works today with noise, DOF, shake, effective resolution and dynamic range
+(backlight). **Works with:** every other plan; each one adds a dimension (lens flaws, rolling shutter).
 
 ## Goal
 

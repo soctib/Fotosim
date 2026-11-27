@@ -26,12 +26,13 @@ sense for them.
   - Phone: no aperture slider (fixed aperture); the focal slider steps through its back cameras,
     and is hidden for a single camera (iPhone XR). In Av, which a phone doesn't really have, the
     shutter indicator is enough.
-  - Film: ISO is the film's – never a slider, even in M.
+  - Film: the loaded film decides – no "Film (ISO)" dropdown and no ISO dial in the simple view,
+    even in M. Entering sets the dial to match the film (see below).
   - Kit zoom / prime: focal slider as now (primes stand for every focal length).
 - **What still resets:** anything that changes the picture but has no control in the simple view,
   so nothing is set by an invisible switch: flash off, person 2 hidden, persons standing still,
-  photographer still, digital zoom 1×, no focus tracking, focus on person 1. Light situation: keep it
-  (the stepper is there).
+  photographer still, digital zoom 1×, no focus tracking, focus on person 1, backlight off, film ISO
+  dial matched to the film. Light situation: keep it (the stepper is there).
 - **Rule:** one function decides which controls the simple view shows, from the settings (pure,
   in `src/state` or `src/model`, with a test); CSS hides the rest as today (`.simple` rules in
   `style.css`), driven by data attributes instead of a fixed list.
@@ -41,3 +42,6 @@ sense for them.
 ## Open questions
 
 - P: show only indicators, or switch to Av on entering?
+- Camera panel: hidden in simplified mode today (`CAMERA_PANEL_IN_SIMPLE_MODE` in
+  `ui/camera/camera.ts`). Once the simple view keeps your camera, should it show the panel – or a
+  reduced one with only the parts its sliders cover?

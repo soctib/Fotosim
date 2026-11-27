@@ -1,7 +1,8 @@
 # WebGL renderer (maybe never)
 
 **Blocked by:** nothing. **Works with:** lens-flaws (distortion and CA are its main reason),
-dynamic-range, white-balance, rolling-shutter, digital-zoom. Only worth doing if the SVG/CSS
+white-balance, rolling-shutter; the implemented dynamic range and digital zoom would move into the
+shaders too. Only worth doing if the SVG/CSS
 renderer gets too slow once those plans land. **Measure first** (see "When").
 
 ## Goal
@@ -26,13 +27,22 @@ the frame-wide blur changes almost nothing. The cost grows with the blur radius 
 and at high zoom a defocused person reaches the 60 px cap. Headless WebKit renders in software, so
 treat these as relative numbers, not phone numbers.
 
+Since then (WebKit, focus-slider drag, median frame interval):
+
+- **Dynamic range** (implemented): sky and scenery use plain CSS filter functions, persons the
+  intercept in their existing `feComponentTransfer` – no measurable cost (16–17 ms in every state).
+- **Figurine** (implemented): ears and nose without clip paths or masks. 16× zoom, person out of
+  focus: 297 → 247 ms at 390 px, 450 → 360 ms at 1280 px – better, still slow.
+- **Camera panel** (implemented): its SVG is rebuilt on every change; not timed, not on a phone.
+
 How the planned effects map onto SVG:
 
 | Effect | SVG/CSS | Cost there |
 |---|---|---|
 | Vignetting, flare haze | gradient overlay | cheap |
 | Rolling-shutter skew | transform per layer | cheap |
-| White balance, tone curve (DR) | `feColorMatrix` / `feComponentTransfer` per layer | moderate |
+| Tone curve (dynamic range) | CSS functions / the persons' `feComponentTransfer` | cheap – done |
+| White balance | colour matrix per layer (needs an SVG filter on sky and scenery) | moderate |
 | Distortion | `feDisplacementMap` over the frame | expensive, per pixel on the CPU |
 | Chromatic aberration | 3× displacement + merge | most expensive |
 
@@ -48,10 +58,15 @@ Try these before rewriting anything:
 4. While a slider is being dragged, skip the expensive filters (distortion, CA, pixelation, maybe
    use a lower blur cap) and draw them on release. A blurry or straight-lined frame during a drag is
    hardly noticed.
+5. A compositing layer per image layer (`will-change: filter` on each `.sim-frame .layer`). Measured
+   on branch `perf/composited-layers` (before dynamic range and the figurine): 20× zoom, person out
+   of focus, 130 → 32 ms per two frames, pixel-identical. *Not merged* – rebase, re-measure with the
+   current rendering, confirm on a real iPhone (composited filters run off the main thread, so rAF
+   timings understate them).
 
 ## When
 
-Do this plan only if, after step 3–4 and with lens-flaws in place, a mid-range phone (or WebKit at
+Do this plan only if, after steps 3–5 and with lens-flaws in place, a mid-range phone (or WebKit at
 4× CPU throttling) stays under ~30 fps while dragging in a normal situation. Not for edge cases
 like 20× zoom with everything out of focus.
 
