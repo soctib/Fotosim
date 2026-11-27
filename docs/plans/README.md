@@ -3,14 +3,13 @@
 Concept documents for planned features. No code – each describes the idea, the model, the data it
 needs, what the UI shows and how it touches the other plans. They can be implemented in any order;
 hard blockers are marked **Blocked by**, soft links **Works with**. Implemented plans are deleted;
-their features (effective resolution, digital zoom, output size) are described in SPEC.md.
+their features (effective resolution, digital zoom, output size, dynamic range) are described in SPEC.md.
 
 Common theme: show **why some gear costs more and what it changes in the picture** – and, just as
 honestly, where it changes nothing (still subject, good light, small view: a phone is fine).
 
 | Plan | One line | Blocked by | Works with |
 |---|---|---|---|
-| [dynamic-range](dynamic-range.md) | Backlight, blown skies and crushed shadows; sensor size, generation, film latitude | – | lens-flaws (flare), cost-value |
 | [lens-flaws](lens-flaws.md) | Vignetting, chromatic aberration, distortion, flare; in-camera correction and its cost | – (each part stands alone) | effective-resolution, dynamic-range, digital-zoom |
 | [rolling-shutter](rolling-shutter.md) | Electronic shutter skews moving things; readout speed is what stacked sensors cost money for | – | – |
 | [white-balance](white-balance.md) | Colour temperature, auto vs fixed WB, film, mixed light with flash | – | effective-resolution (scanner) |
@@ -26,7 +25,7 @@ honestly, where it changes nothing (still subject, good light, small view: a pho
 | [cost-value](cost-value.md) | The cost panel says what each item buys *in the current situation* | – | gets richer with every other plan |
 | [webgl-renderer](webgl-renderer.md) | Camera image on the GPU – only if SVG filters get too slow (measure first; maybe never) | – | lens-flaws, dynamic-range, white-balance, rolling-shutter |
 
-Suggested order (by how much it explains about price): dynamic-range → lens-flaws → rolling-shutter → cost-value → white-balance → perspective → focus-beyond-infinity.
+Suggested order (by how much it explains about price): lens-flaws → rolling-shutter → cost-value → white-balance → perspective → focus-beyond-infinity.
 
 ## Rules every plan follows
 

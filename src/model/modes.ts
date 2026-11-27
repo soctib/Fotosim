@@ -1,3 +1,4 @@
+import { highlightLimitStops, type Highlights } from './dynamicRange';
 import { exposureOffsetStops } from './exposure';
 import { CAMERA_LENSES } from '../data/cameraLenses';
 import { lensMaxAperture } from './lens';
@@ -17,6 +18,13 @@ import type { AutoField, CameraSettings, Sensor } from './types';
 
 /** Auto mode fires the flash once it would need this ISO or more. */
 export const AUTO_FLASH_ISO = 1600;
+
+/**
+ * With flash, each stop the background would sit in its fade to white costs this much (the
+ * subject's error costs 10 per stop): the camera darkens the ambient light for the sky as long
+ * as the flash keeps the subject lit, but not at the subject's expense.
+ */
+const HIGHLIGHT_COST = 6;
 
 /** Highest ISO auto ISO picks: lower with flash, where the flash should do the work. */
 export function autoIsoMax(flashOn: boolean): number {
@@ -81,6 +89,7 @@ function solve(
   sceneEv100: number,
   auto: Set<AutoField>,
   flashOn: boolean,
+  highlights: Highlights | null,
 ): Candidate {
   const crop = cropFactor(sensor);
   const plainLimit = handheldLimitS(s.focalLengthMm, crop);
@@ -132,6 +141,11 @@ function solve(
           const ambient = exposureOffsetStops(sceneEv100, aperture, shutterS, iso);
           cost += 1.2 * Math.max(0, -ambient - 1);
         }
+        if (flashOn && highlights) {
+          // Balanced fill flash: expose the ambient light for the bright background.
+          const ambient = exposureOffsetStops(sceneEv100, aperture, shutterS, iso);
+          cost += HIGHLIGHT_COST * Math.max(0, ambient - highlightLimitStops(highlights));
+        }
         if (!best || cost < best.cost) best = { aperture, shutterS, iso, cost };
       }
     }
@@ -141,13 +155,16 @@ function solve(
 
 /**
  * Fill in the values the current mode controls. Pure: returns a new settings object.
- * Auto mode switches the flash on when it would otherwise be ≥ 1 stop under
- * or need a tripod.
+ * Auto mode switches the flash on when it would otherwise be ≥ 1 stop under, need a tripod, or
+ * blow out the background (backlight). Without flash the modes expose for the subject, whatever
+ * the background does; with flash they also keep the background below its clip if they can
+ * (`highlights`, null = ignore the background).
  */
 export function resolveMode(
   settings: CameraSettings,
   sensor: Sensor,
   sceneEv100: number,
+  highlights: Highlights | null = null,
 ): ResolvedSettings {
   const auto = autoFieldsForMode(settings);
   if (sensor.fixedAperture) auto.delete('aperture');
@@ -155,7 +172,7 @@ export function resolveMode(
 
   let flashOn = settings.flashOn;
   if (settings.mode === 'auto') {
-    const noFlash = solve(settings, sensor, sceneEv100, auto, false);
+    const noFlash = solve(settings, sensor, sceneEv100, auto, false, highlights);
     // Green-mode cameras pop the flash early: as soon as the shot would need high ISO,
     // a shutter slower than the plain handheld limit (people move!) or is still too dark.
     // The ISO criterion only makes sense when the camera chose the ISO itself – a fast film
@@ -170,10 +187,14 @@ export function resolveMode(
       false,
       settings.focusDistanceM,
     );
+    // Backlight: exposed for the subject, the background clips – the camera fills in with flash.
+    const ambient = exposureOffsetStops(sceneEv100, noFlash.aperture, noFlash.shutterS, noFlash.iso);
+    const blownBackground = highlights !== null && ambient + highlights.brightestStops >= highlights.clipStops;
     flashOn =
       off <= -1 ||
       noFlash.shutterS > plainLimit * 1.01 ||
-      (auto.has('iso') && noFlash.iso >= AUTO_FLASH_ISO);
+      (auto.has('iso') && noFlash.iso >= AUTO_FLASH_ISO) ||
+      blownBackground;
   }
 
   // Built-in flash cannot sync faster than the sync speed (an LED can).
@@ -181,7 +202,7 @@ export function resolveMode(
     flashOn && !sensor.ledFlash && settings.shutterS < FLASH_SYNC_S
       ? { ...settings, shutterS: FLASH_SYNC_S }
       : settings;
-  const best = solve(input, sensor, sceneEv100, auto, flashOn);
+  const best = solve(input, sensor, sceneEv100, auto, flashOn, highlights);
   return {
     settings: {
       ...settings,

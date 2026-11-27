@@ -4,6 +4,7 @@ import { focalOptions } from '../src/model/focal';
 import { MIN_DISTANCE_M, minDistanceM } from '../src/model/optics';
 import {
   setAutofocus,
+  setBacklight,
   setCamera,
   setElementDistance,
   setElementVisible,
@@ -139,5 +140,16 @@ describe('simplified mode and digital zoom', () => {
     expect(store.get().camera.digitalZoom).toBe(1);
     setSimple(store, false);
     expect(store.get().camera.digitalZoom).toBe(1);
+  });
+});
+
+describe('backlight', () => {
+  it('is a scene switch; simplified mode turns it off', () => {
+    const store = createStore();
+    setBacklight(store, true);
+    expect(store.get().scene.backlight).toBe(true);
+    expect(store.derived().dynamicRange.sky.tone.brightnessStops).toBeGreaterThan(3);
+    setSimple(store, true);
+    expect(store.get().scene.backlight).toBe(false);
   });
 });

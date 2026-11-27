@@ -27,7 +27,7 @@ Ships as **one self-contained HTML file** (`npm run build` → `dist/index.html`
   so ambient light extends the range; hidden while the ambient light alone is enough (the flash then does nothing).
 
 ### 2. Scene panel
-Light situation, plus one compact row per element: visible toggle, movement (persons only), distance as number (read + edit), "focus here" button.
+Light situation and a **"Gegenlicht"** (backlight) toggle, plus one compact row per element: visible toggle, movement (persons only), distance as number (read + edit), "focus here" button.
 
 ### 3. Bars (vertical; on phones ≤ 520 px a flat strip below the image)
 - **Exposure**: offset in stops, markers at ±1 (slight) and ±2 (strong) under/over.
@@ -62,6 +62,14 @@ persons blur per part (nose, face/body, ears at their own distances, SVG filters
 nose can be sharp and the eyes not. Close persons drift to the image centre (the photographer aims at them).
 On top: `brightness()` per layer from its exposure offset (flash lights only near layers) – 2^(stops/2.2), since
 the factor works on gamma-encoded sRGB; 2^stops would clip mid-tones to white at "leicht überbelichtet".
+**Dynamic range**: each layer's brightness is a tone curve with a hard top and bottom (`tone` from derive): over the
+last stop before the clip it fades to flat white (detail gone, not just bright), over the last stop above the floor to
+a flat dark level. Sky and scenery do it with CSS functions only (`brightness(s/(1−a)) invert(1) brightness(1−a) invert(1)`
+adds an intercept a; plain `brightness()` otherwise), persons with the intercept of their `feComponentTransfer`. A
+crushed backdrop gets extra grain (the grain tile, screen-blended, above the sky layer). The drawn brightness is
+`displayStops` – film and HDR phones squeeze overexposure into their headroom, so a held sky also looks held. The
+caption names layers beyond the range ("Himmel und Hintergrund ausgebrannt", "Himmel abgesoffen"; indoors "Wand").
+Measured in WebKit while dragging the focus slider: no difference in rAF intervals with and without clipping.
 Noise overlay: a grey grain tile made once on a canvas, tiled crisp with an overlay blend (opacity from `noise.amount`) – an SVG `feTurbulence` filter would recompute every pixel on each repaint. The image redraws at most once per animation frame. Sizes and positions from a real perspective projection (`heightFractionPerM`).
 Directional blur for camera shake when `shake.blurFactor > 1`; each layer also smears sideways by its own movement blur.
 A whole-frame Gaussian from `resolution.systemBlurUm` (pixels, diffraction, lens, noise filter, film, scan) – below a
@@ -100,7 +108,8 @@ dropdown. Light and element distances live in the scene panel.
 | Aperture | 1.4 … 22 in ⅓ stops, limited by the lens (phones: fixed, control locked) |
 | Shutter | 30 s … 1/4000 (mechanical, high-end full frame 1/8000; phones 1/16000 electronic), with markers **"hand"** (1/(2·f·crop)) and **"hand + IS"** (+2 stops) that move with focal length |
 | ISO | 100 … 12800 in ⅓ stops, optional auto ISO (P/Av/Tv). Film: fixed by the loaded film in every mode, no auto ISO |
-| Light | Sun 15, cloudy 13, shade 12, dusk 9, office 8, living room 6, night street 4, candle 3 (EV100) |
+| Light | Sun 15, cloudy 13, shade 12, dusk 9, office 8, living room 6, night street 4, candle 3 (EV100, light on the subject). Each also has a front-light contrast for the backdrop and the scenery (sky +1 sun, +1.5 cloudy/dusk, +2 shade; dusk garden −1; living-room walls −1; night sky −4, candle-lit walls −3) |
+| Gegenlicht (scene panel, not in simplified mode) | Off (default) / on: the subject stands in its own shadow, 3 stops darker; the background keeps its light, so it is 3 stops brighter relative to the subject (sunny sky ≈ +4) |
 | Mode | **A** (full auto), **P**, **Av** (Nikon/Sony: A), **Tv** (Nikon/Sony: S), **M** – each with a short explanation |
 | Flash | Checkbox in P/Av/Tv/M; in A the camera switches it on/off itself. Phones have an LED: no sync speed |
 | Stabiliser | Checkbox |
@@ -114,7 +123,7 @@ Modes grey out and set the controls they own (`autoFields`).
 The app opens in a simplified mode for beginners; the header switch "Alle Einstellungen" leaves it.
 Entering applies a fixed setup (`applySimple` in `src/state/actions.ts`): sun, person 1 and the background
 (person 2 hidden), full frame with the pro zoom, Av, auto ISO, no flash, stabiliser on, no focus tracking,
-focus on person 1. The angle of view (nearest full-frame step) and the aperture carry over.
+focus on person 1, no backlight. The angle of view (nearest full-frame step) and the aperture carry over.
 Only the graph, the camera image (no fold heading; the line under it gets a darker/brighter stepper for the
 light situation, so the shutter time can become a problem) and three sliders remain: aperture, shutter (set by the
 camera, shown as an indicator of the handheld ranges) and focal length, plus the infobox above the controls. Leaving keeps the setup and shows
@@ -150,8 +159,22 @@ All formulas use mm for focal length/sensor, m for distances, s for shutter.
 - **Lens limit** (`lens.ts`): widest aperture log-interpolated over the equivalent focal range (kit: f/3.5 at ≤ 28 mm to f/5.6 at ≥ 85 mm), rounded to the next list value that isn't faster. All modes clamp to it.
 - **Modes** (`modes.ts`): brute-force search over the discrete value lists, minimising
   `10·|subject offset| + shake penalties + aperture preference (P) + ISO preference (auto ISO)`.
-  Auto mode fires the flash if it'd otherwise be ≥ 1 stop under, slower than the plain handheld limit, or (auto ISO
-  only – a fast film doesn't count) need ISO ≥ 1600.
+  Auto mode fires the flash if it'd otherwise be ≥ 1 stop under, slower than the plain handheld limit, (auto ISO
+  only – a fast film doesn't count) need ISO ≥ 1600, or blow out the background (backlight). Without flash the
+  modes expose for the subject, whatever the background does. With flash they add `6 · stops` the brightest visible
+  background layer would sit in its fade to white (balanced fill flash): the flash keeps the subject lit and the
+  ambient exposure drops for the sky – limited by the sync speed, so in bright sun a built-in flash only rescues
+  close subjects.
+- **Dynamic range** (`dynamicRange.ts`): every layer (backdrop = sky or walls, scenery, persons) has a brightness in
+  stops relative to correct exposure: ambient + its contrast to the subject (preset, backlight), plus flash at its
+  distance (none for the backdrop). **Clip**: digital +3 stops; colour negative film +5 (its latitude; the ISO stands
+  for the film); phones add their `multiFrameStops` (HDR bursts are exposed shorter to protect the highlights).
+  **Floor**: clip minus the dynamic range – per sensor at base ISO (phone frame ≈ 10 per module, 1"/MFT 12, APS-C 13.5,
+  full frame 14, MF 15), one stop less per ISO stop above 100, at least 4; phones' floor stays a single frame's (the
+  merge's lower noise is in the noise index); film a fixed 9 (floor −4). A layer is clipped at ≥ clip, crushed at
+  ≤ floor, and fades over the stop before each (`highlight`/`shadow` 0…1). `displayStops` squeezes stops above 0 by
+  3/clip for drawing. derive reports clip, floor, range, the backdrop's tone and the visible clipped/crushed layers.
+  Digital zoom doesn't change the range (simplification).
 - **Focus tracking** (`autofocus.ts`): applied before mode resolution (auto modes and flash use the focus distance).
 - **Effective resolution** (`resolution.ts`): every factor is a blur width on the sensor (µm), combined as a root
   sum of squares into b; effective MP = frame area / b² (≤ the file's pixels), so one CoC of blur leaves 1500 px

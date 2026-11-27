@@ -42,6 +42,7 @@ export const initialState: AppState = {
   },
   scene: {
     lightPresetId: 'cloudy',
+    backlight: false,
     elements: [
       { id: 'person1', distanceM: 3, visible: true, motion: 'still' },
       { id: 'person2', distanceM: 6, visible: true, motion: 'still' },

@@ -90,6 +90,7 @@ export const de = {
     iso: 'ISO',
     autoIso: 'Auto-ISO',
     light: 'Lichtsituation',
+    backlight: 'Gegenlicht',
     lightDarker: 'dunkler',
     lightBrighter: 'heller',
     mode: 'Modus',
@@ -320,6 +321,10 @@ export const de = {
     },
     caption: '{shutter} · {aperture} · ISO {iso}',
     zoomCaption: '{factor}× Digitalzoom',
+    /** Layers beyond the dynamic range, named in the caption: "Himmel ausgebrannt". */
+    layers: { sky: 'Himmel', skyIndoor: 'Wand', person1: 'Person 1', person2: 'Person 2', background: 'Hintergrund' },
+    clipped: '{names} ausgebrannt',
+    crushed: '{names} abgesoffen',
     resize: 'Größe des Kamerabilds ändern (ziehen oder Pfeiltasten, Doppelklick setzt zurück)',
   },
 
@@ -388,6 +393,7 @@ export const de = {
     shutter: 'Belichtungszeit',
     iso: 'ISO',
     light: 'Lichtsituation',
+    backlight: 'Gegenlicht und Dynamikumfang',
     mode: 'Modus',
     flash: 'Blitz',
     focus: 'Fokus',
@@ -430,15 +436,17 @@ export const de = {
       'Wie stark das Motiv im Fokus ({subject}) während der Belichtung verwischt, weil es sich gegenüber dir bewegt. Über der Linie gilt es nicht mehr als scharf. Dagegen hilft eine kürzere Zeit, mehr Abstand, eine kürzere Brennweite – oder du bewegst dich mit. Das Verwackeln deiner Hand zeigt dagegen der Bereich unter der Belichtungszeit.',
     iso: 'Verstärkung des Signals. Höhere ISO = heller, aber mehr Rauschen.',
     light: 'Wie hell die Szene ist. Sonne ist rund 500-mal heller als ein Wohnzimmer am Abend.',
+    backlight:
+      'Gegenlicht: Die Sonne steht hinter der Person, ihr Gesicht liegt im eigenen Schatten – der Himmel dahinter ist vier, fünf Blendenstufen heller. So viel Kontrast hält ein einzelnes Digitalbild nicht: Belichtet die Kamera fürs Gesicht, brennt der Himmel weiß aus; belichtest du für den Himmel, wird das Gesicht dunkel.\n\nDer Dynamikumfang ist der Bereich zwischen reinem Weiß und Schwarz, in dem noch Zeichnung bleibt. Gerade: {range} Blendenstufen, reines Weiß ab {clip} über der richtigen Belichtung. Größere und neuere Sensoren halten mehr; hohe ISO kostet Umfang in den Schatten. Farbnegativfilm verzeiht etwa fünf Stufen Überbelichtung. Handys tricksen mit HDR: Sie verrechnen mehrere kurz belichtete Bilder, damit der Himmel nicht ausbrennt.\n\nDie klassische Rettung ist der Aufhellblitz: Der Blitz hellt das Gesicht auf, die Kamera kann für den Himmel belichten. Im prallen Sonnenlicht reicht ein eingebauter Blitz aber nur ein, zwei Meter weit – schneller als die Blitzsynchronzeit (1/250 s) geht es nicht.',
     mode: 'Der Modus legt fest, was du einstellst und was die Kamera übernimmt.',
     stabilized:
       'Der Stabilisator gleicht kleine Wackler der Hand aus – etwa zwei Blendenstufen längere Zeiten werden möglich. Gegen Bewegung der Personen hilft er nicht.',
     flash:
-      'Der Blitz reicht nur ein paar Meter. Was weiter weg ist, bleibt dunkel. Im Graph siehst du die Reichweite.',
+      'Der Blitz reicht nur ein paar Meter. Was weiter weg ist, bleibt dunkel. Im Graph siehst du die Reichweite. Bei Gegenlicht hellt er das Gesicht auf, und die Kamera kann für den hellen Hintergrund belichten (Aufhellblitz).',
     focus:
       'Auf diese Entfernung ist scharfgestellt. Davor und dahinter wird es allmählich unscharf. Schärfentiefe gerade: {dof}.',
     exposure:
-      'Zeigt, wie weit die Belichtung vom Ideal abweicht, in Blendenstufen. Eine Stufe = doppelt bzw. halb so viel Licht.',
+      'Zeigt, wie weit die Belichtung des Motivs im Fokus vom Ideal abweicht, in Blendenstufen. Eine Stufe = doppelt bzw. halb so viel Licht.\n\nWas viel heller oder dunkler ist als das Motiv, kann trotzdem ausbrennen (reines Weiß) oder absaufen (Schwarz): Gerade bleibt Zeichnung von {floor} bis {clip} Blendenstufen um die richtige Belichtung – das nennt man Dynamikumfang. Was darüber oder darunter liegt, steht unter dem Kamerabild.',
     noise:
       'Rauschen hängt von ISO und Sensorgröße ab. Ein kleiner Sensor rauscht bei ISO 100 etwa so wie Vollformat bei viel höherer ISO. Handys gleichen einen Teil davon aus: Sie nehmen mehrere Bilder kurz hintereinander auf und verrechnen sie – neuere Handys mehr als ältere.',
     resolution:

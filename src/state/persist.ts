@@ -56,6 +56,8 @@ function parseCamera(v: unknown, elementIds: ElementId[], defaults: CameraSettin
 /** The elements must be exactly the default ones (same ids, same order). */
 function parseScene(v: unknown, defaults: Scene): Scene | null {
   if (!isObj(v) || !LIGHT_PRESETS.some((p) => p.id === v.lightPresetId)) return null;
+  const backlight = optional(v.backlight, isBool, defaults.backlight);
+  if (backlight === null) return null;
   const els = v.elements;
   if (!Array.isArray(els) || els.length !== defaults.elements.length) return null;
   const elements = defaults.elements.map((d, i) => {
@@ -66,7 +68,7 @@ function parseScene(v: unknown, defaults: Scene): Scene | null {
     return motion === null ? null : { id: d.id, distanceM: e.distanceM, visible: e.visible, motion };
   });
   if (elements.some((e) => e === null)) return null;
-  return { lightPresetId: v.lightPresetId as string, elements: elements as Scene['elements'] };
+  return { lightPresetId: v.lightPresetId as string, backlight, elements: elements as Scene['elements'] };
 }
 
 function parseUi(v: unknown): AppState['ui'] | null {

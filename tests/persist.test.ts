@@ -6,7 +6,7 @@ import { initialState } from '../src/state/store';
 const changed = {
   ...initialState,
   camera: { ...initialState.camera, sensorId: 'fullFrame' as const, aperture: 2.8, mode: 'M' as const, afTarget: 'person2' as const },
-  scene: { ...initialState.scene, lightPresetId: 'dusk' },
+  scene: { ...initialState.scene, lightPresetId: 'dusk', backlight: true },
   ui: { ...initialState.ui, simple: false, showDetails: true, infoKey: 'graph' as const },
 };
 
@@ -73,5 +73,13 @@ describe('parseState with older saves', () => {
     expect(parseState(JSON.stringify(old), initialState)!.camera).toEqual(changed.camera);
     const bad = { ...changed, camera: { ...changed.camera, scanner: 'fax' } };
     expect(parseState(JSON.stringify(bad), initialState)!.camera).toEqual(initialState.camera);
+  });
+
+  it('fills in backlight missing from older states and rejects a wrong one', () => {
+    const old = JSON.parse(JSON.stringify(changed));
+    delete old.scene.backlight;
+    expect(parseState(JSON.stringify(old), initialState)!.scene).toEqual({ ...changed.scene, backlight: false });
+    const bad = { ...changed, scene: { ...changed.scene, backlight: 'yes' } };
+    expect(parseState(JSON.stringify(bad), initialState)!.scene).toEqual(initialState.scene);
   });
 });

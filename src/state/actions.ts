@@ -56,6 +56,10 @@ export function setLight(store: Store, lightPresetId: string): void {
   store.update((s) => ({ ...s, scene: { ...s.scene, lightPresetId } }));
 }
 
+export function setBacklight(store: Store, backlight: boolean): void {
+  store.update((s) => ({ ...s, scene: { ...s.scene, backlight } }));
+}
+
 /**
  * Show or hide an element. Hiding the element the autofocus is tracking switches the
  * tracking off (keeping the focus where it was) – there is nothing left to follow.
@@ -110,7 +114,7 @@ export function setMode(store: Store, mode: Mode): void {
 }
 
 /**
- * The setup simplified mode stands for: sun, one person standing and the background, a full-frame
+ * The setup simplified mode stands for: sun (front light), one person standing and the background, a full-frame
  * body with the pro zoom in Av, auto ISO, no flash, stabiliser on, photographer standing, no focus tracking. Keeps the angle
  * of view (clamped to the zoom range) and the aperture; focuses on person 1.
  */
@@ -123,7 +127,7 @@ export function applySimple(s: AppState): AppState {
     visible: el.id !== 'person2',
     motion: el.id === 'background' ? el.motion : ('still' as const),
   }));
-  const scene = { ...s.scene, lightPresetId: 'sun', elements };
+  const scene = { ...s.scene, lightPresetId: 'sun', backlight: false, elements };
   const person1 = scene.elements.find((el) => el.id === 'person1')!;
   return {
     ...s,

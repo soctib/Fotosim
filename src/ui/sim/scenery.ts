@@ -13,6 +13,8 @@ export interface Scenery {
   frameColor: string;
   backdrop: (bg: DerivedElement, W: number, H: number) => string;
   scenery: (el: DerivedElement, W: number, H: number) => string;
+  /** The backdrop is a room's walls, not the sky (named so in the caption). */
+  indoor?: boolean;
   /** The object the autofocus frame sits on: lateral centre, centre height and frame size (metres). */
   afTarget: { lateralM: number; heightM: number; sizeM: number };
 }
@@ -336,6 +338,7 @@ const SCENERIES: Record<string, Scenery> = {
     afTarget: HOUSE_AF,
   },
   office: {
+    indoor: true,
     frameColor: '#eceff1',
     backdrop: roomBackdrop({ ceiling: '#dfe3e8', wall: '#eceff1', floor: '#8d98a8' }, (g, W, H) =>
       ceilingPanels(g, W, H, '#fbfdff'),
@@ -344,6 +347,7 @@ const SCENERIES: Record<string, Scenery> = {
     afTarget: { lateralM: 1.23, heightM: 1.0, sizeM: 1.2 },
   },
   livingRoom: {
+    indoor: true,
     frameColor: '#e8d9c0',
     backdrop: roomBackdrop({ ceiling: '#d8ccb8', wall: '#e8d9c0', floor: '#9b6b43' }),
     scenery: livingRoom,
@@ -363,6 +367,7 @@ const SCENERIES: Record<string, Scenery> = {
     afTarget: { lateralM: 0.5, heightM: 5.5, sizeM: 9 },
   },
   candle: {
+    indoor: true,
     frameColor: '#4a3424',
     backdrop: roomBackdrop({ ceiling: '#33231a', wall: '#4a3424', floor: '#2e1f16' }),
     scenery: candleTable,

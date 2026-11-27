@@ -8,6 +8,7 @@ import { SENSORS } from '../data/sensors';
 import { applyAutofocus, focusedElement } from './autofocus';
 import { costs, type Costs } from './costs';
 import { activeSensor } from './focal';
+import { displayStops, dynamicRange, layerTone, sceneContrast, type DynamicRange, type LayerTone } from './dynamicRange';
 import { classifyExposure, exposureOffsetStops, type ExposureClass } from './exposure';
 import {
   flashFullOffsetStops,
@@ -76,7 +77,14 @@ export interface DerivedElement {
   visible: boolean;
   relativeBlur: number;
   blurFractionOfWidth: number;
+  /**
+   * Brightness to draw the layer with (stops): its exposure relative to how the scenery is drawn,
+   * which already shows the preset's front-light contrast, as the medium shows it (displayStops:
+   * film and HDR phones squeeze highlights). Persons: their exposure.
+   */
   exposureOffsetStops: number;
+  /** Where the layer sits between highlight clip and shadow floor. */
+  tone: LayerTone;
   /** Fraction of the frame height a person at this distance fills (persons only). */
   frameHeightFraction: number;
   /** Image-height fraction per metre of object size at this distance (for laying out the simulated image). */
@@ -88,6 +96,9 @@ export interface DerivedElement {
   /** The same smear as a fraction of the image width (for rendering). */
   movementBlurFractionOfWidth: number;
 }
+
+/** An image layer: the backdrop (sky or walls) or one of the elements. */
+export type Layer = 'sky' | ElementId;
 
 export interface Derived {
   settings: CameraSettings;
@@ -117,6 +128,7 @@ export interface Derived {
    */
   zoom: { factor: number; equivalentFocalMm: number; dofUncropped: DepthOfField };
   hyperfocalM: number;
+  /** Light on the subject (EV100): the preset's, darker in backlight. */
   sceneEv100: number;
   ambientOffsetStops: number;
   /** Exposure of the focused subject (ambient + flash). Drives the exposure bar. */
@@ -124,6 +136,15 @@ export interface Derived {
   exposureClass: ExposureClass;
   /** Auto ISO is at its upper limit and the subject is still too dark: that limit, else null. */
   autoIsoCapped: number | null;
+  /**
+   * Dynamic range: clip and floor, the backdrop layer (sky or walls; drawn with the background
+   * element's blur), and which visible layers are blown out or drowned in black.
+   */
+  dynamicRange: DynamicRange & {
+    sky: { exposureOffsetStops: number; tone: LayerTone };
+    clipped: Layer[];
+    crushed: Layer[];
+  };
   /** Flash on: its zone (null while the ambient light alone is enough) and the TTL power reduction. */
   flash: { zone: FlashZone | null; powerReductionStops: number } | null;
   /** Handheld limits for the photographer's movement (Infinity on a tripod). */
@@ -159,8 +180,15 @@ export function derive(rawInput: CameraSettings, rawScene: Scene): Derived {
   // The photo as shown: everything below that depends on the frame uses the cropped sensor;
   // the lens and the camera's own decisions use the real one.
   const sensor = croppedSensor(optical, zoom);
-  const sceneEv100 = lightPreset(scene.lightPresetId).ev100;
-  const { settings, autoFields } = resolveMode(applyAutofocus(input, scene), optical, sceneEv100);
+  const preset = lightPreset(scene.lightPresetId);
+  const contrast = sceneContrast(preset, scene.backlight);
+  const sceneEv100 = contrast.subjectEv100;
+  const background = scene.elements.find((el) => el.id === 'background');
+  const highlights = {
+    brightestStops: Math.max(contrast.skyStops, background?.visible ? contrast.sceneryStops : -Infinity),
+    clipStops: dynamicRange(optical, 100).clipStops,
+  };
+  const { settings, autoFields } = resolveMode(applyAutofocus(input, scene), optical, sceneEv100, highlights);
   const { focalLengthMm: f, aperture: N, shutterS: t, iso, focusDistanceM: focus } = settings;
   const crop = cropFactor(sensor);
   const opticalCrop = cropFactor(optical);
@@ -176,11 +204,15 @@ export function derive(rawInput: CameraSettings, rawScene: Scene): Derived {
     flash = { zone: flashZone(gn, N, iso, ambient), powerReductionStops: reduction };
   }
 
+  const dr = dynamicRange(sensor, iso);
   const elements: DerivedElement[] = scene.elements.map((el) => {
-    let exp = ambient;
+    // The scenery has its own contrast to the subject; the flash adds the same light to everything at a distance.
+    const own = el.id === 'background' ? contrast.sceneryStops : 0;
+    const drawn = el.id === 'background' ? preset.sceneryStops : 0;
+    let brightness = ambient + own;
     if (flash) {
       const full = flashFullOffsetStops(sensor.flashGuideNumber, N, iso, el.distanceM);
-      exp = litOffsetStops(ambient, full, flash.powerReductionStops);
+      brightness = litOffsetStops(ambient + own, full, flash.powerReductionStops);
     }
     const speed = relativeSpeedMs(el.motion, settings.motion);
     return {
@@ -189,7 +221,8 @@ export function derive(rawInput: CameraSettings, rawScene: Scene): Derived {
       visible: el.visible,
       relativeBlur: relativeBlur(f, N, focus, el.distanceM, sensor),
       blurFractionOfWidth: blurFractionOfWidth(f, N, focus, el.distanceM, sensor),
-      exposureOffsetStops: exp,
+      exposureOffsetStops: displayStops(brightness, dr) - displayStops(drawn, dr),
+      tone: layerTone(brightness, dr),
       frameHeightFraction:
         el.id === 'background' ? NaN : frameHeightFraction(f, PERSON_HEIGHT_M, el.distanceM, sensor),
       heightFractionPerM: frameHeightFraction(f, 1, el.distanceM, sensor),
@@ -198,6 +231,17 @@ export function derive(rawInput: CameraSettings, rawScene: Scene): Derived {
       movementBlurFractionOfWidth: movementBlurFractionOfWidth(speed, t, f, el.distanceM, sensor),
     };
   });
+
+  // The backdrop is "infinitely" far: no flash reaches it.
+  const skyBrightness = ambient + contrast.skyStops;
+  const sky = {
+    exposureOffsetStops: displayStops(skyBrightness, dr) - displayStops(preset.skyStops, dr),
+    tone: layerTone(skyBrightness, dr),
+  };
+  const layers: { id: Layer; tone: LayerTone }[] = [
+    { id: 'sky', tone: sky.tone },
+    ...elements.filter((e) => e.visible).map((e) => ({ id: e.id, tone: e.tone })),
+  ];
 
   const focused = focusedElement(elements, focus, settings.afTarget);
   const subjectInfo: Derived['subject'] = focused && {
@@ -243,6 +287,12 @@ export function derive(rawInput: CameraSettings, rawScene: Scene): Derived {
       autoFields.has('iso') && iso >= autoIsoMax(settings.flashOn) && classifyExposure(subject).endsWith('Under')
         ? autoIsoMax(settings.flashOn)
         : null,
+    dynamicRange: {
+      ...dr,
+      sky,
+      clipped: layers.filter((l) => l.tone.state === 'clipped').map((l) => l.id),
+      crushed: layers.filter((l) => l.tone.state === 'crushed').map((l) => l.id),
+    },
     flash,
     shake: {
       limitS: motionHandheldLimitS(handheldLimitS(f, crop), settings.motion),

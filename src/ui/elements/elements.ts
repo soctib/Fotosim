@@ -1,4 +1,4 @@
-// Scene panel – what's in front of the camera: the light situation, and one compact row
+// Scene panel – what's in front of the camera: the light situation and backlight, and one compact row
 // per element (show/hide, movement for persons, distance read + edit, focus on it).
 
 import { LIGHT_PRESETS } from '../../data/lightPresets';
@@ -13,6 +13,7 @@ import {
   setElementMotion,
   setElementVisible,
   setInfo,
+  setBacklight,
   setLight,
 } from '../../state/actions';
 import type { Store } from '../../state/store';
@@ -25,11 +26,14 @@ export function mountElements(root: HTMLElement, store: Store): void {
   root.classList.add('elements');
   root.innerHTML = `
     <h3>${t.controls.sectionScene}</h3>
-    <label class="scene-light" data-info="light">${t.controls.light}
-      <select data-role="light">
-        ${LIGHT_PRESETS.map((p) => `<option value="${p.id}">${t.light[p.id as keyof typeof t.light]}</option>`).join('')}
-      </select>
-    </label>` + IDS.map(
+    <div class="scene-head">
+      <label class="scene-light" data-info="light">${t.controls.light}
+        <select data-role="light">
+          ${LIGHT_PRESETS.map((p) => `<option value="${p.id}">${t.light[p.id as keyof typeof t.light]}</option>`).join('')}
+        </select>
+      </label>
+      <label class="toggle scene-backlight" data-info="backlight"><input type="checkbox" data-role="backlight"> ${t.controls.backlight}</label>
+    </div>` + IDS.map(
     (id) => `
     <div class="el-row el-${id}" data-id="${id}">
       <label class="toggle el-name"><input type="checkbox" data-role="visible" aria-label="${t.elements.visible}">
@@ -52,6 +56,11 @@ export function mountElements(root: HTMLElement, store: Store): void {
   light.addEventListener('change', () => setLight(store, light.value));
   light.addEventListener('pointerdown', () => setInfo(store, 'light'));
   light.addEventListener('focus', () => setInfo(store, 'light'));
+  const backlight = root.querySelector<HTMLInputElement>('[data-role="backlight"]')!;
+  backlight.addEventListener('change', () => setBacklight(store, backlight.checked));
+  const backlightLabel = backlight.closest('label')!;
+  backlightLabel.addEventListener('pointerdown', () => setInfo(store, 'backlight'));
+  backlight.addEventListener('focus', () => setInfo(store, 'backlight'));
 
   for (const id of IDS) {
     const row = root.querySelector<HTMLElement>(`[data-id="${id}"]`)!;
@@ -84,6 +93,7 @@ export function mountElements(root: HTMLElement, store: Store): void {
 
   store.subscribe((state, d) => {
     light.value = state.scene.lightPresetId;
+    backlight.checked = state.scene.backlight;
     const tracking = d.settings.afTarget !== null;
     for (const el of state.scene.elements) {
       const row = root.querySelector<HTMLElement>(`[data-id="${el.id}"]`)!;

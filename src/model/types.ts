@@ -43,6 +43,11 @@ export interface Sensor {
   megapixels?: number;
   /** Built-in lens blur (µm); phones get it per module from activeSensor(). */
   lensBlurUm?: number;
+  /**
+   * Digital: usable dynamic range at base ISO (stops), see model/dynamicRange.ts. Phones: a single
+   * frame of the active module (activeSensor()); film has a fixed latitude instead.
+   */
+  dynamicRangeStops?: number;
 }
 
 /** One built-in phone camera module. */
@@ -56,6 +61,8 @@ export interface PhoneCamera {
   outputMegapixels: number;
   /** Blur of the built-in lens on the sensor (µm), see model/resolution.ts. */
   lensBlurUm: number;
+  /** Dynamic range of a single frame at base ISO (stops); smaller sensors and pixels hold less. */
+  dynamicRangeStops: number;
 }
 
 export type LensId = 'kit' | 'fastZoom' | 'prime';
@@ -124,6 +131,8 @@ export interface CameraSettings {
 
 export interface Scene {
   lightPresetId: string;
+  /** Backlight ("Gegenlicht"): subject in its own shadow, the bright background behind it. */
+  backlight: boolean;
   elements: SceneElement[];
 }
 

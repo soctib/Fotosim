@@ -4,7 +4,14 @@
 import { de as t, fill } from '../../data/texts.de';
 import { formatAperture, formatShutter } from '../../model/stops';
 import type { InfoKey, Store } from '../../state/store';
-import { formatMeterRange, formatMp } from '../distance';
+import { formatMeterRange, formatMp, formatNumber } from '../distance';
+
+/** Stops to the nearest half: "14", "13,5". */
+const stops = (x: number) => {
+  const r = Math.round(x * 2) / 2;
+  return formatNumber(r, r % 1 ? 1 : 0);
+};
+const signedStops = (x: number) => `${x > 0 ? '+' : x < 0 ? '−' : '±'}${stops(Math.abs(x))}`;
 
 export function mountInfobox(root: HTMLDetailsElement, store: Store): void {
   root.classList.add('infobox');
@@ -33,6 +40,9 @@ export function mountInfobox(root: HTMLDetailsElement, store: Store): void {
       dof: formatMeterRange(d.dof.nearM, d.dof.farM),
       subject: d.subject ? t.elements[d.subject.id] : t.movement.none,
       mp: formatMp(d.resolution.nominalMp),
+      range: stops(d.dynamicRange.rangeStops),
+      clip: signedStops(d.dynamicRange.clipStops),
+      floor: signedStops(d.dynamicRange.floorStops),
       sharpMp: formatMp(d.outputSize.results.find((x) => x.id === 'a4' && x.view === 'normal')!.sharpMp),
     });
     // Paragraphs: "\n\n" in the texts.

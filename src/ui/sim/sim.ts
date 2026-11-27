@@ -3,11 +3,13 @@
 // scenery follow the light situation (see scenery.ts), so dusk looks like dusk.
 // Scenery and persons are stacked by distance, so nearer things cover farther ones. Movement smears
 // each layer sideways on its own (persons relative to the photographer); noise overlay and
-// directional shake blur on top. Layout uses each element's projected scale
+// directional shake blur on top. Each layer's brightness is a tone curve with a hard top and
+// bottom: beyond the dynamic range it fades to flat white (blown out) or flat dark (crushed). Layout uses each element's projected scale
 // (heightFractionPerM), so framing follows focal length and sensor.
 
 import { de as t, fill } from '../../data/texts.de';
-import type { Derived, DerivedElement } from '../../model/derive';
+import type { Derived, DerivedElement, Layer } from '../../model/derive';
+import type { LayerTone } from '../../model/dynamicRange';
 import { formatAperture, formatShutter } from '../../model/stops';
 import { formatNumber } from '../distance';
 import type { ElementId } from '../../model/types';
@@ -41,6 +43,10 @@ const MIN_VISIBLE_SIGMA = 0.3;
 const MAX_BRIGHTNESS = 2 ** 6;
 const DISPLAY_GAMMA = 2.2;
 const MIN_BRIGHTNESS = 0.03;
+/** Flat level (sRGB) a crushed layer sinks to: not pure black, so its extra grain still shows. */
+const CRUSHED_LEVEL = 0.06;
+/** Opacity of the extra grain on a fully crushed backdrop (screen blend: noise lifted out of the black). */
+const CRUSHED_GRAIN = 0.2;
 /** Side of the pre-computed grain tile, in its own pixels (one per display pixel at 1×). */
 const GRAIN_TILE = 256;
 /** Grain contrast: standard deviation of the tile's grey values around mid-grey (0–1). */
@@ -56,6 +62,7 @@ export function mountSim(root: HTMLElement, store: Store): void {
     <div class="sim-frame" role="img" aria-label="${t.sim.title}">
       <div class="sim-image">
         <svg class="layer" data-layer="sky" xmlns="${SVG_NS}"></svg>
+        <div class="sky-grain" aria-hidden="true"></div>
         <svg class="layer" data-layer="background" xmlns="${SVG_NS}"></svg>
         <svg class="layer" data-layer="person2" xmlns="${SVG_NS}"></svg>
         <svg class="layer" data-layer="person1" xmlns="${SVG_NS}"></svg>
@@ -84,6 +91,9 @@ export function mountSim(root: HTMLElement, store: Store): void {
   const image = root.querySelector<HTMLElement>('.sim-image')!;
   const noise = root.querySelector<HTMLElement>('.noise')!;
   noise.style.backgroundImage = `url(${grainTile()})`;
+  // A crushed backdrop: shadows that drowned in noise. Inside the image, above the sky, under everything else.
+  const skyGrain = root.querySelector<HTMLElement>('.sky-grain')!;
+  skyGrain.style.backgroundImage = noise.style.backgroundImage;
   const shake = root.querySelector<SVGFEGaussianBlurElement>('#sim-shake feGaussianBlur')!;
   const moveBackground = root.querySelector<SVGFEGaussianBlurElement>('#sim-move-background feGaussianBlur')!;
   const pixelate = root.querySelector<SVGFilterElement>('#sim-pixelate')!;
@@ -147,22 +157,26 @@ export function mountSim(root: HTMLElement, store: Store): void {
     const zoomed = (svg: string) => (z === 1 ? svg : `<g transform="matrix(${z} 0 0 ${z} ${view.tx.toFixed(2)} ${view.ty.toFixed(2)})">${svg}</g>`);
 
     const sigmaAt = (m: number) => Math.min(MAX_BLUR_PX, (d.blurFractionAt(m) / z) * W * SIGMA_PER_DISC);
-    const gain = (el: DerivedElement) => Math.min(MAX_BRIGHTNESS, Math.max(MIN_BRIGHTNESS, 2 ** (el.exposureOffsetStops / DISPLAY_GAMMA)));
+    const gain = (stops: number) => Math.min(MAX_BRIGHTNESS, Math.max(MIN_BRIGHTNESS, 2 ** (stops / DISPLAY_GAMMA)));
     const moveSigma = (el: DerivedElement) => Math.min(MAX_BLUR_PX, el.movementBlurFractionOfWidth * W * SIGMA_PER_SMEAR);
 
     // Sky (or wall) and open ground are always furthest back; they share the background's blur, smear and light.
     const bg = d.elements.find((e) => e.id === 'background')!;
     const bgMove = moveSigma(bg);
     moveBackground.setAttribute('stdDeviation', `${bgMove.toFixed(2)} 0`);
-    const filterFor = (el: DerivedElement) =>
-      `brightness(${gain(el).toFixed(3)}) ` +
+    const filterFor = (el: DerivedElement, light: { exposureOffsetStops: number; tone: LayerTone }) =>
+      `${toneCss(toneLine(gain(light.exposureOffsetStops), light.tone))} ` +
       `blur(${Math.min(MAX_BLUR_PX, el.blurFractionOfWidth * W * SIGMA_PER_DISC).toFixed(2)}px)` +
       `${bgMove > 0.1 ? ' url(#sim-move-background)' : ''}`;
     const sky = layer('sky');
     sky.setAttribute('viewBox', `0 0 ${W} ${H}`);
     sky.innerHTML = zoomed(scenery.backdrop(uncropped(bg), W, H));
-    sky.style.filter = filterFor(bg);
+    sky.style.filter = filterFor(bg, d.dynamicRange.sky);
     sky.style.zIndex = '0';
+    const crushed = d.dynamicRange.sky.tone.shadow;
+    skyGrain.style.display = crushed > 0 ? '' : 'none';
+    skyGrain.style.opacity = (crushed * CRUSHED_GRAIN).toFixed(3);
+    skyGrain.style.zIndex = '1';
     frame.style.background = scenery.frameColor;
 
     // Far to near: a person behind the house disappears behind it.
@@ -171,16 +185,16 @@ export function mountSim(root: HTMLElement, store: Store): void {
       const svg = layer(el.id);
       svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
       svg.style.display = el.visible ? '' : 'none';
-      svg.style.zIndex = String(i + 1);
+      svg.style.zIndex = String(i + 2);
       if (el.id === 'background') {
         svg.innerHTML = zoomed(scenery.scenery(uncropped(el), W, H));
-        svg.style.filter = filterFor(el);
+        svg.style.filter = filterFor(el, el);
       } else {
         // Persons blur per part (nose, face, ears sit at different distances), so the light goes into
         // each part's filter too, ahead of the blur. Movement adds a sideways smear on top of the defocus.
         const move = moveSigma(el) / z;
         svg.innerHTML = zoomed(
-          drawPerson(uncropped(el), W, H, z, gain(el), (dm) => {
+          drawPerson(uncropped(el), W, H, z, toneLine(gain(el.exposureOffsetStops), el.tone), (dm) => {
             const sigma = sigmaAt(el.distanceM + dm);
             return `${Math.min(MAX_BLUR_PX, Math.hypot(sigma, move)).toFixed(2)} ${sigma.toFixed(2)}`;
           }),
@@ -236,6 +250,10 @@ export function mountSim(root: HTMLElement, store: Store): void {
     ];
     if (z > 1) parts.push(fill(t.sim.zoomCaption, { factor: formatNumber(z, z < 10 ? 1 : 0) }));
     if (d.shake.cls !== 'safe') parts.push(t.shake[d.shake.cls]);
+    const names = (layers: Layer[]) =>
+      joinNames(layers.map((id) => (id === 'sky' ? (scenery.indoor ? t.sim.layers.skyIndoor : t.sim.layers.sky) : t.sim.layers[id])));
+    if (d.dynamicRange.clipped.length) parts.push(fill(t.sim.clipped, { names: names(d.dynamicRange.clipped) }));
+    if (d.dynamicRange.crushed.length) parts.push(fill(t.sim.crushed, { names: names(d.dynamicRange.crushed) }));
     caption.textContent = parts.join(' · ');
   }
 
@@ -246,6 +264,37 @@ export function mountSim(root: HTMLElement, store: Store): void {
       schedule(last.d, last.scenery);
     }
   }).observe(frame);
+}
+
+/** "A", "A und B", "A, B und C". */
+function joinNames(names: string[]): string {
+  return names.length < 2 ? (names[0] ?? '') : `${names.slice(0, -1).join(', ')}${t.motion.and}${names[names.length - 1]}`;
+}
+
+/** A layer's tone curve on its sRGB colours: out = intercept + slope · in, clamped to 0…1. */
+interface ToneLine {
+  slope: number;
+  intercept: number;
+}
+
+/**
+ * Exposure gain plus the dynamic range's hard ends: towards the clip the layer fades to flat white
+ * (detail gone, not just bright), towards the floor to flat dark.
+ */
+function toneLine(gain: number, tone: LayerTone): ToneLine {
+  const keep = (1 - tone.highlight) * (1 - tone.shadow);
+  return { slope: gain * keep, intercept: tone.highlight + (1 - tone.highlight) * tone.shadow * CRUSHED_LEVEL };
+}
+
+/**
+ * The same as CSS filter functions, which have no intercept: brightness(s/(1−a)), invert, brightness(1−a),
+ * invert gives a + (1−a)·min(1, s·x/(1−a)) = min(1, a + s·x). Plain brightness() when there is no
+ * intercept – cheap functions only, no SVG filter (those are slow in WebKit).
+ */
+function toneCss({ slope, intercept: a }: ToneLine): string {
+  if (a <= 0) return `brightness(${slope.toFixed(3)})`;
+  if (a >= 1) return 'brightness(0) invert(1)';
+  return `brightness(${(slope / (1 - a)).toFixed(3)}) invert(1) brightness(${(1 - a).toFixed(3)}) invert(1)`;
 }
 
 /** Digital zoom transform: display = z · uncropped + (tx, ty). */
@@ -371,19 +420,20 @@ function drawNose(perM: number): string {
  * blur from their own distance – with a shallow enough depth of field the nose tip can be
  * sharp while the eyes are not. `stdDeviation(dm)` gives the blur ("x y" in px) for an offset from the eye plane;
  * `zoom` is the digital zoom the drawing will be enlarged by (fine detail needs display pixels);
- * `gain` is the exposure factor, applied before the blur (see MAX_BRIGHTNESS).
+ * `tone` is the exposure gain with the dynamic range's ends, applied before the blur (see MAX_BRIGHTNESS).
  */
 function drawPerson(
   el: DerivedElement,
   W: number,
   H: number,
   zoom: number,
-  gain: number,
+  tone: ToneLine,
   stdDeviation: (dm: number) => string,
 ): string {
   const { perM, groundY, cx } = projection(el, W, H);
   // sRGB like CSS brightness(), so the persons match the background layers.
-  const fn = (c: string) => `<feFunc${c} type="linear" slope="${gain.toFixed(3)}"/>`;
+  const fn = (c: string) =>
+    `<feFunc${c} type="linear" slope="${tone.slope.toFixed(3)}"${tone.intercept > 0 ? ` intercept="${tone.intercept.toFixed(3)}"` : ''}/>`;
   const light = `<feComponentTransfer color-interpolation-filters="sRGB">${fn('R')}${fn('G')}${fn('B')}</feComponentTransfer>`;
   const filter = (part: string, dm: number) =>
     `<filter id="${el.id}-${part}" filterUnits="userSpaceOnUse" x="0" y="0" width="${W}" height="${H}">

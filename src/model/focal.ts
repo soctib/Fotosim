@@ -76,6 +76,7 @@ export function activeSensor(sensor: Sensor, focalLengthMm: number): Sensor {
     fixedAperture: c.aperture,
     megapixels: c.outputMegapixels,
     lensBlurUm: c.lensBlurUm,
+    dynamicRangeStops: c.dynamicRangeStops,
   };
 }
 

@@ -754,6 +754,7 @@ header {
 
 .sim-frame .sim-image,
 .sim-frame .layer,
+.sim-frame .sky-grain,
 .sim-frame .noise {
   position: absolute;
   inset: 0;
@@ -763,8 +764,14 @@ header {
 
 
 /* Only drawn shapes take taps (to set the autofocus); sky and empty areas fall through. */
-.sim-frame .layer {
+.sim-frame .layer,
+.sim-frame .sky-grain {
   pointer-events: none;
+}
+/* Extra grain on a crushed backdrop: screen lifts the noise out of the black. */
+.sim-frame .sky-grain {
+  mix-blend-mode: screen;
+  image-rendering: pixelated;
 }
 .sim-frame .layer:not([data-layer='sky']) * {
   pointer-events: visiblePainted;
@@ -1381,15 +1388,20 @@ header {
   text-transform: uppercase;
   color: var(--muted);
 }
+.scene-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-bottom: 6px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--line);
+}
 .scene-light {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
   font-weight: 600;
-  padding-bottom: 6px;
-  margin-bottom: 4px;
-  border-bottom: 1px solid var(--line);
 }
 .scene-light select {
   font: inherit;
