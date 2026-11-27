@@ -20,7 +20,8 @@ Ships as **one self-contained HTML file** (`npm run build` → `dist/index.html`
 - **Three draggable elements**: Person 1, Person 2, Background.
   - Persons: stick figures; once a head would be ≥ 36 px wide they become a profile head facing the camera, with nose,
     eye and ear at their true distances (nose tip −3 cm, ears +9 cm from the eyes; a person's distance is the eyes),
-    each blurred by its own distance. Very large heads grow into the plot, drawn see-through.
+    each blurred by its own distance. Very large heads grow into the plot, drawn see-through. The heads wear the
+    figurine's skin and hair (see camera image) with a collar in the person's graph colour.
 - **Focus line**: vertical, draggable. Tapping an element focuses on it (simulated autofocus).
 - **Depth-of-field band** (near/far limit) shaded.
 - **Flash zone** shaded when the flash is on: too close / range / falling off / no effect. Computed for ambient + flash,
@@ -60,6 +61,16 @@ controls scroll; folded away, the sharpness graph sticks instead (only outside s
 Layers: sky/ground, background scenery, persons – stacked by distance. The backdrop and scenery follow the light situation (sunny/cloudy/overcast/dusk garden with a house, office, living room, night street, candle-lit table), so a beginner sees what kind of light the preset means; indoor scenery still stands at the background distance. Background blur from `blurFractionOfWidth × imageWidthPx`;
 persons blur per part (nose, face/body, ears at their own distances, SVG filters), so with a shallow depth of field the
 nose can be sharp and the eyes not. Close persons drift to the image centre (the photographer aims at them).
+**Persons** (`ui/sim/figurine.ts`, drawn in cm, 175 cm tall, eyes at −165 cm): a figurine whose head outline (head,
+neck, ear bumps; 23 cm wide) and hair are based on Personas by Draftbit (CC BY 4.0, modified; credited in the README
+and the camera image's info text). Person 1: skin `#e5a07e`, hair `#6c4545`, short combover; person 2: skin
+`#b16a5b`, hair `#362c47`, bob. The face is a lighter tone than neck and ears, the ears have a small fold; our own
+detailed eyes (±4.8 cm: iris texture, catchlight, lid – fine detail for judging sharpness), mouth and triangle nose
+(flat shadow on its left half, fading from the tip up to the bridge; nostrils, freckles and a tip highlight close up).
+Body: t-shirt (shoulders ±19.6 cm, neckline), short sleeves, bare forearms and hands, jeans with cuffs, sneakers.
+The three depth groups are drawn without clip paths or masks (ears as their own paths, the nose fade as gradient
+fills) – those cost noticeably in WebKit at high digital zoom; colours are inline and pre-mixed, since blend modes do
+nothing inside a blurred group.
 On top: `brightness()` per layer from its exposure offset (flash lights only near layers) – 2^(stops/2.2), since
 the factor works on gamma-encoded sRGB; 2^stops would clip mid-tones to white at "leicht überbelichtet".
 **Dynamic range**: each layer's brightness is a tone curve with a hard top and bottom (`tone` from derive): over the

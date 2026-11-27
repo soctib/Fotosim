@@ -1,6 +1,6 @@
 # Livelier dolls
 
-**Blocked by:** [figurine](figurine.md). **Works with:** –
+**Blocked by:** nothing (builds on the figurine in `ui/sim/figurine.ts`). **Works with:** –
 
 Small touches that also teach something. No physics change; rendering only (`ui/sim/sim.ts`, graph
 heads in `ui/graph/graph.ts`). Each item can be done on its own.

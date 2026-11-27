@@ -17,6 +17,7 @@ import { focusOn, setAutofocus, setInfo } from '../../state/actions';
 import { FACE_DEPTH_M } from '../face';
 import { mountLightStepper } from '../lightStepper';
 import type { Store } from '../../state/store';
+import { figure } from './figurine';
 import { projection } from './projection';
 import { sceneryFor, type Scenery } from './scenery';
 
@@ -371,50 +372,6 @@ function drawAfFrame(el: DerivedElement, target: Scenery['afTarget'], W: number,
     M${r},${b - c} V${b} H${r - c} M${l + c},${b} H${l} V${b - c}"/>`;
 }
 
-/** Iris must be at least this many pixels in radius before the eye is drawn in detail. */
-const EYE_DETAIL_MIN_PX = 3;
-
-/**
- * One eye at (x, -165 cm). Close up: white, textured iris, pupil, catchlight and lid line –
- * fine detail to judge sharpness by (the catchlight especially). Far away: just white and iris.
- */
-function drawEye(x: number, perM: number): string {
-  const y = -165;
-  const irisR = 1.0;
-  const white = `<ellipse class="sclera" cx="${x}" cy="${y}" rx="2.3" ry="1.45"/>`;
-  // Same size from afar, just without the fine detail – no jump when crossing the threshold.
-  if (irisR * (perM / 100) < EYE_DETAIL_MIN_PX) return `${white}<circle class="iris eye-simple" cx="${x}" cy="${y}" r="${irisR}"/>`;
-  const rays = Array.from({ length: 18 }, (_, i) => {
-    const a = (i / 18) * Math.PI * 2;
-    const [c, s] = [Math.cos(a), Math.sin(a)];
-    return `M${(x + c * 0.5).toFixed(3)},${(y + s * 0.5).toFixed(3)} L${(x + c * 0.92).toFixed(3)},${(y + s * 0.92).toFixed(3)}`;
-  }).join(' ');
-  return `<g class="eye-detail">
-    ${white}
-    <circle class="iris" cx="${x}" cy="${y}" r="${irisR}"/>
-    <path class="iris-rays" d="${rays}"/>
-    <circle class="limbus" cx="${x}" cy="${y}" r="${irisR - 0.04}"/>
-    <circle class="pupil" cx="${x}" cy="${y}" r="0.42"/>
-    <circle class="catchlight" cx="${x + 0.32}" cy="${y - 0.34}" r="0.19"/>
-    <path class="lid" d="M${x - 2.4},${y + 0.15} Q${x},${y - 2.1} ${x + 2.4},${y + 0.15}"/>
-  </g>`;
-}
-
-/**
- * Nose (front view). Close up the tip gets fine detail – highlight, nostrils, freckles – so
- * you can tell whether the tip itself is sharp.
- */
-function drawNose(perM: number): string {
-  const shape = `<path class="nose" d="M0,-165 L-2.4,-158.6 Q0,-157.2 2.4,-158.6 Z"/>`;
-  if (perM / 100 < EYE_DETAIL_MIN_PX) return shape;
-  const freckles: [number, number][] = [[-1.1, -160.4], [-0.5, -161.6], [0.6, -160.9], [1.2, -159.9], [0.1, -162.6], [-1.5, -159.3]];
-  return `${shape}
-    <ellipse class="nostril" cx="-0.95" cy="-158.15" rx="0.5" ry="0.26"/>
-    <ellipse class="nostril" cx="0.95" cy="-158.15" rx="0.5" ry="0.26"/>
-    ${freckles.map(([x, y]) => `<circle class="freckle" cx="${x}" cy="${y}" r="0.13"/>`).join('')}
-    <ellipse class="nose-highlight" cx="0.25" cy="-159.3" rx="0.42" ry="0.3"/>`;
-}
-
 /**
  * Person facing the camera. Distance = eyes. Nose, face/body and ears each get their own
  * blur from their own distance – with a shallow enough depth of field the nose tip can be
@@ -438,26 +395,17 @@ function drawPerson(
   const filter = (part: string, dm: number) =>
     `<filter id="${el.id}-${part}" filterUnits="userSpaceOnUse" x="0" y="0" width="${W}" height="${H}">
        ${light}<feGaussianBlur stdDeviation="${stdDeviation(dm)}"/></filter>`;
-  // Drawn in centimetres with the origin at the feet; 175 cm tall. The transform sits on an inner
-  // group so each filter works in pixel units.
+  // The figure is drawn in centimetres with the origin at the feet (see figurine.ts). The transform
+  // sits on an inner group so each filter works in pixel units.
+  const id = el.id as Exclude<ElementId, 'background'>;
+  const parts = figure(id, (perM / 100) * zoom);
   const part = (name: string, body: string) =>
     `<g filter="url(#${el.id}-${name})"><g transform="translate(${cx} ${groundY}) scale(${perM / 100})">${body}</g></g>`;
-  return `<defs>${filter('ears', FACE_DEPTH_M.ears)}${filter('body', 0)}${filter('nose', FACE_DEPTH_M.noseTip)}</defs>
+  return `<defs>${filter('ears', FACE_DEPTH_M.ears)}${filter('body', 0)}${filter('nose', FACE_DEPTH_M.noseTip)}${parts.defs}</defs>
   <g class="person person-${el.id}">
-    ${part('ears', `<ellipse class="ear" cx="-11.6" cy="-163" rx="2.8" ry="4.2"/><ellipse class="ear" cx="11.6" cy="-163" rx="2.8" ry="4.2"/>`)}
-    ${part(
-      'body',
-      `<path class="legs" d="M-15,0 L-12,-88 L12,-88 L15,0 L5,0 L0,-60 L-5,0 Z"/>
-       <path class="arm" d="M-21,-140 Q-30,-110 -26,-82" />
-       <path class="arm" d="M21,-140 Q30,-110 26,-82" />
-       <rect class="shirt" x="-22" y="-146" width="44" height="64" rx="12"/>
-       <rect class="skin" x="-4.5" y="-152" width="9" height="8"/>
-       <circle class="skin" cx="0" cy="-163" r="11.5"/>
-       <path class="hair" d="M-11.8,-163 Q-12,-178 0,-177 Q12,-178 11.8,-163 Q8,-171 0,-171 Q-8,-171 -11.8,-163 Z"/>
-       ${drawEye(-4.2, perM * zoom)}${drawEye(4.2, perM * zoom)}
-       <path class="mouth" d="M-3.8,-155.8 Q0,-153 3.8,-155.8"/>`,
-    )}
-    ${part('nose', drawNose(perM * zoom))}
+    ${part('ears', parts.ears)}
+    ${part('body', parts.body)}
+    ${part('nose', parts.nose)}
   </g>`;
 }
 

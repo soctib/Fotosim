@@ -462,11 +462,16 @@ header {
 .graph .figure.head.big {
   opacity: 0.5;
 }
+/* Profile heads wear the figurine's skin and hair (inline, see sim/figurine.ts); the collar keeps the person's colour. */
 .graph .figure.head .head-eye {
-  fill: var(--panel);
+  fill: #3a2516;
 }
-.graph .figure.head .head-ear {
-  stroke: var(--panel);
+.graph .figure.head .head-collar {
+  fill: var(--c);
+}
+.graph .figure.head .head-mouth,
+.graph .figure.head .head-ear-fold {
+  fill: none;
   stroke-width: 1.2;
 }
 .graph .el-background .figure {
@@ -919,14 +924,8 @@ header {
 }
 
 /* Scene colours are the "real world" – the same in light and dark mode. Backdrop and scenery
-   colours live in sim/scenery.ts (one set per light situation). */
-.sim .legs { fill: #34405a; }
-.sim .skin { fill: #f1c27d; }
-.sim .hair { fill: #4a3222; }
-.sim .nose { fill: #dfa463; }
-.sim .nostril { fill: #8a5228; }
-.sim .freckle { fill: #b0703a; }
-.sim .nose-highlight { fill: #fff3dc; }
+   colours live in sim/scenery.ts (one set per light situation), skin, hair and clothes in
+   sim/figurine.ts; the eyes are styled here. */
 .sim .sclera { fill: #fbfaf6; stroke: #c99a68; stroke-width: 0.12; }
 .sim .iris { fill: #d6a256; }
 .sim .person-person2 .iris { fill: #9fd0f2; }
@@ -938,18 +937,6 @@ header {
 .sim .pupil { fill: #111; }
 .sim .catchlight { fill: #fff; }
 .sim .lid { fill: none; stroke: #3a2516; stroke-width: 0.3; stroke-linecap: round; }
-.sim .ear { fill: #eab676; stroke: #c98d4f; stroke-width: 0.6; }
-.sim .mouth,
-.sim .arm {
-  fill: none;
-  stroke-linecap: round;
-}
-.sim .mouth { stroke: #8a3b2a; stroke-width: 1.4; }
-.sim .arm { stroke-width: 10; }
-.sim .person-person1 .shirt { fill: #c2255c; }
-.sim .person-person1 .arm { stroke: #c2255c; }
-.sim .person-person2 .shirt { fill: #7048e8; }
-.sim .person-person2 .arm { stroke: #7048e8; }
 
 /* ---- bars ---- */
 

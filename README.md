@@ -32,3 +32,6 @@ Details zu Funktionen, Formeln und Aufbau: [SPEC.md](SPEC.md) (englisch).
 ## Lizenz
 
 MIT
+
+Kopf- und Haarformen der Figuren im Kamerabild basieren auf [Personas](https://personas.draftbit.com/) von Draftbit
+(verändert), lizenziert unter [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).

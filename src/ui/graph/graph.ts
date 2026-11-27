@@ -9,6 +9,7 @@ import { focusOn, setElementDistance, setFocus, setInfo, setLogScale, setShowDet
 import type { Store } from '../../state/store';
 import { formatMeterRange, formatMeters, formatNumber } from '../distance';
 import { FACE_DEPTH_M } from '../face';
+import { personColors } from '../sim/figurine';
 import {
   LINEAR_DEFAULT,
   LOG_VIEW,
@@ -540,19 +541,38 @@ function drawHead(el: DerivedElement, sx: XScale, x0: number, L: Layout, blurAt:
     `<filter id="head-${el.id}-${part}" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="${blurCuePx(blurAt(d + dx)).toFixed(2)}"/></filter>`;
   const skullL = X(-0.02);
   const skullR = X(FACE_DEPTH_M.backOfHead);
+  // The figurine's colours (skin, hair) from the camera image; the collar keeps the person's graph colour.
+  const c = personColors(el.id as Exclude<ElementId, 'background'>);
+  const paint = (color: string) => `style="fill:${color}"`;
+  // Hair: an arc around the skull from the forehead over the top to the back (down to the jaw for
+  // long hair), back along the hairline.
+  const skull = { x: (-0.02 + FACE_DEPTH_M.backOfHead) / 2, y: 0.13, rx: (FACE_DEPTH_M.backOfHead + 0.02) / 2, ry: 0.105 };
+  const around = (deg: number, grow: number): [number, number] => {
+    const a = (deg * Math.PI) / 180;
+    return [skull.x + Math.cos(a) * skull.rx * grow, skull.y + Math.sin(a) * skull.ry * grow];
+  };
+  const arc = (from: number, to: number, grow: number) =>
+    Array.from({ length: 13 }, (_, i) => around(from + ((to - from) * i) / 12, grow));
+  const hair: [number, number][] = c.longHair
+    ? [...arc(150, -62, 1.08), [0.135, 0.03], [0.07, 0.05], [0.055, 0.15], [0.025, 0.19]]
+    : [...arc(150, -22, 1.05), [0.15, 0.1], [0.1, 0.165], [0.035, 0.192]];
   const markup = `
     <defs>${filter('ears', FACE_DEPTH_M.ears)}${filter('face', 0)}${filter('nose', FACE_DEPTH_M.noseTip)}</defs>
     <g filter="url(#head-${el.id}-face)">
-      <rect x="${X(0.04)}" y="${Y(0.02)}" width="${X(0.11) - X(0.04)}" height="${-Y(0.02)}"/>
-      <ellipse cx="${(skullL + skullR) / 2}" cy="${Y(0.13)}" rx="${(skullR - skullL) / 2}" ry="${0.105 * ky}"/>
-      <polygon points="${pts([[0.02, 0.21], [-0.006, 0.16], [-0.005, 0.125], [-0.01, 0.07], [-0.014, 0.055], [-0.008, 0.045], [-0.012, 0.032], [-0.003, 0.008], [0.06, 0], [0.06, 0.21]])}"/>
+      <rect x="${X(0.04)}" y="${Y(0.02)}" width="${X(0.11) - X(0.04)}" height="${-Y(0.02)}" ${paint(c.skin)}/>
+      <rect class="head-collar" x="${X(-0.01)}" y="${Y(-0.035)}" width="${X(0.16) - X(-0.01)}" height="${-Y(-0.035)}" rx="${0.008 * kx}"/>
+      <ellipse cx="${(skullL + skullR) / 2}" cy="${Y(0.13)}" rx="${(skullR - skullL) / 2}" ry="${0.105 * ky}" ${paint(c.face)}/>
+      <polygon points="${pts([[0.02, 0.21], [-0.006, 0.16], [-0.005, 0.125], [-0.01, 0.07], [-0.014, 0.055], [-0.008, 0.045], [-0.012, 0.032], [-0.003, 0.008], [0.06, 0], [0.06, 0.21]])}" ${paint(c.face)}/>
+      <polygon points="${pts(hair)}" ${paint(c.hair)}/>
       <circle class="head-eye" cx="${X(0.008)}" cy="${Y(HEAD_EYE_M)}" r="${Math.max(1.5, 0.008 * ky)}"/>
+      <polyline class="head-mouth" points="${pts([[-0.006, 0.042], [0.008, 0.04]])}" style="stroke:${c.mouth}"/>
     </g>
     <g filter="url(#head-${el.id}-ears)">
-      <ellipse class="head-ear" cx="${X(FACE_DEPTH_M.ears)}" cy="${Y(0.115)}" rx="${Math.max(2, 0.02 * kx)}" ry="${0.032 * ky}"/>
+      <ellipse cx="${X(FACE_DEPTH_M.ears)}" cy="${Y(0.115)}" rx="${Math.max(2, 0.02 * kx)}" ry="${0.032 * ky}" ${paint(c.skin)}/>
+      <ellipse class="head-ear-fold" cx="${X(FACE_DEPTH_M.ears)}" cy="${Y(0.115)}" rx="${Math.max(1, 0.01 * kx)}" ry="${0.018 * ky}" style="stroke:${c.earFold}"/>
     </g>
     <g filter="url(#head-${el.id}-nose)">
-      <polygon class="head-nose" points="${pts([[-0.004, 0.128], [FACE_DEPTH_M.noseTip, 0.085], [-0.008, 0.07]])}"/>
+      <polygon points="${pts([[-0.004, 0.128], [FACE_DEPTH_M.noseTip, 0.085], [-0.008, 0.07]])}" ${paint(c.nose)}/>
     </g>`;
   return { markup, left: X(FACE_DEPTH_M.noseTip), right: skullR, top: Y(0.235), big: L.groundY + Y(0.235) < L.plotBottom };
 }
