@@ -2,6 +2,7 @@
 
 import { SENSORS } from '../data/sensors';
 import { CAMERA_LENSES } from '../data/cameraLenses';
+import { nearestFilmIso } from '../model/film';
 import { activeSensor, snapFocal } from '../model/focal';
 import { cropFactor, MAX_DISTANCE_M, minDistanceM } from '../model/optics';
 import type { CameraSettings, ElementId, Mode, Motion } from '../model/types';
@@ -21,11 +22,22 @@ const clampDistance = (m: number, focalMm: number) =>
 export function setCamera(store: Store, patch: Partial<CameraSettings>): void {
   store.update((s: AppState) => {
     const camera = { ...s.camera, ...patch };
+    // Picking up a film camera loads a film (the nearest speed to the ISO in use) and sets the
+    // dial to match, so nobody starts out with a wrong dial by accident.
+    if (patch.sensorId !== undefined && patch.sensorId !== s.camera.sensorId && SENSORS[patch.sensorId].isFilm) {
+      camera.iso = nearestFilmIso(camera.iso);
+      camera.filmDialIso = camera.iso;
+    }
     if (patch.focusDistanceM !== undefined) {
       camera.focusDistanceM = clampDistance(camera.focusDistanceM, camera.focalLengthMm);
     }
     return { ...s, camera };
   });
+}
+
+/** Load a film: its speed, and the camera's ISO dial set to match (as the photographer would). */
+export function setFilm(store: Store, iso: number): void {
+  setCamera(store, { iso, filmDialIso: iso, autoIso: false });
 }
 
 export function setFocus(store: Store, distanceM: number): void {

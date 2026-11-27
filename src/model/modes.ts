@@ -9,7 +9,7 @@ import {
   APERTURES,
   AUTO_ISO_MAX,
   FLASH_SLOWEST_S,
-  FLASH_SYNC_S,
+  flashSyncS,
   ISOS,
   SHUTTER_SPEEDS_S,
   fastestShutterS,
@@ -98,7 +98,7 @@ function candidates(s: CameraSettings, sensor: Sensor, auto: Set<AutoField>, fla
   // A real flash tube needs the shutter between the sync speed and the slowest flash time;
   // a phone's LED is continuous light and doesn't care.
   if (flashOn && auto.has('shutterS') && !sensor.ledFlash) {
-    shutters = shutters.filter((t) => t <= FLASH_SLOWEST_S + 1e-9 && t >= FLASH_SYNC_S - 1e-9);
+    shutters = shutters.filter((t) => t <= FLASH_SLOWEST_S + 1e-9 && t >= flashSyncS(sensor) - 1e-9);
   }
   return { apertures, shutters };
 }
@@ -224,10 +224,11 @@ export function resolveMode(
       blownBackground;
   }
 
-  // Built-in flash cannot sync faster than the sync speed (an LED can).
+  // Built-in flash cannot sync faster than the sync speed (an LED can; a leaf shutter syncs at all speeds).
+  const sync = flashSyncS(sensor);
   const input =
-    flashOn && !sensor.ledFlash && settings.shutterS < FLASH_SYNC_S
-      ? { ...settings, shutterS: FLASH_SYNC_S }
+    flashOn && !sensor.ledFlash && settings.shutterS < sync
+      ? { ...settings, shutterS: sync }
       : settings;
   const best = solve(input, sensor, sceneEv100, auto, flashOn, highlights);
   let { aperture, shutterS } = best;

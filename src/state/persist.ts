@@ -44,13 +44,15 @@ function parseCamera(v: unknown, elementIds: ElementId[], defaults: CameraSettin
     isBool(v.stabilized) &&
     isPos(v.focusDistanceM) &&
     (v.afTarget === null || elementIds.includes(v.afTarget as ElementId));
+  // Older saves have no dial: it matches the loaded film.
+  const filmDialIso = optional(v.filmDialIso, isPos, isPos(v.iso) ? v.iso : defaults.filmDialIso);
   const programShift = optional(v.programShift, (x): x is number => Number.isInteger(x) && Math.abs(x as number) <= 60, defaults.programShift);
-  if (!ok || motion === null || digitalZoom === null || scanner === null || programShift === null) return null;
+  if (!ok || motion === null || digitalZoom === null || scanner === null || programShift === null || filmDialIso === null) return null;
   const { sensorId, lensId, focalLengthMm, aperture, shutterS, iso, autoIso, mode, flashOn, stabilized, focusDistanceM, afTarget } =
     v as unknown as CameraSettings;
   return {
     sensorId, lensId, focalLengthMm, aperture, shutterS, iso, autoIso, mode, flashOn, stabilized, motion, focusDistanceM, afTarget,
-    digitalZoom, scanner, programShift,
+    digitalZoom, scanner, programShift, filmDialIso,
   };
 }
 

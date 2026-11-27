@@ -8,6 +8,7 @@ import {
   setCamera,
   setElementDistance,
   setElementVisible,
+  setFilm,
   setFocus,
   setLight,
   setSimple,
@@ -151,5 +152,29 @@ describe('backlight', () => {
     expect(store.derived().dynamicRange.sky.tone.brightnessStops).toBeGreaterThan(3);
     setSimple(store, true);
     expect(store.get().scene.backlight).toBe(false);
+  });
+});
+
+describe('film', () => {
+  it('picking up a film camera loads the nearest film and sets the dial to match', () => {
+    const store = createStore();
+    setCamera(store, { iso: 6400 });
+    setCamera(store, { sensorId: 'film35' });
+    expect(store.get().camera.iso).toBe(3200);
+    expect(store.get().camera.filmDialIso).toBe(3200);
+  });
+
+  it('turning the dial leaves the film alone; loading a film resets the dial', () => {
+    const store = createStore();
+    setCamera(store, { sensorId: 'film35' });
+    setFilm(store, 400);
+    setCamera(store, { filmDialIso: 100 });
+    expect(store.get().camera.iso).toBe(400);
+    expect(store.derived().film?.mismatchStops).toBeCloseTo(2, 10);
+    // Changing modes (which writes back the resolved settings) keeps the wrong dial.
+    setCamera(store, { mode: 'P' });
+    expect(store.get().camera.filmDialIso).toBe(100);
+    setFilm(store, 800);
+    expect(store.get().camera.filmDialIso).toBe(800);
   });
 });

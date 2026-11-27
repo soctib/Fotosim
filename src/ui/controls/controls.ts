@@ -16,6 +16,7 @@ import {
   snapFocal,
   zoomPositionToEquivalent,
 } from '../../model/focal';
+import { FILM_ISOS } from '../../model/film';
 import { MOTIONS } from '../../model/motion';
 import { MAX_DIGITAL_ZOOM } from '../../model/optics';
 import { APERTURES, ISOS, SHUTTER_SPEEDS_S, formatAperture, formatShutter } from '../../model/stops';
@@ -25,6 +26,7 @@ import {
   MIN_DISTANCE_M,
   setAutofocus,
   setCamera,
+  setFilm,
   setFocus,
   setInfo,
   setMode,
@@ -101,6 +103,12 @@ export function mountControls(root: HTMLElement, store: Store): void {
           ${SENSOR_ORDER.map((id) => `<option value="${id}">${t.sensors[id]}</option>`).join('')}
         </select>
       </div>
+      <div class="control" data-info="film" data-field="film">
+        <label for="c-film">${t.controls.film}</label>
+        <select id="c-film">
+          ${FILM_ISOS.map((iso) => `<option value="${iso}">${fill(t.controls.filmOption, { iso: String(iso) })}</option>`).join('')}
+        </select>
+      </div>
       <div class="control" data-info="scanner">
         <label for="c-scanner">${t.controls.scanner}</label>
         <select id="c-scanner">
@@ -160,6 +168,8 @@ export function mountControls(root: HTMLElement, store: Store): void {
   const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
   const sensor = $<HTMLSelectElement>('c-sensor');
   const scanner = $<HTMLSelectElement>('c-scanner');
+  const filmSel = $<HTMLSelectElement>('c-film');
+  const isoLabel = root.querySelector<HTMLLabelElement>('label[for="c-iso"]')!;
   const lens = $<HTMLSelectElement>('c-lens');
   const focal = $<HTMLInputElement>('c-focal');
   const digitalZoom = $<HTMLInputElement>('c-zoom');
@@ -213,7 +223,11 @@ export function mountControls(root: HTMLElement, store: Store): void {
   modeButtons.forEach((b) => b.addEventListener('click', () => setMode(store, b.dataset.mode as Mode)));
   aperture.addEventListener('input', () => setCamera(store, { aperture: APERTURES[Number(aperture.value)] }));
   shutter.addEventListener('input', () => setCamera(store, { shutterS: SHUTTER_SPEEDS_S[Number(shutter.value)] }));
-  iso.addEventListener('input', () => setCamera(store, { iso: ISOS[Number(iso.value)] }));
+  filmSel.addEventListener('change', () => setFilm(store, Number(filmSel.value)));
+  // Film: the ISO slider is the camera's dial; the film itself is picked in the dropdown above.
+  iso.addEventListener('input', () =>
+    setCamera(store, store.derived().sensor.isFilm ? { filmDialIso: ISOS[Number(iso.value)] } : { iso: ISOS[Number(iso.value)] }),
+  );
   autoIso.addEventListener('change', () => {
     // Turning auto ISO off keeps the ISO the camera had chosen.
     setCamera(store, { autoIso: autoIso.checked, iso: store.derived().settings.iso });
@@ -326,11 +340,26 @@ export function mountControls(root: HTMLElement, store: Store): void {
         .join(' · '),
     );
 
-    // ISO: always automatic in A; auto ISO is a choice in P/Av/Tv; M is fully manual.
-    iso.disabled = auto.has('iso');
-    iso.value = String(nearestIndex(ISOS, s.iso));
-    $('o-iso').textContent = String(s.iso);
-    hint('iso', d.autoIsoCapped !== null ? fill(t.controls.autoIsoCapHint, { iso: String(d.autoIsoCapped) }) : autoHint('iso'));
+    // Film: which film is loaded, and the camera's ISO dial (hidden where the camera reads the DX code).
+    filmSel.closest<HTMLElement>('.control')!.hidden = !d.film;
+    filmSel.value = String(s.iso);
+    isoLabel.firstChild!.textContent = `${d.film ? t.controls.isoDial : t.controls.iso} `;
+    iso.closest<HTMLElement>('.control')!.hidden = !!d.film?.dx;
+    if (d.film) {
+      const m = d.film.mismatchStops;
+      iso.disabled = false;
+      iso.value = String(nearestIndex(ISOS, d.film.dialIso));
+      $('o-iso').textContent = String(d.film.dialIso);
+      const off = formatNumber(Math.round(Math.abs(m) * 3) / 3, Math.abs(m) % 1 ? 1 : 0);
+      const stops = `${off} ${Math.abs(m) === 1 ? t.controls.stop : t.controls.stops}`;
+      hint('iso', Math.abs(m) < 0.1 ? '' : fill(m > 0 ? t.controls.isoDialOver : t.controls.isoDialUnder, { film: String(s.iso), stops }));
+    } else {
+      // ISO: always automatic in A; auto ISO is a choice in P/Av/Tv; M is fully manual.
+      iso.disabled = auto.has('iso');
+      iso.value = String(nearestIndex(ISOS, s.iso));
+      $('o-iso').textContent = String(s.iso);
+      hint('iso', d.autoIsoCapped !== null ? fill(t.controls.autoIsoCapHint, { iso: String(d.autoIsoCapped) }) : autoHint('iso'));
+    }
     autoIso.checked = s.autoIso;
     // Hidden where it means nothing: A (always auto), M (always manual), film (the film decides).
     autoIso.closest<HTMLElement>('.control')!.hidden = s.mode === 'auto' || s.mode === 'M' || !!d.sensor.isFilm;

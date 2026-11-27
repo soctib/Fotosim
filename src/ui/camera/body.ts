@@ -119,10 +119,49 @@ function speedlite(p: Painter, cx: number, cy: number, attrs: Attrs, cls: string
   );
 }
 
+/**
+ * Folded-out view through a film body's finder: the frame on the focusing screen with its split
+ * circle, the values as red LEDs below it and, on SLRs, a needle meter at the right edge. The needle
+ * shows what the camera believes (its ISO dial), not what the film gets.
+ */
+function viewfinderCard(p: Painter, v: RigView, w: number, y: number, square: boolean): string {
+  const ch = square ? 52 : 44;
+  const x0 = -w / 2 + 1;
+  let s = p.rect(x0, y, w - 2, ch, 'vf', 6);
+  // Frame: 3:2 (35 mm) or square (6×6), left of the meter scale.
+  const fh = ch - 14;
+  const fw = square ? fh : Math.min(fh * 1.5, w - 30);
+  const fx = x0 + (w - 2 - 16 - fw) / 2;
+  const fy = y + 4;
+  s += p.rect(fx, fy, fw, fh, 'vf-screen', 1);
+  const cx = fx + fw / 2;
+  const cy = fy + fh / 2;
+  s += `<circle cx="${r2(cx)}" cy="${r2(cy)}" r="${r2(fh * 0.26)}" class="vf-ring"/>`;
+  s += `<circle cx="${r2(cx)}" cy="${r2(cy)}" r="${r2(fh * 0.13)}" class="vf-line"/>`;
+  s += `<line x1="${r2(cx - fh * 0.13)}" x2="${r2(cx + fh * 0.13)}" y1="${r2(cy)}" y2="${r2(cy)}" class="vf-line"/>`;
+  // Values below the frame.
+  if (v.readout.line1) s += p.text(cx, fy + fh + 5, v.readout.line1, 4, square ? 'vf-text' : 'vf-led');
+  // Needle meter: + at the top, − at the bottom, 2 stops each way.
+  if (!square && v.readout.meter !== null) {
+    const mx = fx + fw + 9;
+    const half = fh / 2 - 3;
+    for (let i = -2; i <= 2; i++) {
+      const ty = cy - (half * i) / 2;
+      s += `<line x1="${r2(mx - (i === 0 ? 2.4 : 1.4))}" x2="${r2(mx)}" y1="${r2(ty)}" y2="${r2(ty)}" class="vf-line"/>`;
+    }
+    s += p.text(mx + 2.6, cy - half, '+', 3.6, 'vf-text') + p.text(mx + 2.6, cy + half, '−', 3.6, 'vf-text');
+    const ny = cy - (half * Math.min(2.3, Math.max(-2.3, v.readout.meter))) / 2;
+    s += `<line x1="${r2(mx - 5)}" x2="${r2(mx + 1)}" y1="${r2(ny)}" y2="${r2(ny)}" class="vf-needle"/>`;
+  }
+  s += p.text(0, y + ch + 4, square ? t.camera.waistFinderView : t.camera.viewfinder, 3.6, 'lab');
+  p.ext(-w / 2, y, w / 2, y + ch + 6.5);
+  return s;
+}
+
 const lugs = (p: Painter, w: number, y: number) => p.rect(-w / 2 - 2, y, 2.4, 6, 'mt', 1) + p.rect(w / 2 - 0.4, y, 2.4, 6, 'mt', 1);
 const bodyCap = (p: Painter, ax: number, d = 60) => p.rect(ax - d / 2, -3, d, 3, 'mt', 0.6);
 
-/** Folded-out card under the body: the phone's screen or a film body's finder readout. */
+/** Folded-out card under the body: the phone's screen or a digital body's rear screen. */
 function readoutCard(p: Painter, v: RigView, w: number, y: number, caption: string, extra = ''): string {
   const ch = v.phoneModules.length ? 34 : 24;
   let s = p.rect(-w / 2 + 1, y, w - 2, ch, 'scrcard', 4);
@@ -238,7 +277,7 @@ function drawSlr(p: Painter, b: SlrShape, v: RigView): { under: string; top: str
   s += `<path d="M${r2(vx)},${r2(vy)}L${r2(vx - 22)},${r2(vy + b.depthMm - 14)}" class="lever"/>`;
   s += p.circ(vx, vy, 6, 'mt2') + p.circ(vx, vy, 3.3, 'mt') + `<circle cx="${r2(vx)}" cy="${r2(vy)}" r="3.3" class="dome"/>`;
   s += v.lens ? drawLens(p, v.lens, ax) : bodyCap(p, ax, 56);
-  s += readoutCard(p, v, Math.min(w, 110), py1 + b.eyecupMm + 4, t.camera.viewfinder);
+  s += viewfinderCard(p, v, Math.min(w, 110), py1 + b.eyecupMm + 4, false);
   return { under: s, top: v.flash ? speedlite(p, ax, shoeY, at(v, 'flash'), lk(v, 'flash')) : '' };
 }
 
@@ -258,7 +297,7 @@ function drawBox(p: Painter, b: BoxShape, v: RigView): string {
   // Film speed reminder dial on the magazine.
   s += p.rect(-w / 2 + 6, d + b.magazineMm - 13, 22, 7, `lcd${held(v, 'film-iso')}`, 1, at(v, 'film-iso')) + `<text x="${r2(-w / 2 + 17)}" y="${r2(d + b.magazineMm - 9.5)}" font-size="3.4" class="tl" text-anchor="middle" dy=".36em">${t.camera.filmIso.replace('{iso}', String(v.filmIso))}</text>`;
   s += v.lens ? drawLens(p, v.lens, 0) : bodyCap(p, 0, 64);
-  s += readoutCard(p, v, w, d + b.magazineMm + 5, t.camera.viewfinder);
+  s += viewfinderCard(p, v, Math.min(w, 96), d + b.magazineMm + 5, true);
   return s;
 }
 

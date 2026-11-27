@@ -29,8 +29,10 @@ export const BODY_PRICES: Record<SensorId, BodyPrice> = {
   fullFrame: { priceEur: [800, 2800], lensFactor: 1 },
   // Nikon Z8 ~3,700 € up to Canon R1 / Sony A1 II ~7,500 €.
   fullFramePro: { priceEur: [3500, 7500], lensFactor: 1 },
-  // Film: used market, from a basic SLR to a Leica M6 (~3,000–3,500 €).
-  film35: { priceEur: [50, 3500], used: true, lensFactor: 0.3 },
+  // Film, used market: a classic program SLR (AE-1 Program, X-700) ~50–400 €.
+  film35: { priceEur: [50, 400], used: true, lensFactor: 0.3 },
+  // Used Canon EOS 3 / Nikon F100 ~150–400 €, up to a Nikon F6 (~2,000 €).
+  film35Dx: { priceEur: [150, 2000], used: true, lensFactor: 0.5 },
   // Used GFX 50S II (~2,200 €) up to a new Hasselblad X2D II (~7,500 €). GF lenses cost about twice
   // the full-frame ones (Hasselblad XCD more).
   mf4433: { priceEur: [2500, 7500], lensFactor: 2 },
@@ -118,6 +120,7 @@ export interface FilmCost {
 export const FILM_COSTS: Partial<Record<SensorId, FilmCost>> = {
   // Kodak Gold 200 (36 exp.) ~11 €, development + scan 17–27 €
   film35: { rollEur: [25, 40], framesPerRoll: 36 },
+  film35Dx: { rollEur: [25, 40], framesPerRoll: 36 },
   // Portra 400 120 ~17 €, development + scan 17.50–28 €
   mf645: { rollEur: [30, 45], framesPerRoll: 15 },
   mf66: { rollEur: [30, 45], framesPerRoll: 12 },

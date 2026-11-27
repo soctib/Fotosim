@@ -10,6 +10,7 @@ export type SensorId =
   | 'fullFrame'
   | 'fullFramePro'
   | 'film35'
+  | 'film35Dx'
   | 'mf4433'
   | 'mf645'
   | 'mf66'
@@ -27,8 +28,15 @@ export interface Sensor {
   flashGuideNumber: number;
   /** The "flash" is a continuous LED: no sync speed, works with any shutter time. */
   ledFlash?: boolean;
+  /** Leaf shutter in the lens (6×6): slower top speed, but the flash syncs at every speed. */
+  leafShutter?: boolean;
   /** Film: the ISO is the loaded film's speed – no camera mode can change it. */
   isFilm?: boolean;
+  /**
+   * Film bodies that read the film speed from the cartridge's DX code: the meter always knows the
+   * film. Without it the photographer sets the camera's ISO dial (filmDialIso) to match the film.
+   */
+  dxCoding?: boolean;
   /**
    * Phones merge a burst of frames into one photo (Smart HDR, Deep Fusion, …): N usable frames
    * average out noise by log2(N) stops. Rough estimate per phone generation; 0 for cameras.
@@ -111,8 +119,15 @@ export interface CameraSettings {
   focalLengthMm: number;
   aperture: number;
   shutterS: number;
+  /** Digital: the ISO setting. Film: the loaded film's speed. */
   iso: number;
   autoIso: boolean;
+  /**
+   * Film bodies without DX coding: the camera's ISO (ASA) dial, which its meter and automatic
+   * modes go by. Set to the film's speed whenever a film is loaded; off from it, the shot is
+   * over- or underexposed. Ignored by digital and DX bodies.
+   */
+  filmDialIso: number;
   mode: Mode;
   /** Manual flash switch (ignored in 'auto', where the camera decides). */
   flashOn: boolean;

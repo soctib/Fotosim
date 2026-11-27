@@ -68,13 +68,18 @@ export const SENSORS: Record<SensorId, Sensor> = {
   // High-end full frame (Nikon Z8/Z9, Canon R5 II, Sony A1 II): same sensor size, so the same depth
   // of field and noise; a faster mechanical shutter and about twice the pixels.
   fullFramePro: { id: 'fullFramePro', widthMm: 36, heightMm: 24, flashGuideNumber: 12, fastestShutterS: 1 / 8000, megapixels: 45, dynamicRangeStops: 14 },
-  // Same format on 35 mm film
-  film35: { id: 'film35', widthMm: 36, heightMm: 24, flashGuideNumber: 12, isFilm: true },
+  // Same format on 35 mm film. Classic SLR (Canon AE-1 Program, Minolta X-700): ISO dial set by hand.
+  film35: { id: 'film35', widthMm: 36, heightMm: 24, flashGuideNumber: 12, fastestShutterS: 1 / 1000, isFilm: true },
+  // Late autofocus film SLR (Nikon F100, Canon EOS 3): reads the film speed from the DX code.
+  film35Dx: { id: 'film35Dx', widthMm: 36, heightMm: 24, flashGuideNumber: 12, fastestShutterS: 1 / 8000, isFilm: true, dxCoding: true },
   // Fujifilm GFX 100 series, Hasselblad X2D: 100 MP.
   mf4433: { id: 'mf4433', widthMm: 43.8, heightMm: 32.9, flashGuideNumber: 12, megapixels: 100, dynamicRangeStops: 15 },
-  mf645: { id: 'mf645', widthMm: 56, heightMm: 41.5, flashGuideNumber: 12, isFilm: true },
-  mf66: { id: 'mf66', widthMm: 56, heightMm: 56, flashGuideNumber: 12, isFilm: true },
-  mf67: { id: 'mf67', widthMm: 69.5, heightMm: 56, flashGuideNumber: 12, isFilm: true },
+  // Mamiya 645, Pentax 645: focal-plane shutter to 1/1000 s.
+  mf645: { id: 'mf645', widthMm: 56, heightMm: 41.5, flashGuideNumber: 12, fastestShutterS: 1 / 1000, isFilm: true },
+  // Hasselblad 500 C/M: leaf shutter in the lens, 1/500 s, flash at every speed.
+  mf66: { id: 'mf66', widthMm: 56, heightMm: 56, flashGuideNumber: 12, fastestShutterS: 1 / 500, leafShutter: true, isFilm: true },
+  // Pentax 67: focal-plane shutter to 1/1000 s.
+  mf67: { id: 'mf67', widthMm: 69.5, heightMm: 56, flashGuideNumber: 12, fastestShutterS: 1 / 1000, isFilm: true },
 };
 
 export const SENSOR_ORDER: SensorId[] = [
@@ -87,6 +92,7 @@ export const SENSOR_ORDER: SensorId[] = [
   'fullFrame',
   'fullFramePro',
   'film35',
+  'film35Dx',
   'mf4433',
   'mf645',
   'mf66',

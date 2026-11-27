@@ -15,7 +15,7 @@ import {
   DRAG_STEP_MM,
   dragClicks,
   entrancePupilMm,
-  FILM_SPEEDS_S,
+  filmSpeeds,
   filmApertureStops,
   filmDialsAuto,
   filmMode,
@@ -42,7 +42,7 @@ import {
 } from '../../model/cameraPanel';
 import type { Derived } from '../../model/derive';
 import { equivalentToZoomPosition, focalOptions, formatFocal, snapFocal } from '../../model/focal';
-import { APERTURES, formatAperture, formatShutter, SHUTTER_SPEEDS_S } from '../../model/stops';
+import { APERTURES, formatAperture, formatShutter, ISOS, SHUTTER_SPEEDS_S } from '../../model/stops';
 import { EQUIVALENT_FOCAL_STEPS_MM } from '../../data/sensors';
 import type { Mode } from '../../model/types';
 import { MAX_DISTANCE_M, setCamera, setControlView, setFocus, setInfo, setMode } from '../../state/actions';
@@ -169,7 +169,8 @@ export function mountCamera(root: HTMLElement, store: Store): void {
         return auto.has('aperture') || dv.sensor.fixedAperture !== undefined;
       case 'lcd-iso':
       case 'iso':
-        return s.mode === 'auto';
+        // DX film bodies read the film's speed from the cartridge.
+        return s.mode === 'auto' || !!dv.film?.dx;
       case 'front':
       case 'rear':
         return dialRole(s.mode, id, isoEdit) === null;
@@ -187,6 +188,7 @@ export function mountCamera(root: HTMLElement, store: Store): void {
     const mode = modeShort(s.mode);
     if (id === 'lcd-t') say(fill(t.camera.msg.cameraSetsShutter, { mode }));
     else if (id === 'lcd-n') say(d().sensor.fixedAperture !== undefined ? t.camera.msg.fixedAperture : fill(t.camera.msg.cameraSetsAperture, { mode }));
+    else if ((id === 'lcd-iso' || id === 'iso') && d().film?.dx) say(fill(t.camera.msg.dxIso, { iso: String(s.iso) }));
     else if (id === 'lcd-iso' || id === 'iso') say(fill(t.camera.msg.cameraSetsIso, { mode }));
     else if (id === 'flash') say(t.camera.msg.cameraSetsFlash);
     else if (id === 'focus' && s.afTarget) say(fill(t.camera.msg.tracking, { target: t.elements[s.afTarget] }));
@@ -202,6 +204,11 @@ export function mountCamera(root: HTMLElement, store: Store): void {
     const dv = d();
     const next = stepInList(SHUTTER_SPEEDS_S, dv.settings.shutterS, dir, (x) => x >= dv.fastestShutterS * 0.999);
     setCamera(store, { shutterS: next });
+  };
+  /** The classic film body's ISO (ASA) dial: the meter goes by it, the film stays what it is. */
+  const stepFilmDial = (dir: number) => {
+    const dv = d();
+    setCamera(store, { filmDialIso: stepInList(ISOS, dv.film?.dialIso ?? dv.settings.iso, dir) });
   };
   const stepIsoBy = (dir: number) => {
     const s = d().settings;
@@ -226,13 +233,15 @@ export function mountCamera(root: HTMLElement, store: Store): void {
   }
 
   function filmSpeedStep(dir: number): void {
-    const s = d().settings;
+    const dv = d();
+    const s = dv.settings;
+    const speeds = filmSpeeds(dv.fastestShutterS);
     const auto = filmDialsAuto(s.mode);
-    const idx = dialIndex(FILM_SPEEDS_S, s.shutterS, auto.speed, true);
-    const ni = Math.min(FILM_SPEEDS_S.length, Math.max(0, idx + dir));
+    const idx = dialIndex(speeds, s.shutterS, auto.speed, true);
+    const ni = Math.min(speeds.length, Math.max(0, idx + dir));
     if (ni === idx) return;
     const mode = filmMode(ni === 0, auto.aperture);
-    changeMode(mode, ni === 0 ? {} : { shutterS: FILM_SPEEDS_S[ni - 1] });
+    changeMode(mode, ni === 0 ? {} : { shutterS: speeds[ni - 1] });
     if (mode !== s.mode) say(fill(t.camera.msg.filmMode, { mode: t.modes[mode].name }));
   }
 
@@ -259,7 +268,7 @@ export function mountCamera(root: HTMLElement, store: Store): void {
     }
     if (id === 'speed') return filmSpeedStep(dir);
     if (id === 'aperture') return filmApertureStep(dir);
-    if (id === 'film-iso') return stepIsoBy(dir);
+    if (id === 'film-iso') return stepFilmDial(dir);
     if (locked(id)) return warnLocked(id);
     if (id === 'front' || id === 'rear') {
       const role = dialRole(s.mode, id, isoEdit);
@@ -298,7 +307,7 @@ export function mountCamera(root: HTMLElement, store: Store): void {
       if (o) setCamera(store, { focalLengthMm: o.realMm });
       return;
     }
-    if (id === 'film-iso') return say(t.camera.msg.filmIso);
+    if (id === 'film-iso') return say(fill(t.camera.msg.filmIso, { film: String(s.iso) }));
     if (locked(id)) warnLocked(id);
   }
 
@@ -457,8 +466,8 @@ export function mountCamera(root: HTMLElement, store: Store): void {
         rings.aperture = { marks, cur: dialIndex(stops, s.aperture, auto.aperture, false) * APERTURE_RING_STEP_DEG, attrs: ctl('aperture'), ribFrac: 0.3 };
         covered.add('aperture');
         if (b.type === 'box') {
-          const sm: RingMarkView[] = [{ deg: 0, label: t.camera.dialAuto, alt: true }, ...FILM_SPEEDS_S.map((x, i) => ({ deg: (i + 1) * SPEED_RING_STEP_DEG, label: speedLabel(x) }))];
-          rings.speed = { marks: sm, cur: dialIndex(FILM_SPEEDS_S, s.shutterS, auto.speed, true) * SPEED_RING_STEP_DEG, attrs: ctl('speed'), ribFrac: 0.3 } satisfies RingView;
+          const sm: RingMarkView[] = [{ deg: 0, label: t.camera.dialAuto, alt: true }, ...filmSpeeds(dv.fastestShutterS).map((x, i) => ({ deg: (i + 1) * SPEED_RING_STEP_DEG, label: speedLabel(x) }))];
+          rings.speed = { marks: sm, cur: dialIndex(filmSpeeds(dv.fastestShutterS), s.shutterS, auto.speed, true) * SPEED_RING_STEP_DEG, attrs: ctl('speed'), ribFrac: 0.3 } satisfies RingView;
           covered.add('shutter');
         }
       }
@@ -504,9 +513,10 @@ export function mountCamera(root: HTMLElement, store: Store): void {
         shutterS: s.shutterS,
         aperture: s.aperture,
         iso: s.iso,
+        isoLabel: dv.film?.dx ? t.camera.lcdDx : t.camera.lcdIso,
         autoIso: dv.autoFields.has('iso'),
         flash,
-        meter: s.mode === 'M' ? dv.exposureOffsetStops : null,
+        meter: s.mode === 'M' ? dv.meterOffsetStops : null,
         isoEdit,
         field: lcdField,
         locked: (id) => locked(id),
@@ -522,16 +532,17 @@ export function mountCamera(root: HTMLElement, store: Store): void {
       compactZoom: equivalentToZoomPosition(o.zoom !== undefined ? (o.zoom ? 400 : 14) : dv.equivalentFocalMm),
       speedDial:
         b.type === 'slr'
-          ? { labels: [{ deg: 0, label: t.camera.dialAuto, alt: true }, ...FILM_SPEEDS_S.map((x) => ({ deg: 0, label: speedLabel(x) }))], index: dialIndex(FILM_SPEEDS_S, s.shutterS, filmAuto.speed, true) }
+          ? { labels: [{ deg: 0, label: t.camera.dialAuto, alt: true }, ...filmSpeeds(dv.fastestShutterS).map((x) => ({ deg: 0, label: speedLabel(x) }))], index: dialIndex(filmSpeeds(dv.fastestShutterS), s.shutterS, filmAuto.speed, true) }
           : null,
-      filmIso: s.iso,
+      filmIso: dv.film?.dialIso ?? s.iso,
       readout:
         b.type === 'phone'
-          ? { line1: '', line2: '', meter: s.mode === 'M' ? dv.exposureOffsetStops : null }
+          ? { line1: '', line2: '', meter: s.mode === 'M' ? dv.meterOffsetStops : null }
           : {
               line1: `${formatShutter(s.shutterS, t.locale)} · ${formatAperture(s.aperture)}`,
               line2: '',
-              meter: s.mode === 'M' ? dv.exposureOffsetStops : null,
+              // Film finders show the meter all the time (it reads "correct" in the automatic modes).
+              meter: isFilmBody(b) || s.mode === 'M' ? dv.meterOffsetStops : null,
             },
       phoneModules,
       phoneFields:
@@ -588,7 +599,11 @@ export function mountCamera(root: HTMLElement, store: Store): void {
     const vh = bottom - vy;
     stage.style.height = `${layout.heightPx}px`;
     // A new camera starts with the body in view (scrollTop 0 is the bottom: the stage is column-reverse).
-    if (b !== lastBody) stage.scrollTop = 0;
+    if (b !== lastBody) {
+      stage.scrollTop = 0;
+      // A message about the previous camera's controls doesn't apply to this one.
+      if (lastBody) msgEl.textContent = '';
+    }
     lastBody = b;
     queueMicrotask(markMoreAbove);
 

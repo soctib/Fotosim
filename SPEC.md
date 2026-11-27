@@ -132,9 +132,14 @@ with the zoom ring; with a prime mounted the hint line says so.
   out like a camera app's pro mode: shutter, aperture (fixed) and ISO – shutter and ISO are dragged sideways (locked
   where the mode leaves them to the camera), a light-meter bar in M – then the built-in cameras as "0,5× 1× 5×" buttons
   and a flash button. In the camera view the phone hides the shutter and ISO sliders.
-- **Film bodies**: no mode dial and no display – a speed dial (whole stops, 6×6: a speed ring on the leaf-shutter lens),
-  an aperture ring on the lens, both with an "A" position (both A = P, only the speed dial = Av, only the ring = Tv,
-  neither = M; full auto shows as both on A), the film speed in the rewind crank's window and a finder readout card.
+- **Classic film bodies** (35 mm classic, 645, 6×7; 6×6 as a box): no mode dial and no display – a speed dial (whole
+  stops, 6×6: a speed ring on the leaf-shutter lens), an aperture ring on the lens, both with an "A" position (both A = P,
+  only the speed dial = Av, only the ring = Tv, neither = M; full auto shows as both on A), the **ISO dial** as an
+  "ASA 400" window at the rewind crank (6×6: a reminder dial on the magazine) – dragged, it turns the dial only, never
+  the film – and a folded-out **view through the finder**: the frame on the focusing screen with a split circle, the
+  values as red LEDs and a needle meter (what the camera believes; 6×6: square ground glass, no meter).
+- **Modern film body** (35 mm DX): drawn like the digital bodies (mode dial, top display, dials); the display reads
+  "DX" next to the ISO, which is locked – tapping it says the camera reads the cartridge.
 - **Rings**: zoom ring (real mm marks, 100° over the lens's range) and focus ring (from the lens's near limit to ∞,
   √-spaced, 150°) are drawn as turning cylinders; dragged sideways, the scale moves with the finger (dθ = dx / R).
   Zooming past the lens's end swaps in the next lens of the type (message names it). Focus tracking locks the focus ring.
@@ -152,14 +157,17 @@ dropdown. Light and element distances live in the scene panel.
 
 | Control | Values |
 |---|---|
-| Camera type (= sensor/film size) | iPhone XR, iPhone 15 Pro Max, Fairphone 5, 1" compact, MFT, APS-C, full frame digital mid-range and high-end (same sensor; high-end has a 1/8000 s shutter and costs more), 35 mm film, MF digital 44×33, MF 645, 6×6, 6×7 (film) |
+| Camera type (= sensor/film size) | iPhone XR, iPhone 15 Pro Max, Fairphone 5, 1" compact, MFT, APS-C, full frame digital mid-range and high-end (same sensor; high-end has a 1/8000 s shutter and costs more), 35 mm film classic (manual ISO dial, 1/1000 s) and modern (DX coding, 1/8000 s), MF digital 44×33, MF 645, 6×6, 6×7 (film) |
 | Focal length | Steps are common full-frame-equivalent focal lengths; shown as **real + equivalent**, e.g. "50 mm (≙ 76 mm KB)". Phones: only their built-in back cameras (XR: 26 mm; 15 Pro Max: 13/24/120 mm; Fairphone 5: 13/25 mm), each with its own sensor size and fixed aperture – the focal length picks the camera (`activeSensor()`). |
 | Scan (film cameras only) | Lab scan (default, ≈ 6 MP from 35 mm), flatbed, film scanner, camera scan (24 MP), drum scanner (`data/scanners.ts`) |
 | Digital zoom (lens panel, not in simplified mode – entering it resets 1×) | 1× … 20×, log scale; label "2× (≙ 100 mm KB, 6 MP)". Phones: hint when a longer built-in camera covers the framing |
 | Lens | Kit zoom f/3.5–5.6 (default), pro zoom f/2.8, fast prime f/1.4 – limits the widest aperture (phones: built in, control locked) |
 | Aperture | 1.4 … 22 in ⅓ stops, limited by the lens (phones: fixed, control locked) |
-| Shutter | 30 s … 1/4000 (mechanical, high-end full frame 1/8000; phones 1/16000 electronic), with markers **"hand"** (1/(2·f·crop)) and **"hand + IS"** (+2 stops) that move with focal length |
-| ISO | 100 … 12800 in ⅓ stops, optional auto ISO (P/Av/Tv). Film: fixed by the loaded film in every mode, no auto ISO |
+| Shutter | 30 s … 1/4000 (mechanical, high-end full frame 1/8000; phones 1/16000 electronic; film: classic 35 mm, 645 and 6×7 1/1000, DX body 1/8000, 6×6 leaf shutter 1/500 – the speed dials and rings end there), with markers **"hand"** (1/(2·f·crop)) and **"hand + IS"** (+2 stops) that move with focal length |
+| ISO | 100 … 12800 in ⅓ stops, optional auto ISO (P/Av/Tv). Film: see "Film (ISO)" and "ISO dial" |
+| Flash sync | 1/250 s with focal-plane shutters; the 6×6's leaf shutter syncs at every speed (1/500 s), which helps fill flash in the sun (`flashSyncS`) |
+| Film (ISO) | Film cameras only: the loaded film, ISO 100, 160, 200, 400, 800, 1600, 3200 (`model/film.ts`). Loading a film (or picking up a film camera: nearest speed to the ISO in use) sets the dial to match |
+| ISO dial | Film cameras without DX coding: the camera's ISO (ASA) dial, ⅓ stops. The meter and the automatic modes (including TTL flash) go by it; the picture gets the film's real speed, so a wrong dial over- or underexposes by log2(film ÷ dial) stops while the meter reads correct (`meterOffsetStops` vs `exposureOffsetStops`). The slider view shows it as "ISO-Rad an der Kamera" with a hint when it's off; hidden for the DX body |
 | Light | Sun 15, cloudy 13, shade 12, dusk 9, office 8, living room 6, night street 4, candle 3 (EV100, light on the subject). Each also has a front-light contrast for the backdrop and the scenery (sky +1 sun, +1.5 cloudy/dusk, +2 shade; dusk garden −1; living-room walls −1; night sky −4, candle-lit walls −3) |
 | Gegenlicht (scene panel, not in simplified mode) | Off (default) / on: the subject stands in its own shadow, 3 stops darker; the background keeps its light, so it is 3 stops brighter relative to the subject (sunny sky ≈ +4) |
 | Mode | **A** (full auto), **P**, **Av** (Nikon/Sony: A), **Tv** (Nikon/Sony: S), **M** – each with a short explanation. P has a program shift (camera panel's rear dial; reset by a mode change) |

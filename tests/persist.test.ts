@@ -94,6 +94,14 @@ describe('parseState: camera panel', () => {
     expect(s.camera.programShift).toBe(0);
   });
 
+  it('fills in the film dial missing from older states with the loaded film', () => {
+    const old = JSON.parse(JSON.stringify({ ...changed, camera: { ...changed.camera, iso: 400 } }));
+    delete old.camera.filmDialIso;
+    expect(parseState(JSON.stringify(old), initialState)!.camera.filmDialIso).toBe(400);
+    const bad = { ...changed, camera: { ...changed.camera, filmDialIso: -1 } };
+    expect(parseState(JSON.stringify(bad), initialState)!.camera).toEqual(initialState.camera);
+  });
+
   it('rejects an unknown control view or a broken program shift', () => {
     const badView = { ...changed, ui: { ...changed.ui, controlView: 'knobs' } };
     expect(parseState(JSON.stringify(badView), initialState)!.ui).toEqual(initialState.ui);

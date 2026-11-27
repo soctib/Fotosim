@@ -305,6 +305,11 @@ export function dragClicks(accMm: number, stepMm: number): { clicks: number; res
 
 /** Whole-stop shutter speeds on a film body's speed dial (after its "A" position). */
 export const FILM_SPEEDS_S = [1, 1 / 2, 1 / 4, 1 / 8, 1 / 15, 1 / 30, 1 / 60, 1 / 125, 1 / 250, 1 / 500, 1 / 1000] as const;
+
+/** The speeds engraved on a body's dial or ring: up to its fastest (a leaf shutter stops at 1/500 s). */
+export function filmSpeeds(fastestS: number): number[] {
+  return FILM_SPEEDS_S.filter((x) => x >= fastestS * 0.999);
+}
 /** Whole stops on a film lens's aperture ring (before its "A" position). */
 export const FILM_APERTURES = [1.4, 2, 2.8, 4, 5.6, 8, 11, 16, 22] as const;
 

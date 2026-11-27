@@ -28,6 +28,11 @@ export function fastestShutterS(sensor: Sensor): number {
   return sensor.fastestShutterS ?? MECHANICAL_FASTEST_S;
 }
 
+/** Fastest shutter speed a flash tube works with: the sync speed, or any speed with a leaf shutter. */
+export function flashSyncS(sensor: Sensor): number {
+  return sensor.leafShutter ? fastestShutterS(sensor) : FLASH_SYNC_S;
+}
+
 /** ISO in ⅓ stops. */
 export const ISOS = [
   100, 125, 160, 200, 250, 320, 400, 500, 640, 800, 1000, 1250, 1600, 2000, 2500, 3200, 4000,

@@ -1741,6 +1741,14 @@ header {
 .cam .scrcard { fill: var(--cam-screen); fill-opacity: 0.92; stroke: var(--muted); stroke-width: 0.4; stroke-dasharray: 1.5 1; }
 .cam .ts { fill: #f4f4f4; font-family: system-ui, -apple-system, sans-serif; font-weight: 600; }
 .cam .lab { fill: var(--muted); font-family: system-ui, -apple-system, sans-serif; }
+/* View through a film body's finder: dark eyepiece, grey focusing screen, red LEDs, a light needle. */
+.cam .vf { fill: #0d0e10; stroke: var(--muted); stroke-width: 0.4; }
+.cam .vf-screen { fill: #3a3d42; stroke: #9a9fa6; stroke-width: 0.35; }
+.cam .vf-ring { fill: none; stroke: #8b9097; stroke-width: 0.35; stroke-dasharray: 0.6 0.6; }
+.cam .vf-line { fill: none; stroke: #b9bdc3; stroke-width: 0.35; }
+.cam .vf-needle { stroke: #f2f2f2; stroke-width: 0.7; stroke-linecap: round; }
+.cam .vf-led { fill: #ff4a36; font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-weight: 600; }
+.cam .vf-text { fill: #b9bdc3; font-family: system-ui, -apple-system, sans-serif; }
 .cam .lab-dark { fill: #a9adb4; font-family: system-ui, -apple-system, sans-serif; }
 .cam .phbtn { fill: #2b2e33; stroke: #55595f; stroke-width: 0.3; }
 .cam .phbtn.on { fill: #4a4d52; stroke: var(--cam-flash); }

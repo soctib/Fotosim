@@ -17,6 +17,7 @@ import {
   ttlPowerReductionStops,
   type FlashZone,
 } from './flash';
+import { filmMismatchStops, meterIso } from './film';
 import { autoIsoMax, maxApertureFor, resolveMode } from './modes';
 import { fastestShutterS } from './stops';
 import { classifyNoise, equivalentIso, noiseAmount, noiseIndexStops, type NoiseClass } from './noise';
@@ -133,6 +134,10 @@ export interface Derived {
   ambientOffsetStops: number;
   /** Exposure of the focused subject (ambient + flash). Drives the exposure bar. */
   exposureOffsetStops: number;
+  /** What the camera's light meter shows: film with a wrongly set dial reads "correct" while the film is off. */
+  meterOffsetStops: number;
+  /** Film: the dial the meter goes by (the film's speed with DX coding) and how far that puts the film off. */
+  film: { dialIso: number; dx: boolean; mismatchStops: number } | null;
   exposureClass: ExposureClass;
   /** Auto ISO is at its upper limit and the subject is still too dark: that limit, else null. */
   autoIsoCapped: number | null;
@@ -188,7 +193,12 @@ export function derive(rawInput: CameraSettings, rawScene: Scene): Derived {
     brightestStops: Math.max(contrast.skyStops, background?.visible ? contrast.sceneryStops : -Infinity),
     clipStops: dynamicRange(optical, 100).clipStops,
   };
-  const { settings, autoFields } = resolveMode(applyAutofocus(input, scene), optical, sceneEv100, highlights);
+  // The camera decides by the ISO its meter knows (film: the dial, unless it reads the DX code);
+  // the picture then gets the loaded film's real speed.
+  const believed = resolveMode({ ...applyAutofocus(input, scene), iso: meterIso(input, optical) }, optical, sceneEv100, highlights);
+  const autoFields = believed.autoFields;
+  const settings = optical.isFilm ? { ...believed.settings, iso: input.iso } : believed.settings;
+  const mismatch = filmMismatchStops(input, optical);
   const { focalLengthMm: f, aperture: N, shutterS: t, iso, focusDistanceM: focus } = settings;
   const crop = cropFactor(sensor);
   const opticalCrop = cropFactor(optical);
@@ -199,7 +209,8 @@ export function derive(rawInput: CameraSettings, rawScene: Scene): Derived {
   if (settings.flashOn) {
     const gn = sensor.flashGuideNumber;
     const fullAtFocus = flashFullOffsetStops(gn, N, iso, focus);
-    const reduction = ttlPowerReductionStops(ambient, fullAtFocus);
+    // TTL metering goes by the dial too: it sees everything `mismatch` stops darker or brighter.
+    const reduction = ttlPowerReductionStops(ambient - mismatch, fullAtFocus - mismatch);
     subject = litOffsetStops(ambient, fullAtFocus, reduction);
     flash = { zone: flashZone(gn, N, iso, ambient), powerReductionStops: reduction };
   }
@@ -282,6 +293,8 @@ export function derive(rawInput: CameraSettings, rawScene: Scene): Derived {
     sceneEv100,
     ambientOffsetStops: ambient,
     exposureOffsetStops: subject,
+    meterOffsetStops: subject - mismatch,
+    film: optical.isFilm ? { dialIso: meterIso(input, optical), dx: !!optical.dxCoding, mismatchStops: mismatch } : null,
     exposureClass: classifyExposure(subject),
     autoIsoCapped:
       autoFields.has('iso') && iso >= autoIsoMax(settings.flashOn) && classifyExposure(subject).endsWith('Under')

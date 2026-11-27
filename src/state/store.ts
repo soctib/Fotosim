@@ -34,6 +34,7 @@ export const initialState: AppState = {
     shutterS: 1 / 125,
     iso: 100,
     autoIso: true,
+    filmDialIso: 100,
     mode: 'Av',
     flashOn: false,
     stabilized: true,

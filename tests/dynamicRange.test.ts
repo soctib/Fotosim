@@ -129,7 +129,7 @@ describe('derive() dynamic range', () => {
   });
 
   it('backlight: film and an HDR phone hold the sky a camera blows out', () => {
-    const film = derive(cam({ sensorId: 'film35', mode: 'Av', aperture: 4, iso: 400 }), scene('sun', true));
+    const film = derive(cam({ sensorId: 'film35', mode: 'Av', aperture: 4, iso: 400, filmDialIso: 400 }), scene('sun', true));
     expect(film.dynamicRange.clipped).toEqual([]);
     const phone = derive(cam({ sensorId: 'iphone15ProMax', mode: 'auto' }), scene('sun', true));
     expect(phone.settings.flashOn).toBe(false);

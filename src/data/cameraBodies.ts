@@ -92,8 +92,10 @@ export const BODY_SHAPES: Record<SensorId, BodyShape> = {
   fullFrame: { type: 'ml', widthMm: 134, depthMm: 42, gripMm: 20, gripWidthMm: 36, humpWidthMm: 44, humpX: -6, eyecupMm: 7.5, realTopDisplay: false },
   // Nikon Z8: 144 × 83 mm
   fullFramePro: { type: 'ml', widthMm: 144, depthMm: 50, gripMm: 24, gripWidthMm: 40, humpWidthMm: 50, humpX: -6, eyecupMm: 9, realTopDisplay: true },
-  // Nikon FM2: 143 × 55 mm
-  film35: { type: 'slr', widthMm: 142.5, depthMm: 36, mirrorBoxMm: 14, mirrorBoxWidthMm: 66, prismWidthMm: 58, eyecupMm: 5, realTopDisplay: false },
+  // Canon AE-1 Program: 141 × 48 mm (body without the lens mount)
+  film35: { type: 'slr', widthMm: 141, depthMm: 36, mirrorBoxMm: 14, mirrorBoxWidthMm: 66, prismWidthMm: 58, eyecupMm: 5, realTopDisplay: false },
+  // Nikon F100: 155 × 67 mm – drawn like the digital bodies: mode dial, top display, two dials.
+  film35Dx: { type: 'ml', widthMm: 155, depthMm: 46, gripMm: 21, gripWidthMm: 40, humpWidthMm: 58, humpX: -4, eyecupMm: 8, realTopDisplay: true },
   // Fujifilm GFX 100S: 150 × 87 mm
   mf4433: { type: 'ml', widthMm: 150, depthMm: 50, gripMm: 25, gripWidthMm: 42, humpWidthMm: 58, humpX: -8, eyecupMm: 12, realTopDisplay: true },
   // Mamiya 645 Pro: 150 × 106 mm

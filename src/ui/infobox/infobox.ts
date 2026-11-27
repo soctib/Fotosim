@@ -29,7 +29,11 @@ export function mountInfobox(root: HTMLDetailsElement, store: Store): void {
         ? 'graphSimple'
         : state.ui.infoKey === 'shutter' && tripod
           ? 'shutterTripod'
-          : state.ui.infoKey;
+          : state.ui.infoKey === 'iso' && d.film
+            ? d.film.dx
+              ? 'isoFilmDx'
+              : 'isoFilm'
+            : state.ui.infoKey;
     title.textContent = t.infoTitles[key];
     const aperture = formatAperture(d.settings.aperture);
     const filled = fill(t.info[key], {

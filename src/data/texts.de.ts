@@ -18,7 +18,8 @@ export const de = {
     apsc: 'APS-C',
     fullFrame: 'Vollformat digital (Mittelklasse)',
     fullFramePro: 'Vollformat digital (Profi)',
-    film35: 'Kleinbild analog (Film)',
+    film35: 'Kleinbild analog (klassisch)',
+    film35Dx: 'Kleinbild analog (modern, DX)',
     mf4433: 'Mittelformat digital (44×33)',
     mf645: 'Mittelformat 6×4,5 (Film)',
     mf66: 'Mittelformat 6×6 (Film)',
@@ -89,6 +90,14 @@ export const de = {
     shutter: 'Belichtungszeit',
     iso: 'ISO',
     autoIso: 'Auto-ISO',
+    /** Film cameras: which film is loaded (dropdown) and the camera's ISO dial (slider). */
+    film: 'Film (ISO)',
+    filmOption: 'ISO {iso}',
+    isoDial: 'ISO-Rad an der Kamera',
+    isoDialOver: 'Passt nicht zum Film (ISO {film}): {stops} überbelichtet',
+    isoDialUnder: 'Passt nicht zum Film (ISO {film}): {stops} unterbelichtet',
+    stop: 'Stufe',
+    stops: 'Stufen',
     light: 'Lichtsituation',
     backlight: 'Gegenlicht',
     lightDarker: 'dunkler',
@@ -126,6 +135,8 @@ export const de = {
     drawing: 'Kamera von oben – Räder, Ringe und Tasten lassen sich bedienen',
     /** Printed on the top display and seven-segment strings. */
     lcdIso: 'ISO',
+    /** Printed on the display of film bodies that read the DX code. */
+    lcdDx: 'DX',
     lcdAuto: 'AUTO',
     lcdAperture: 'F',
     /** Printed parts. */
@@ -135,7 +146,8 @@ export const de = {
     isoButton: 'ISO',
     dialAuto: 'A',
     phoneScreen: 'Display (umgeklappt)',
-    viewfinder: 'Sucheranzeige (umgeklappt)',
+    viewfinder: 'Blick durch den Sucher',
+    waistFinderView: 'Blick in den Lichtschacht',
     rearScreen: 'Rückdisplay (umgeklappt)',
     /** Engraving on primes, like on real barrels. */
     engraving: '{f} mm 1:{n}',
@@ -143,7 +155,7 @@ export const de = {
     /** Labels over the values on the phone's screen card. */
     phoneLabels: { shutter: 'Zeit', aperture: 'Blende', iso: 'ISO', isoAuto: 'ISO auto' },
     phoneZoom: '{factor}×',
-    filmIso: 'ISO {iso}',
+    filmIso: 'ASA {iso}',
     frontView: 'Von vorn: Eintrittspupille ⌀ {pupil} mm ({focal} mm ÷ {aperture}), Frontlinse ⌀ {front} mm',
     /** Accessible names of the controls. */
     labels: {
@@ -162,7 +174,7 @@ export const de = {
       lcdIso: 'ISO im Display',
       speed: 'Zeitenrad',
       aperture: 'Blendenring',
-      filmIso: 'Filmempfindlichkeit',
+      filmIso: 'ISO-Rad (ASA)',
       phoneFlash: 'Blitz (LED)',
       phoneModule: 'Kamera {factor}×',
     },
@@ -177,7 +189,7 @@ export const de = {
       Av: 'Av: Beide Räder stellen die Blende, die Kamera wählt die Zeit.',
       Tv: 'Tv: Beide Räder stellen die Zeit, die Kamera wählt die Blende.',
       M: 'M: Hinteres Rad = Zeit, vorderes Rad = Blende. Der Balken im Display zeigt, wie weit die Belichtung danebenliegt.',
-      film: 'Zeitenrad und Blendenring: „A“ überlässt den Wert der Kamera. Beide auf A = P, nur das Zeitenrad = Av, nur der Ring = Tv, keins = M.',
+      film: 'Zeitenrad und Blendenring: „A“ überlässt den Wert der Kamera. Beide auf A = P, nur das Zeitenrad = Av, nur der Ring = Tv, keins = M. Das ASA-Fenster ist das ISO-Rad: Es muss zum eingelegten Film passen.',
       phone: 'Beim Handy ist die Blende fest. Zeit und ISO stellst du auf dem Display ein (seitlich ziehen), darunter wählst du die Kamera (0,5×, 1×, …) und den Blitz.',
       /** Appended for lenses without a zoom ring. */
       prime: 'Festbrennweite: kein Zoomring – der Regler „Brennweite“ wechselt das Objektiv.',
@@ -198,7 +210,8 @@ export const de = {
       tracking: 'Der Fokus folgt {target} – zum Drehen „Fokus nachführen“ ausschalten.',
       fixedAperture: 'Beim Handy ist die Blende fest.',
       lensChange: 'Weiter zoomt dieses Objektiv nicht – jetzt steckt ein anderes an: {lens}.',
-      filmIso: 'Beim Film legt der eingelegte Film die ISO fest – hier stellst du ein, welcher drin ist.',
+      filmIso: 'ISO-Rad (früher ASA): auf den eingelegten Film stellen, hier ISO {film}. Der Belichtungsmesser rechnet mit dem Wert am Rad – zum Verstellen seitlich ziehen.',
+      dxIso: 'Die Kamera liest die ISO selbst von der Filmpatrone ab (DX-Code): ISO {iso}. Den Film wählst du unter „Film (ISO)“.',
       filmMode: 'Modus jetzt: {mode}',
     },
   },
@@ -437,7 +450,8 @@ export const de = {
       apsc: 'z.B. Canon R50, Sony A6400, Fujifilm X-T5',
       fullFrame: 'z.B. Canon RP, Nikon Z5 bis Sony A7 IV, Canon R6 II',
       fullFramePro: 'z.B. Nikon Z8, Canon R5 II, Sony A1 II',
-      film35: 'z.B. Pentax K1000, Nikon FM2, Leica M6',
+      film35: 'z.B. Canon AE-1 Program, Minolta X-700, Pentax ME Super',
+      film35Dx: 'z.B. Nikon F100, Canon EOS 3, Nikon F6',
       mf4433: 'z.B. Fujifilm GFX 100S II, Hasselblad X2D',
       mf645: 'z.B. Mamiya 645, Pentax 645',
       mf66: 'z.B. Yashica Mat, Hasselblad 500C/M, Rolleiflex',
@@ -477,6 +491,9 @@ export const de = {
     aperture: 'Blende',
     shutter: 'Belichtungszeit',
     iso: 'ISO',
+    isoFilm: 'ISO (ASA) beim Film',
+    isoFilmDx: 'ISO (ASA) beim Film',
+    film: 'Film',
     light: 'Lichtsituation',
     backlight: 'Gegenlicht und Dynamikumfang',
     mode: 'Modus',
@@ -520,7 +537,12 @@ export const de = {
       'Wie sich die Person bewegt (quer durchs Bild). Während der Belichtung legt sie ein Stück Weg zurück und verwischt – je schneller, je näher und je länger die Brennweite, desto stärker. Auch wer still steht, schwankt und atmet ein wenig. Gegen Bewegung hilft nur eine kürzere Zeit, weder Stabilisator noch Stativ. Bewegst du dich mit, zählt nur der Unterschied: Gehst du neben jemandem her, bleibt er scharf.',
     movement:
       'Wie stark das Motiv im Fokus ({subject}) während der Belichtung verwischt, weil es sich gegenüber dir bewegt. Über der Linie gilt es nicht mehr als scharf. Dagegen hilft eine kürzere Zeit, mehr Abstand, eine kürzere Brennweite – oder du bewegst dich mit. Das Verwackeln deiner Hand zeigt dagegen der Bereich unter der Belichtungszeit.',
-    iso: 'Verstärkung des Signals. Höhere ISO = heller, aber mehr Rauschen.',
+    iso: 'Verstärkung des Signals. Höhere ISO = heller, aber mehr Rauschen. Der Name stammt vom Film, wo er die Empfindlichkeit angibt – früher hieß der Wert dort ASA.',
+    isoFilm:
+      'Beim Film legt der eingelegte Film die Empfindlichkeit fest, nicht die Kamera. Früher hieß der Wert ASA – ISO 400 und ASA 400 sind dasselbe.\n\nAm ISO-Rad der Kamera stellst du ein, welcher Film drin ist; danach richtet sich der Belichtungsmesser. Stimmt das Rad nicht, belichtet die Kamera falsch, ohne es zu merken: Steht es auf 100 bei einem 400er-Film, wird jedes Bild zwei Stufen überbelichtet – die Anzeige sagt trotzdem „passt“. Farbnegativfilm verzeiht Überbelichtung, Unterbelichtung kaum.',
+    isoFilmDx:
+      'Beim Film legt der eingelegte Film die Empfindlichkeit fest, nicht die Kamera. Früher hieß der Wert ASA – ISO 400 und ASA 400 sind dasselbe.\n\nDiese Kamera liest sie selbst ab: über den DX-Code, das Schachbrettmuster auf der Filmpatrone. Ältere Kameras haben dafür ein ISO-Rad, das du von Hand auf den Film einstellen musst – vergisst du es, ist die ganze Rolle falsch belichtet.',
+    film: 'Welcher Film in der Kamera liegt. Die Zahl ist seine Empfindlichkeit (ISO, früher ASA): 100er für Sonne, 400er als Allrounder, 1600 bis 3200 für wenig Licht – mit deutlich gröberem Korn. Ein Film gilt für die ganze Rolle: Wechseln kannst du erst, wenn sie voll ist.',
     light: 'Wie hell die Szene ist. Sonne ist rund 500-mal heller als ein Wohnzimmer am Abend.',
     backlight:
       'Gegenlicht: Die Sonne steht hinter der Person, ihr Gesicht liegt im eigenen Schatten – der Himmel dahinter ist vier, fünf Blendenstufen heller. So viel Kontrast hält ein einzelnes Digitalbild nicht: Belichtet die Kamera fürs Gesicht, brennt der Himmel weiß aus; belichtest du für den Himmel, wird das Gesicht dunkel.\n\nDer Dynamikumfang ist der Bereich zwischen reinem Weiß und Schwarz, in dem noch Zeichnung bleibt. Gerade: {range} Blendenstufen, reines Weiß ab {clip} über der richtigen Belichtung. Größere und neuere Sensoren halten mehr; hohe ISO kostet Umfang in den Schatten. Farbnegativfilm verzeiht etwa fünf Stufen Überbelichtung. Handys tricksen mit HDR: Sie verrechnen mehrere kurz belichtete Bilder, damit der Himmel nicht ausbrennt.\n\nDie klassische Rettung ist der Aufhellblitz: Der Blitz hellt das Gesicht auf, die Kamera kann für den Himmel belichten. Im prallen Sonnenlicht reicht ein eingebauter Blitz aber nur ein, zwei Meter weit – schneller als die Blitzsynchronzeit (1/250 s) geht es nicht.',

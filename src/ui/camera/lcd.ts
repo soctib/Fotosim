@@ -76,6 +76,8 @@ export interface LcdState {
   shutterS: number;
   aperture: number;
   iso: number;
+  /** Label printed next to the ISO: "ISO", or "DX" where the camera reads it from the film. */
+  isoLabel: string;
   autoIso: boolean;
   flash: boolean;
   /** Light meter (stops, + = over) in M; null otherwise. */
@@ -151,7 +153,7 @@ export function lcdPanel(p: Painter, x: number, y: number, w: number, h: number,
     const lab = ch2 * 0.62;
     const iw = kI * cw2;
     const ix = x + pad + lab * 2.1;
-    s += `<text x="${r2(x + pad)}" y="${r2(y2 + ch2)}" font-size="${r2(lab)}" class="tlab">${t.camera.lcdIso}</text>`;
+    s += `<text x="${r2(x + pad)}" y="${r2(y2 + ch2)}" font-size="${r2(lab)}" class="tlab">${st.isoLabel}</text>`;
     s += autoLabel(x + pad, y2 - lab * 0.25, lab * 0.8);
     s += lcdField(p, 'lcd-iso', ix, y2, iw, ch2, segText(isoStr, ix + iw, y2, cw2, ch2), st, st.isoEdit);
     const fx = x + w - pad - ch2 * 0.4;
@@ -170,7 +172,7 @@ export function lcdPanel(p: Painter, x: number, y: number, w: number, h: number,
     s += lcdField(p, 'lcd-n', xr - kN * cw, y2, kN * cw, ch, segText(nStr, xr, y2, cw, ch), st);
     const cw2 = cw * 0.62;
     const iw = kI * cw2;
-    s += `<text x="${r2(x + pad)}" y="${r2(y3 + ch2)}" font-size="${r2(ch2 * 0.62)}" class="tlab">${t.camera.lcdIso}</text>`;
+    s += `<text x="${r2(x + pad)}" y="${r2(y3 + ch2)}" font-size="${r2(ch2 * 0.62)}" class="tlab">${st.isoLabel}</text>`;
     s += autoLabel(x + pad, y3 + ch2 * 0.2, ch2 * 0.5);
     s += lcdField(p, 'lcd-iso', xr - iw, y3, iw, ch2, segText(isoStr, xr, y3, cw2, ch2), st, st.isoEdit);
     if (st.flash) s += flashIcon(x + pad + 1.5, y1, ch * 0.8, 'sg1');
