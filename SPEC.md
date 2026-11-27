@@ -103,6 +103,47 @@ Rough price ranges (orders of magnitude) for the gear in use, from `derive().cos
 - **Tripod** when the photographer's movement is "tripod or leaning" (phone: a small one).
 - **Sum** of the minima and maxima. Notes: used prices, film running cost per roll and frame, MF film has hardly any zooms/fast lenses.
 
+### 7. Camera panel ("Kamera | Regler")
+A switch at the top of the controls column picks the **camera seen from above** (default) or the sliders; both edit
+the same store through the same actions (`ui.controlView`, persisted). Hidden in simplified mode, which keeps its three
+sliders (`CAMERA_PANEL_IN_SIMPLE_MODE` in `ui/camera/camera.ts`). In the camera view the sliders for what the drawing can
+set are hidden (body classes `cam-covers-*`); type dropdowns, scan, digital zoom, stabiliser, movement and focus tracking stay.
+The focal-length slider stays too (except for phones and compacts): it's what changes the lens, so it doesn't come and go
+with the zoom ring; with a prime mounted the hint line says so.
+- **Drawing** (`ui/camera/`, SVG in mm, built from `derive()` only): one body per camera type (`data/cameraBodies.ts`) and
+  the concrete lens the cost list names (`data/lensShapes.ts`, per `LensKind`; other systems scaled by √(1/crop)). The body
+  takes a fixed share of the panel width (deep bodies count by depth), the lens is to scale: zooms with an inner tube grow
+  towards the long end (the 70–200/2.8 doesn't), the front is at least the entrance pupil `f / N_max` + 8 mm wide. Scale and
+  panel height depend on the body only (`model/cameraPanel.ts`: `panelLayout`): the body sits at the bottom, with room for
+  a lens of 1.3 × the body width above it, up to a height cap that grows with the panel width (`drawingMaxHeight`).
+  Longer lenses scroll (the top edge fades while there's more above); the camera never moves while zooming or changing
+  lenses. Under it: a line on what the dials do in this mode, a front view with the iris
+  (pupil at the current aperture) to scale, and short messages.
+- **Mirrorless/DSLR-style bodies**: mode dial (labels fixed on the dial, the dial turns to the index; tap to step, drag to
+  turn), **seven-segment top display** (slight italic, faint unlit segments, printed "ISO"/"AUTO"; field sizes from the
+  widest value so digits never change size; flash symbol; in M a light-meter bar −2…+2 from the exposure offset).
+  **Front dial** (under the shutter button) and **rear dial**: Av = aperture, Tv = shutter, M = rear shutter / front
+  aperture, P = rear dial shifts the program, A = nothing (`dialRole`). **ISO button**: the ISO blinks, the dials change
+  it ("AUTO" below the lowest value where the mode has auto ISO), press again (or Esc) to end. Display values can be
+  dragged too. Hot shoe: tap attaches or removes a speedlite (the flash switch). All bodies get a top display, even
+  where the real one has none (`DRAW_TOP_DISPLAY_ALWAYS`; off, they'd show a rear-screen card).
+- **Compact**: same display and dials (front = control ring at the lens base), pop-up flash, the telescoping lens is
+  dragged to zoom. **Phones**: seen from the top edge with the camera bump; the screen is a card folded out below, laid
+  out like a camera app's pro mode: shutter, aperture (fixed) and ISO – shutter and ISO are dragged sideways (locked
+  where the mode leaves them to the camera), a light-meter bar in M – then the built-in cameras as "0,5× 1× 5×" buttons
+  and a flash button. In the camera view the phone hides the shutter and ISO sliders.
+- **Film bodies**: no mode dial and no display – a speed dial (whole stops, 6×6: a speed ring on the leaf-shutter lens),
+  an aperture ring on the lens, both with an "A" position (both A = P, only the speed dial = Av, only the ring = Tv,
+  neither = M; full auto shows as both on A), the film speed in the rewind crank's window and a finder readout card.
+- **Rings**: zoom ring (real mm marks, 100° over the lens's range) and focus ring (from the lens's near limit to ∞,
+  √-spaced, 150°) are drawn as turning cylinders; dragged sideways, the scale moves with the finger (dθ = dx / R).
+  Zooming past the lens's end swaps in the next lens of the type (message names it). Focus tracking locks the focus ring.
+- **Interaction**: Pointer Events (mouse and touch; vertical swipes still scroll), a click per 4 mm (dials), 5 mm
+  (display, film dials) or 7 mm (mode dial) of drag. A changeable display value shows a thin underline on mouse hover;
+  values the mode leaves to the camera get the `not-allowed` cursor and a short warning ("In Av wählt die Kamera die
+  Zeit."). While a control is held, its underline and cursor stay until release. Every control is focusable
+  (slider/button roles with value texts), arrow keys turn, Enter/Space tap. Touching a part shows its infobox text.
+
 ## Inputs
 
 Grouped like the real thing: a **camera** panel (type, mode, aperture, shutter, ISO, flash – modern bodies set the
@@ -121,7 +162,7 @@ dropdown. Light and element distances live in the scene panel.
 | ISO | 100 … 12800 in ⅓ stops, optional auto ISO (P/Av/Tv). Film: fixed by the loaded film in every mode, no auto ISO |
 | Light | Sun 15, cloudy 13, shade 12, dusk 9, office 8, living room 6, night street 4, candle 3 (EV100, light on the subject). Each also has a front-light contrast for the backdrop and the scenery (sky +1 sun, +1.5 cloudy/dusk, +2 shade; dusk garden −1; living-room walls −1; night sky −4, candle-lit walls −3) |
 | Gegenlicht (scene panel, not in simplified mode) | Off (default) / on: the subject stands in its own shadow, 3 stops darker; the background keeps its light, so it is 3 stops brighter relative to the subject (sunny sky ≈ +4) |
-| Mode | **A** (full auto), **P**, **Av** (Nikon/Sony: A), **Tv** (Nikon/Sony: S), **M** – each with a short explanation |
+| Mode | **A** (full auto), **P**, **Av** (Nikon/Sony: A), **Tv** (Nikon/Sony: S), **M** – each with a short explanation. P has a program shift (camera panel's rear dial; reset by a mode change) |
 | Flash | Checkbox in P/Av/Tv/M; in A the camera switches it on/off itself. Phones have an LED: no sync speed |
 | Stabiliser | Checkbox |
 | Focus | Slider + focus line + tap-to-focus, all synced. Can't go closer than the lens's near limit (≈ 8× focal length, at least 0.3 m); element distances share that limit and are pushed out when a longer lens is chosen |
@@ -186,6 +227,10 @@ All formulas use mm for focal length/sensor, m for distances, s for shutter.
   ≤ floor, and fades over the stop before each (`highlight`/`shadow` 0…1). `displayStops` squeezes stops above 0 by
   3/clip for drawing. derive reports clip, floor, range, the backdrop's tone and the visible clipped/crushed layers.
   Digital zoom doesn't change the range (simplification).
+- **Program shift** (`modes.ts`, `programShift`): in P each click trades ⅓ stop of aperture for ⅓ stop of time from
+  the solved program (same exposure), stopping where the aperture or shutter list ends (flash: the sync window).
+- **Camera panel mechanics** (`cameraPanel.ts`): lens outline and scale, fitting, ring angles and marks, dial roles per
+  mode, ISO and film-dial steps, film "A" positions → mode – pure, so the panel only draws.
 - **Focus tracking** (`autofocus.ts`): applied before mode resolution (auto modes and flash use the focus distance).
 - **Effective resolution** (`resolution.ts`): every factor is a blur width on the sensor (µm), combined as a root
   sum of squares into b; effective MP = frame area / b² (≤ the file's pixels), so one CoC of blur leaves 1500 px
@@ -216,7 +261,7 @@ All formulas use mm for focal length/sensor, m for distances, s for shutter.
 src/model    pure physics + mode logic (no DOM)
 src/data     sensors, light presets, prices, texts.de.ts
 src/state    store: state → derive() → listeners
-src/ui       graph/, bars/, controls/, sim/, infobox/   (to do)
+src/ui       graph/, bars/, controls/, camera/, sim/, infobox/, quality/, costs/
 src/assets   SVGs, imported with ?raw and inlined
 ```
 
@@ -227,7 +272,9 @@ Unidirectional: input → `store.update()` → `resolveMode()` → `derive()` �
 - **Desktop**: graph top left, simulation + bars below it, then the scene panel (light situation + one row per element);
   camera controls in the next column. Wide screens (≥ 1400 px): third column with the infobox on top and the cost
   list (open) below; while the list is folded, the lens panel moves into the third column under the infobox.
-  Narrower: infobox above the controls, cost list collapsible below them.
+  Narrower: infobox above the controls, cost list collapsible below them. While the camera panel is shown, the
+  controls column widens (up to 520 px on medium screens, up to 640 px on wide ones) so the drawing is big enough to
+  operate.
 - **Mobile**: graph, simulation + bars (pinned at the top while scrolling the rest), "Wofür reicht das Foto?" box, scene panel, controls, infobox, cost list (collapsible).
 - Pointer Events everywhere (mouse + touch identical).
 

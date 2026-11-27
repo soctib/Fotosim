@@ -127,6 +127,8 @@ export interface CameraSettings {
   digitalZoom: number;
   /** Film cameras only: how the negatives are scanned. */
   scanner: ScannerId;
+  /** Program shift in P (rear dial), ⅓-stop clicks: + = smaller aperture, longer time. 0 elsewhere. */
+  programShift: number;
 }
 
 export interface Scene {

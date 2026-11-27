@@ -75,14 +75,14 @@ function nearestIndex(values: readonly number[], target: number): number {
 
 /** A labelled range input; `extra` goes below the track (shutter: handheld ranges). */
 const range = (id: string, label: string, max: number, info: string, extra = '') => `
-  <div class="control" data-info="${info}">
+  <div class="control" data-info="${info}" data-field="${id}">
     <label for="c-${id}">${label} <output id="o-${id}"></output></label>
     <div class="range-wrap"><input id="c-${id}" type="range" min="0" max="${max}" step="1">${extra}</div>
     <small class="hint" id="h-${id}"></small>
   </div>`;
 
 const checkbox = (id: string, label: string, info: string) => `
-  <div class="control control-check" data-info="${info}">
+  <div class="control control-check" data-info="${info}" data-field="${id}">
     <label class="toggle"><input id="c-${id}" type="checkbox"> ${label}</label>
     <small class="hint" id="h-${id}"></small>
   </div>`;
@@ -107,7 +107,7 @@ export function mountControls(root: HTMLElement, store: Store): void {
           ${SCANNER_ORDER.map((id) => `<option value="${id}">${t.scanners[id]}</option>`).join('')}
         </select>
       </div>
-      <div class="control" data-info="mode">
+      <div class="control" data-info="mode" data-field="mode">
         <span class="control-label">${t.controls.mode}</span>
         <div class="segmented" role="radiogroup" aria-label="${t.controls.mode}">
           ${MODES.map((m) => `<button type="button" role="radio" data-mode="${m}" title="${t.modes[m].name}">${t.modes[m].short}</button>`).join('')}

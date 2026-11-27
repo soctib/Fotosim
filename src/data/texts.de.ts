@@ -118,6 +118,91 @@ export const de = {
     nearLimitHint: 'näher stellt dieses Objektiv nicht scharf: {min}',
   },
 
+  /** The camera seen from above (ui/camera), the second view of the controls. */
+  camera: {
+    viewSwitch: 'Bedienung',
+    viewCamera: 'Kamera',
+    viewSliders: 'Regler',
+    drawing: 'Kamera von oben – Räder, Ringe und Tasten lassen sich bedienen',
+    /** Printed on the top display and seven-segment strings. */
+    lcdIso: 'ISO',
+    lcdAuto: 'AUTO',
+    lcdAperture: 'F',
+    /** Printed parts. */
+    speedlite: 'Blitz',
+    waistFinder: 'Lichtschachtsucher',
+    filmBack: 'Film-Rückteil',
+    isoButton: 'ISO',
+    dialAuto: 'A',
+    phoneScreen: 'Display (umgeklappt)',
+    viewfinder: 'Sucheranzeige (umgeklappt)',
+    rearScreen: 'Rückdisplay (umgeklappt)',
+    /** Engraving on primes, like on real barrels. */
+    engraving: '{f} mm 1:{n}',
+    /** Break mark on a lens drawn shorter than it is. */
+    /** Labels over the values on the phone's screen card. */
+    phoneLabels: { shutter: 'Zeit', aperture: 'Blende', iso: 'ISO', isoAuto: 'ISO auto' },
+    phoneZoom: '{factor}×',
+    filmIso: 'ISO {iso}',
+    frontView: 'Von vorn: Eintrittspupille ⌀ {pupil} mm ({focal} mm ÷ {aperture}), Frontlinse ⌀ {front} mm',
+    /** Accessible names of the controls. */
+    labels: {
+      mode: 'Modusrad',
+      front: 'Vorderes Einstellrad',
+      rear: 'Hinteres Einstellrad',
+      controlRing: 'Einstellring am Objektiv',
+      iso: 'ISO-Taste',
+      flash: 'Blitzschuh – antippen steckt den Blitz auf oder ab',
+      popup: 'Klappblitz',
+      zoom: 'Zoomring',
+      compactZoom: 'Zoom',
+      focus: 'Fokusring',
+      lcdShutter: 'Belichtungszeit im Display',
+      lcdAperture: 'Blende im Display',
+      lcdIso: 'ISO im Display',
+      speed: 'Zeitenrad',
+      aperture: 'Blendenring',
+      filmIso: 'Filmempfindlichkeit',
+      phoneFlash: 'Blitz (LED)',
+      phoneModule: 'Kamera {factor}×',
+    },
+    valueAuto: 'Automatik',
+    valueNone: 'ohne Funktion',
+    valueOn: 'an',
+    valueOff: 'aus',
+    /** One line under the drawing: what the dials do in this mode. */
+    hints: {
+      auto: 'A: Die Kamera wählt alles selbst – die Räder haben keine Funktion.',
+      P: 'P: Die Kamera wählt Zeit und Blende. Das hintere Rad verschiebt das Programm: andere Kombination, gleiche Helligkeit.',
+      Av: 'Av: Beide Räder stellen die Blende, die Kamera wählt die Zeit.',
+      Tv: 'Tv: Beide Räder stellen die Zeit, die Kamera wählt die Blende.',
+      M: 'M: Hinteres Rad = Zeit, vorderes Rad = Blende. Der Balken im Display zeigt, wie weit die Belichtung danebenliegt.',
+      film: 'Zeitenrad und Blendenring: „A“ überlässt den Wert der Kamera. Beide auf A = P, nur das Zeitenrad = Av, nur der Ring = Tv, keins = M.',
+      phone: 'Beim Handy ist die Blende fest. Zeit und ISO stellst du auf dem Display ein (seitlich ziehen), darunter wählst du die Kamera (0,5×, 1×, …) und den Blitz.',
+      /** Appended for lenses without a zoom ring. */
+      prime: 'Festbrennweite: kein Zoomring – der Regler „Brennweite“ wechselt das Objektiv.',
+    },
+    msg: {
+      phoneDrag: 'Zum Verstellen seitlich ziehen.',
+      cameraSetsShutter: 'In {mode} wählt die Kamera die Zeit.',
+      cameraSetsAperture: 'In {mode} wählt die Kamera die Blende.',
+      cameraSetsIso: 'In {mode} wählt die Kamera die ISO.',
+      cameraSetsAll: 'In A wählt die Kamera alles selbst.',
+      cameraSetsFlash: 'In A entscheidet die Kamera, ob sie blitzt.',
+      frontInP: 'In P verschiebt das hintere Rad das Programm.',
+      shift: 'Programmverschiebung: andere Kombination, gleiche Helligkeit.',
+      isoEdit: 'ISO: jetzt ein Rad drehen. Nochmal ISO drücken zum Beenden.',
+      isoDone: 'ISO eingestellt.',
+      flashOn: 'Blitz aufgesteckt.',
+      flashOff: 'Blitz abgenommen.',
+      tracking: 'Der Fokus folgt {target} – zum Drehen „Fokus nachführen“ ausschalten.',
+      fixedAperture: 'Beim Handy ist die Blende fest.',
+      lensChange: 'Weiter zoomt dieses Objektiv nicht – jetzt steckt ein anderes an: {lens}.',
+      filmIso: 'Beim Film legt der eingelegte Film die ISO fest – hier stellst du ein, welcher drin ist.',
+      filmMode: 'Modus jetzt: {mode}',
+    },
+  },
+
   elements: {
     person1: 'Person 1',
     person2: 'Person 2',
@@ -411,6 +496,7 @@ export const de = {
     graph: 'Schärfekurve',
     graphSimple: 'Schärfentiefe',
     sim: 'Kamerabild',
+    cameraPanel: 'Kamera von oben',
   },
 
   // Infobox: shown for the last clicked/tapped element. {placeholders} get live values.
@@ -461,6 +547,8 @@ export const de = {
       'Die Kurve zeigt, wie unscharf etwas in welcher Entfernung wird. Unter der Linie „scharf“ gilt es als scharf. Personen und Hintergrund kannst du verschieben.',
     autofocus:
       'Beim Nachführen bleibt die Schärfe auf dem gewählten Motiv, auch wenn es sich bewegt – an Kameras heißt das „AF-C“ oder kontinuierlicher Autofokus. Tippst du jetzt im Kamerabild auf etwas anderes, wird das verfolgt. Zum Scharfstellen von Hand: „Aus“.',
+    cameraPanel:
+      'Die Kamera von oben – so bedienst du sie auch in echt: Modusrad antippen oder drehen, die Einstellräder seitlich ziehen, Zoom- und Fokusring mit dem Finger drehen, ISO drücken und dann ein Rad drehen, den Blitz auf den Blitzschuh stecken. Was ein Rad tut, hängt vom Modus ab; was die Kamera selbst wählt, ist gesperrt.\n\nDas Objektiv ist maßstäblich zum Gehäuse gezeichnet. Die Frontlinse muss mindestens so groß sein wie die Eintrittspupille, Brennweite ÷ größte Blende – gerade {pupil}. Deshalb ist ein 400 mm f/2,8 so riesig, schwer und teuer.',
     sim: 'Tippe auf eine Person oder den Hintergrund, um darauf scharfzustellen. So ungefähr sähe das Foto aus. Unschärfe, Helligkeit, Rauschen und Bildausschnitt kommen direkt aus den Einstellungen – die Figuren sind Comic, die Rechnung dahinter nicht.\n\nDie Figuren basieren auf „Personas“ von Draftbit (verändert), Lizenz CC BY 4.0.',
   },
 };

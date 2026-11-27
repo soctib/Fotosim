@@ -1,6 +1,6 @@
 # Infobox reacts on hover
 
-**Blocked by:** nothing. **Works with:** camera-panel (tapping a part may show its infobox text).
+**Blocked by:** nothing. **Works with:** – (the camera panel, see SPEC, already shows a part's text on touch; hovering its parts should too).
 
 ## Problem
 

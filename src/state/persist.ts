@@ -9,7 +9,7 @@ import { SENSORS } from '../data/sensors';
 import { de } from '../data/texts.de';
 import { MOTIONS } from '../model/motion';
 import type { CameraSettings, ElementId, Mode, Motion, Scene } from '../model/types';
-import type { AppState, Store } from './store';
+import type { AppState, ControlView, Store } from './store';
 
 const KEY = 'fotosim.state.v1';
 const MODES: Mode[] = ['auto', 'P', 'Av', 'Tv', 'M'];
@@ -44,12 +44,13 @@ function parseCamera(v: unknown, elementIds: ElementId[], defaults: CameraSettin
     isBool(v.stabilized) &&
     isPos(v.focusDistanceM) &&
     (v.afTarget === null || elementIds.includes(v.afTarget as ElementId));
-  if (!ok || motion === null || digitalZoom === null || scanner === null) return null;
+  const programShift = optional(v.programShift, (x): x is number => Number.isInteger(x) && Math.abs(x as number) <= 60, defaults.programShift);
+  if (!ok || motion === null || digitalZoom === null || scanner === null || programShift === null) return null;
   const { sensorId, lensId, focalLengthMm, aperture, shutterS, iso, autoIso, mode, flashOn, stabilized, focusDistanceM, afTarget } =
     v as unknown as CameraSettings;
   return {
     sensorId, lensId, focalLengthMm, aperture, shutterS, iso, autoIso, mode, flashOn, stabilized, motion, focusDistanceM, afTarget,
-    digitalZoom, scanner,
+    digitalZoom, scanner, programShift,
   };
 }
 
@@ -71,12 +72,15 @@ function parseScene(v: unknown, defaults: Scene): Scene | null {
   return { lightPresetId: v.lightPresetId as string, backlight, elements: elements as Scene['elements'] };
 }
 
-function parseUi(v: unknown): AppState['ui'] | null {
+const CONTROL_VIEWS: ControlView[] = ['camera', 'sliders'];
+
+function parseUi(v: unknown, defaults: AppState['ui']): AppState['ui'] | null {
   if (!isObj(v)) return null;
+  const controlView = optional(v.controlView, (x): x is ControlView => CONTROL_VIEWS.includes(x as ControlView), defaults.controlView);
   const ok = isBool(v.logScale) && isBool(v.showDetails) && has(de.info, v.infoKey) && isBool(v.simple);
-  if (!ok) return null;
+  if (!ok || controlView === null) return null;
   const { logScale, showDetails, infoKey, simple } = v as unknown as AppState['ui'];
-  return { logScale, showDetails, infoKey, simple };
+  return { logScale, showDetails, infoKey, simple, controlView };
 }
 
 /**
@@ -94,7 +98,7 @@ export function parseState(json: string | null, defaults: AppState): AppState | 
   if (!isObj(raw)) return null;
   const scene = parseScene(raw.scene, defaults.scene);
   const camera = parseCamera(raw.camera, defaults.scene.elements.map((e) => e.id), defaults.camera);
-  const ui = parseUi(raw.ui);
+  const ui = parseUi(raw.ui, defaults.ui);
   if (!scene && !camera && !ui) return null;
   // Camera and scene belong together (focus tracking, near limit): restore both or neither.
   const both = scene && camera;

@@ -18,6 +18,28 @@
   --sun: #f59f00;
   --warn: #e8590c;
   --bad: #c92a2a;
+
+  /* camera panel (ui/camera) */
+  --cam: #2c2f34;
+  --cam-hi: #3d4148;
+  --cam-edge: #111316;
+  --cam-rubber: #1d1f23;
+  --cam-lens: #2a2c30;
+  --cam-lens2: #36393e;
+  --cam-ring: #232528;
+  --cam-rib: #646973;
+  --cam-metal: #b4b8be;
+  --cam-metal2: #8a8f96;
+  --cam-mark: #eeeeee;
+  --cam-mark2: #b9bcc2;
+  --cam-auto: #3fae5a;
+  --cam-lcd: #c6d2bb;
+  --cam-lcd-fg: #1c2619;
+  --cam-glass: #6d9cc4;
+  --cam-flash: #f2c84b;
+  --cam-phone: #d9dbde;
+  --cam-phone-back: #8e9aa8;
+  --cam-screen: #15171a;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -34,6 +56,25 @@
     --p1: #f06595;
     --p2: #9775fa;
     --scenery: #8fb08c;
+
+    --cam: #474b53;
+    --cam-hi: #5a5f68;
+    --cam-edge: #7b808a;
+    --cam-rubber: #33363c;
+    --cam-lens: #43464d;
+    --cam-lens2: #51555c;
+    --cam-ring: #393c42;
+    --cam-rib: #8f949d;
+    --cam-metal: #c3c7cc;
+    --cam-metal2: #949aa2;
+    --cam-mark: #f2f2f2;
+    --cam-mark2: #c5c8ce;
+    --cam-lcd: #a9b99c;
+    --cam-lcd-fg: #121a10;
+    --cam-glass: #7fb0dc;
+    --cam-phone: #9ea2a8;
+    --cam-phone-back: #6f7c8b;
+    --cam-screen: #050607;
   }
 }
 
@@ -82,9 +123,10 @@ header {
   gap: 16px;
   align-items: start;
   grid-template-columns: minmax(0, 1fr) 300px;
-  grid-template-rows: auto auto 1fr;
+  grid-template-rows: auto auto auto 1fr;
   grid-template-areas:
     'stage info'
+    'stage cam'
     'stage side'
     'stage costs';
   max-width: 1200px;
@@ -104,6 +146,16 @@ header {
 #costs {
   grid-area: costs;
 }
+/* View switch and camera panel (ui/camera), above the controls. */
+#camera {
+  grid-area: cam;
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.simple #camera {
+  display: none;
+}
 
 /*
  * Wide screens: third column with the infobox on top and the cost list below.
@@ -112,9 +164,19 @@ header {
 @media (min-width: 1400px) {
   .layout {
     grid-template-columns: minmax(0, 1fr) 300px 340px;
-    grid-template-rows: auto;
-    grid-template-areas: 'stage side info';
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+      'stage cam info'
+      'stage side info';
     max-width: 1720px;
+  }
+  /* The camera needs more room than the sliders: the middle column widens while it's shown. */
+  body.cam-view .layout {
+    grid-template-columns: minmax(0, 1fr) clamp(300px, 34vw, 640px) 340px;
+    max-width: 1900px;
+  }
+  body.cam-view header {
+    max-width: 1900px;
   }
   header {
     max-width: 1720px;
@@ -146,15 +208,21 @@ header {
 @media (min-width: 761px) and (max-width: 1399px) {
   .layout:has(#infobox:not([open])) {
     grid-template-areas:
+      'stage cam'
       'stage side'
       'stage costs'
       'stage info';
   }
   .layout:has(#infobox:not([open])):has(#costs:not([open])) {
     grid-template-areas:
+      'stage cam'
       'stage side'
       'stage info'
       'stage costs';
+  }
+  /* The camera needs more room than the sliders: the right column widens while it's shown. */
+  body.cam-view .layout {
+    grid-template-columns: minmax(0, 1fr) clamp(300px, 42vw, 520px);
   }
 }
 
@@ -203,6 +271,7 @@ header {
     display: contents;
   }
   .stage > *,
+  #camera,
   #controls,
   #infobox,
   #costs {
@@ -1539,4 +1608,171 @@ header {
   body.simple header {
     max-width: 1200px;
   }
+}
+
+/* ---- camera panel: the camera seen from above (ui/camera) ---- */
+
+.view-switch {
+  grid-template-columns: 1fr 1fr;
+}
+.view-switch[hidden],
+.cam[hidden],
+.cam-front[hidden] {
+  display: none;
+}
+.cam {
+  gap: 6px;
+}
+.cam-stage {
+  /* Fixed height per camera (set in ui/camera); a long lens scrolls. column-reverse keeps the
+     body anchored at the bottom: scrollTop 0 is the bottom, and redraws don't move it. */
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+.cam-stage svg {
+  flex: none;
+}
+.cam-stage.more-above {
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 40px);
+  mask-image: linear-gradient(to bottom, transparent, #000 40px);
+}
+.cam-stage svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  /* Every control is dragged sideways, so vertical swipes still scroll the page. */
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+.cam-msg,
+.cam-hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.cam-msg:empty {
+  display: none;
+}
+.cam-msg {
+  color: var(--accent);
+  font-weight: 600;
+  text-align: center;
+}
+.cam-front {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.cam-front svg {
+  flex: none;
+}
+
+/* Only the controls take the pointer; while one is held, nothing else reacts to hover. */
+.cam-stage svg * {
+  pointer-events: none;
+}
+.cam-stage svg [data-ctl] {
+  pointer-events: all;
+  cursor: ew-resize;
+}
+.cam-stage svg [data-ctl='mode'],
+.cam-stage svg [data-ctl='iso'],
+.cam-stage svg [data-ctl='flash'],
+.cam-stage svg [data-ctl^='module-'] {
+  cursor: pointer;
+}
+.cam-stage svg [data-ctl].locked,
+.cam-stage svg .fld.locked [data-ctl] {
+  cursor: not-allowed;
+}
+.cam-stage.dragging svg [data-ctl],
+.cam-stage.dragging svg [data-ctl].locked,
+.cam-stage.dragging svg .fld.locked [data-ctl] {
+  cursor: inherit;
+}
+.cam-stage svg [data-ctl]:focus {
+  outline: none;
+}
+.cam-stage svg [data-ctl]:focus-visible {
+  stroke: var(--accent);
+  stroke-width: 0.9px;
+}
+
+.cam .b { fill: var(--cam); stroke: var(--cam-edge); stroke-width: 0.4; }
+.cam .bh { fill: var(--cam-hi); stroke: var(--cam-edge); stroke-width: 0.4; }
+.cam .rub { fill: var(--cam-rubber); stroke: var(--cam-edge); stroke-width: 0.3; }
+.cam .mt { fill: var(--cam-metal); stroke: var(--cam-metal2); stroke-width: 0.3; }
+.cam .mt2 { fill: var(--cam-metal2); }
+.cam .ln { fill: var(--cam-lens); stroke: var(--cam-edge); stroke-width: 0.4; }
+.cam .ln2 { fill: var(--cam-lens2); stroke: var(--cam-edge); stroke-width: 0.4; }
+.cam .rg { fill: var(--cam-ring); stroke: var(--cam-edge); stroke-width: 0.4; }
+.cam .rib { stroke: var(--cam-rib); }
+.cam .tk { stroke: var(--cam-mark); stroke-width: 0.35; }
+.cam .tm { fill: var(--cam-mark); font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; font-weight: 600; }
+.cam .tm2 { fill: var(--cam-mark2); font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; font-weight: 500; }
+.cam .lcd { fill: var(--cam-lcd); stroke: var(--cam-edge); stroke-width: 0.4; }
+.cam .tl { fill: var(--cam-lcd-fg); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-weight: 700; }
+.cam .sg1 { fill: var(--cam-lcd-fg); }
+.cam .sg0 { fill: var(--cam-lcd-fg); opacity: 0.07; }
+.cam .tlab { fill: var(--cam-lcd-fg); font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; font-weight: 700; letter-spacing: 0.02em; }
+.cam .lcd-tick { stroke: var(--cam-lcd-fg); stroke-width: 0.5; opacity: 0.5; }
+.cam .on-dark .sg1, .cam .on-dark .tlab { fill: #f4f4f4; }
+.cam .on-dark .lcd-tick { stroke: #f4f4f4; opacity: 0.8; }
+.cam .btn { fill: var(--cam-hi); stroke: var(--cam-edge); stroke-width: 0.35; }
+.cam .acc { fill: var(--accent); }
+.cam .aut { fill: var(--cam-auto); font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; font-weight: 700; }
+.cam .gl { fill: var(--cam-glass); fill-opacity: 0.55; stroke: var(--cam-glass); stroke-width: 0.5; }
+.cam .gl-front { fill-opacity: 0.25; }
+.cam .pup { stroke: var(--accent); stroke-width: 0.7; fill: none; }
+.cam .iris { fill: var(--panel); stroke: var(--accent); }
+.cam .fl { fill: var(--cam-flash); }
+.cam .ph { fill: var(--cam-phone); stroke: var(--cam-edge); stroke-width: 0.3; }
+.cam .phb { fill: var(--cam-phone-back); stroke: var(--cam-edge); stroke-width: 0.3; }
+.cam .scr { fill: var(--cam-screen); }
+.cam .scrcard { fill: var(--cam-screen); fill-opacity: 0.92; stroke: var(--muted); stroke-width: 0.4; stroke-dasharray: 1.5 1; }
+.cam .ts { fill: #f4f4f4; font-family: system-ui, -apple-system, sans-serif; font-weight: 600; }
+.cam .lab { fill: var(--muted); font-family: system-ui, -apple-system, sans-serif; }
+.cam .lab-dark { fill: #a9adb4; font-family: system-ui, -apple-system, sans-serif; }
+.cam .phbtn { fill: #2b2e33; stroke: #55595f; stroke-width: 0.3; }
+.cam .phbtn.on { fill: #4a4d52; stroke: var(--cam-flash); }
+.cam .phbtn-t { fill: #f4f4f4; font-family: system-ui, -apple-system, sans-serif; font-weight: 600; }
+.cam .phbtn-t.on { fill: var(--cam-flash); }
+.cam .cyl { fill: url(#cam-cyl); }
+.cam .dome { fill: url(#cam-dome); }
+.cam .hit { fill: transparent; }
+.cam .edge-line { fill: none; stroke: var(--cam-edge); stroke-width: 0.4; }
+.cam .crank { stroke: var(--cam-metal2); stroke-width: 2.4; stroke-linecap: round; fill: none; }
+.cam .lever { stroke: var(--cam-metal); stroke-width: 4.5; stroke-linecap: round; fill: none; }
+
+/* A value you can change: thin underline on hover (mouse); it stays while the control is held. */
+.cam .fld .hov { stroke: var(--cam-lcd-fg); stroke-width: 0.55; opacity: 0; }
+.cam .fld.scr .hov { stroke: #f4f4f4; }
+@media (hover: hover) {
+  .cam-stage:not(.dragging) .fld:not(.locked):hover .hov { opacity: 0.7; }
+}
+.cam .fld.held:not(.locked) .hov { opacity: 0.7; }
+.cam .blink { animation: cam-blink 1s steps(1) infinite; }
+@keyframes cam-blink {
+  50% { opacity: 0.15; }
+}
+
+/* Camera view: the sliders for what the drawing sets are hidden (ui/camera sets these classes). */
+body.cam-view.cam-covers-mode [data-field='mode'],
+body.cam-view.cam-covers-aperture [data-field='aperture'],
+body.cam-view.cam-covers-shutter [data-field='shutter'],
+body.cam-view.cam-covers-iso [data-field='iso'],
+body.cam-view.cam-covers-autoiso [data-field='autoiso'],
+body.cam-view.cam-covers-flash [data-field='flash'],
+body.cam-view.cam-covers-focal [data-field='focal'],
+body.cam-view.cam-covers-focus [data-field='focus'] {
+  display: none;
 }

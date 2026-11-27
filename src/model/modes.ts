@@ -83,6 +83,47 @@ interface Candidate {
   cost: number;
 }
 
+/** Apertures and shutter speeds the camera may choose from (or the user's, where they're not automatic). */
+function candidates(s: CameraSettings, sensor: Sensor, auto: Set<AutoField>, flashOn: boolean) {
+  const widest = maxApertureFor(s, sensor);
+  const apertures: number[] = sensor.fixedAperture
+    ? [sensor.fixedAperture]
+    : auto.has('aperture')
+      ? APERTURES.filter((n) => n >= widest)
+      : [Math.max(s.aperture, widest)];
+  const fastest = fastestShutterS(sensor) - 1e-12;
+  let shutters: number[] = auto.has('shutterS')
+    ? SHUTTER_SPEEDS_S.filter((t) => t >= fastest)
+    : [Math.max(s.shutterS, fastestShutterS(sensor))];
+  // A real flash tube needs the shutter between the sync speed and the slowest flash time;
+  // a phone's LED is continuous light and doesn't care.
+  if (flashOn && auto.has('shutterS') && !sensor.ledFlash) {
+    shutters = shutters.filter((t) => t <= FLASH_SLOWEST_S + 1e-9 && t >= FLASH_SYNC_S - 1e-9);
+  }
+  return { apertures, shutters };
+}
+
+/**
+ * Program shift (P, the rear dial): each click trades ⅓ stop of aperture for ⅓ stop of time, so the
+ * exposure stays the same – + = smaller aperture and longer time. Stops where either list ends.
+ * `apertures` wide → narrow, `shutters` slow → fast, as in stops.ts.
+ */
+export function applyProgramShift(
+  aperture: number,
+  shutterS: number,
+  clicks: number,
+  apertures: readonly number[],
+  shutters: readonly number[],
+): { aperture: number; shutterS: number } {
+  const ai = apertures.indexOf(aperture);
+  const si = shutters.indexOf(shutterS);
+  if (ai < 0 || si < 0 || clicks === 0) return { aperture, shutterS };
+  const lo = Math.max(-ai, si - (shutters.length - 1));
+  const hi = Math.min(apertures.length - 1 - ai, si);
+  const k = Math.min(hi, Math.max(lo, clicks));
+  return { aperture: apertures[ai + k], shutterS: shutters[si - k] };
+}
+
 function solve(
   s: CameraSettings,
   sensor: Sensor,
@@ -95,21 +136,7 @@ function solve(
   const plainLimit = handheldLimitS(s.focalLengthMm, crop);
   const shakeLimit = s.stabilized ? handheldLimitWithIsS(s.focalLengthMm, crop) : plainLimit;
 
-  const widest = maxApertureFor(s, sensor);
-  const apertures = sensor.fixedAperture
-    ? [sensor.fixedAperture]
-    : auto.has('aperture')
-      ? APERTURES.filter((n) => n >= widest)
-      : [Math.max(s.aperture, widest)];
-  const fastest = fastestShutterS(sensor) - 1e-12;
-  let shutters = auto.has('shutterS')
-    ? SHUTTER_SPEEDS_S.filter((t) => t >= fastest)
-    : [Math.max(s.shutterS, fastestShutterS(sensor))];
-  // A real flash tube needs the shutter between the sync speed and the slowest flash time;
-  // a phone's LED is continuous light and doesn't care.
-  if (flashOn && auto.has('shutterS') && !sensor.ledFlash) {
-    shutters = shutters.filter((t) => t <= FLASH_SLOWEST_S + 1e-9 && t >= FLASH_SYNC_S - 1e-9);
-  }
+  const { apertures, shutters } = candidates(s, sensor, auto, flashOn);
   const isoMax = autoIsoMax(flashOn);
   const isos = auto.has('iso') ? ISOS.filter((i) => i <= isoMax) : [s.iso];
 
@@ -203,11 +230,16 @@ export function resolveMode(
       ? { ...settings, shutterS: FLASH_SYNC_S }
       : settings;
   const best = solve(input, sensor, sceneEv100, auto, flashOn, highlights);
+  let { aperture, shutterS } = best;
+  if (settings.mode === 'P' && settings.programShift && auto.has('aperture') && auto.has('shutterS')) {
+    const c = candidates(input, sensor, auto, flashOn);
+    ({ aperture, shutterS } = applyProgramShift(aperture, shutterS, settings.programShift, c.apertures, c.shutters));
+  }
   return {
     settings: {
       ...settings,
-      aperture: sensor.fixedAperture ?? best.aperture, // already limited to the lens
-      shutterS: best.shutterS,
+      aperture: sensor.fixedAperture ?? aperture, // already limited to the lens
+      shutterS,
       iso: best.iso,
       flashOn,
     },

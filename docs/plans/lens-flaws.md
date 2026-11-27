@@ -2,7 +2,7 @@
 
 **Blocked by:** nothing – each part stands alone. **Works with:** effective-resolution (corner
 resolution, cost of correction), dynamic range (flare uses the existing backlight switch, `scene.backlight`), digital-zoom
-(a centre crop hides most flaws).
+(a centre crop hides most flaws), the camera panel (lens outline per lens kind in `data/lensShapes.ts`).
 
 ## Goal
 

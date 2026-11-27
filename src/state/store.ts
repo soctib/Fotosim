@@ -5,6 +5,7 @@ import { focalOptions } from '../model/focal';
 import type { CameraSettings, Scene } from '../model/types';
 
 export type InfoKey = keyof Texts['info'];
+export type ControlView = 'camera' | 'sliders';
 
 export interface AppState {
   camera: CameraSettings;
@@ -18,6 +19,8 @@ export interface AppState {
     infoKey: InfoKey;
     /** Simplified mode: fixed beginner setup, only aperture, shutter (as indicator) and focal length shown. */
     simple: boolean;
+    /** Controls column: the camera seen from above ('camera') or the sliders ('sliders'). */
+    controlView: ControlView;
   };
 }
 
@@ -39,6 +42,7 @@ export const initialState: AppState = {
     afTarget: null,
     digitalZoom: 1,
     scanner: 'lab',
+    programShift: 0,
   },
   scene: {
     lightPresetId: 'cloudy',
@@ -49,7 +53,7 @@ export const initialState: AppState = {
       { id: 'background', distanceM: 50, visible: true, motion: 'frozen' },
     ],
   },
-  ui: { logScale: true, showDetails: false, infoKey: 'graph', simple: false },
+  ui: { logScale: true, showDetails: false, infoKey: 'graph', simple: false, controlView: 'camera' },
 };
 
 type Listener = (state: AppState, derived: Derived) => void;

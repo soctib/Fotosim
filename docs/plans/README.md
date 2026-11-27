@@ -3,7 +3,7 @@
 Concept documents for planned features. No code – each describes the idea, the model, the data it
 needs, what the UI shows and how it touches the other plans. They can be implemented in any order;
 hard blockers are marked **Blocked by**, soft links **Works with**. Implemented plans are deleted;
-their features (effective resolution, digital zoom, output size, dynamic range, the figurine) are described in SPEC.md.
+their features (effective resolution, digital zoom, output size, dynamic range, the figurine, the camera panel) are described in SPEC.md.
 
 Common theme: show **why some gear costs more and what it changes in the picture** – and, just as
 honestly, where it changes nothing (still subject, good light, small view: a phone is fine).
@@ -16,11 +16,10 @@ honestly, where it changes nothing (still subject, good light, small view: a pho
 | [perspective](perspective.md) | Face proportions depend on distance only, not on focal length | – | digital-zoom |
 | [focus-beyond-infinity](focus-beyond-infinity.md) | Zooms focus past ∞: nothing is sharp, dramatic on long lenses; focus stored in diopters | – | effective-resolution |
 | [ux-polish](ux-polish.md) | Small fixes: linear-graph scrollbar, scene-matching background icon, blue accent | – | – |
-| [hover-infobox](hover-infobox.md) | Infobox follows the mouse on hover; one shared helper replaces scattered listeners | – | camera-panel |
+| [hover-infobox](hover-infobox.md) | Infobox follows the mouse on hover; one shared helper replaces scattered listeners | – | – |
 | [doll-life](doll-life.md) | Smile when in focus, side view when moving, wave at the long lens | – | – |
 | [phone-mini-graph](phone-mini-graph.md) | Strip graph in the sticky phone preview once the real graph scrolls away | – | – |
 | [simple-mode-keeps-camera](simple-mode-keeps-camera.md) | Simplified mode keeps body, lens and mode; sliders chosen per mode and camera | – | – |
-| [camera-panel](camera-panel.md) | Top-view camera you operate directly: mode dial, seven-segment display, dials, zoom/focus rings | – | focus-beyond-infinity, lens-flaws, hover-infobox |
 | [cost-value](cost-value.md) | The cost panel says what each item buys *in the current situation* | – | gets richer with every other plan |
 | [webgl-renderer](webgl-renderer.md) | Camera image on the GPU – only if SVG filters get too slow (measure first; maybe never) | – | lens-flaws, dynamic-range, white-balance, rolling-shutter |
 

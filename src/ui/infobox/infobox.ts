@@ -2,6 +2,7 @@
 // summary just says "Hilfe"; unfolded it shows the current title.
 
 import { de as t, fill } from '../../data/texts.de';
+import { entrancePupilMm } from '../../model/cameraPanel';
 import { formatAperture, formatShutter } from '../../model/stops';
 import type { InfoKey, Store } from '../../state/store';
 import { formatMeterRange, formatMp, formatNumber } from '../distance';
@@ -43,6 +44,7 @@ export function mountInfobox(root: HTMLDetailsElement, store: Store): void {
       range: stops(d.dynamicRange.rangeStops),
       clip: signedStops(d.dynamicRange.clipStops),
       floor: signedStops(d.dynamicRange.floorStops),
+      pupil: `${formatNumber(entrancePupilMm(d.settings.focalLengthMm, d.maxAperture), 0)} mm`,
       sharpMp: formatMp(d.outputSize.results.find((x) => x.id === 'a4' && x.view === 'normal')!.sharpMp),
     });
     // Paragraphs: "\n\n" in the texts.

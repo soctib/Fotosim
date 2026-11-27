@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { SENSORS } from '../src/data/sensors';
 import { derive } from '../src/model/derive';
-import { resolveMode } from '../src/model/modes';
+import { applyProgramShift, resolveMode } from '../src/model/modes';
 import { FLASH_SYNC_S } from '../src/model/stops';
 import type { CameraSettings, Scene } from '../src/model/types';
 import { initialState } from '../src/state/store';
@@ -124,3 +124,29 @@ describe('derive', () => {
   });
 });
 
+
+describe('program shift', () => {
+  const p = { ...base, mode: 'P' as const, autoIso: false, iso: 100, stabilized: true };
+
+  it('trades aperture for time at the same exposure', () => {
+    const r0 = resolveMode(p, ff, 15).settings;
+    const r3 = resolveMode({ ...p, programShift: 3 }, ff, 15).settings;
+    expect(r3.aperture).toBeGreaterThan(r0.aperture);
+    expect(r3.shutterS).toBeGreaterThan(r0.shutterS);
+    const ev = (n: number, t: number) => Math.log2((n * n) / t);
+    expect(Math.abs(ev(r3.aperture, r3.shutterS) - ev(r0.aperture, r0.shutterS))).toBeLessThan(0.15);
+    const back = resolveMode({ ...p, programShift: -3 }, ff, 15).settings;
+    expect(back.aperture).toBeLessThan(r0.aperture);
+  });
+
+  it('stops at the ends of the lists', () => {
+    expect(applyProgramShift(2, 1 / 100, -5, [1.4, 2, 2.8], [1 / 60, 1 / 100, 1 / 200])).toEqual({ aperture: 1.4, shutterS: 1 / 200 });
+    expect(applyProgramShift(2, 1 / 100, 5, [1.4, 2, 2.8], [1 / 60, 1 / 100, 1 / 200])).toEqual({ aperture: 2.8, shutterS: 1 / 60 });
+    expect(applyProgramShift(2, 1 / 100, 0, [1.4, 2, 2.8], [1 / 60, 1 / 100, 1 / 200])).toEqual({ aperture: 2, shutterS: 1 / 100 });
+  });
+
+  it('does nothing outside P', () => {
+    const av = { ...p, mode: 'Av' as const, aperture: 4 };
+    expect(resolveMode({ ...av, programShift: 4 }, ff, 15).settings.shutterS).toBe(resolveMode(av, ff, 15).settings.shutterS);
+  });
+});

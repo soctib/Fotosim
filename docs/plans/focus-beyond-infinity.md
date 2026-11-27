@@ -1,7 +1,8 @@
 # Focus beyond infinity
 
 **Blocked by:** nothing. **Works with:** cost-value (a lens quirk, not a price point),
-effective-resolution (focus error is one of its blur sources).
+effective-resolution (focus error is one of its blur sources). The camera panel's focus ring
+(`focusRingAngle` in `model/cameraPanel.ts`, 0° = ∞) should then turn a little past ∞.
 
 ## Goal
 

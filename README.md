@@ -8,6 +8,7 @@ Interaktiver Foto-Simulator für Einsteiger: Was passiert mit **Schärfe**, **Be
 - Digitalzoom: Ausschnitt vergrößern, bis Rauschen, Unschärfe und Pixel sichtbar werden
 - Vereinfachtes Kamerabild, das Unschärfe, Ausschnitt, Helligkeit und Rauschen zeigt
 - Kameramodi A, P, Av, Tv, M mit kurzer Erklärung, Blitz mit Reichweite
+- Kamera von oben zum Selbst-Bedienen: Modusrad, Display, Einstellräder, ISO-Taste, Blitzschuh, Zoom- und Fokusring – das Objektiv maßstäblich, vom Kit-Zoom bis zum 400 mm f/2,8; wahlweise klassisch mit Reglern
 - Dynamikumfang: Gegenlicht lässt den Himmel ausbrennen oder das Gesicht absaufen – Sensorgröße, Film, Handy-HDR und Aufhellblitz machen den Unterschied
 - Vom Handy bis Mittelformat, dazu grobe Kosten für Kamera, Objektiv und Stativ
 - Startet vereinfacht: Sonne, Vollformat, nur Lichtsituation, Blende, Belichtungszeit und Brennweite – „Alle Einstellungen“ zeigt den Rest

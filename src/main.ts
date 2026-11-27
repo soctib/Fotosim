@@ -4,6 +4,7 @@ import { applySimple, setSimple } from './state/actions';
 import { loadState, persist, rememberFold } from './state/persist';
 import { createStore, initialState } from './state/store';
 import { mountBars } from './ui/bars/bars';
+import { mountCamera } from './ui/camera/camera';
 import { mountControls } from './ui/controls/controls';
 import { mountCosts } from './ui/costs/costs';
 import { mountElements } from './ui/elements/elements';
@@ -36,6 +37,7 @@ app.innerHTML = `
       <details id="quality" open></details>
       <section id="elements"></section>
     </div>
+    <section id="camera"></section>
     <aside id="controls"></aside>
     <div class="col-info">
       <details id="infobox" open></details>
@@ -55,6 +57,7 @@ mountPreviewSummary($<HTMLDetailsElement>('.preview'), store);
 mountQuality($<HTMLDetailsElement>('#quality'), store);
 mountElements($('#elements'), store);
 mountControls($('#controls'), store);
+mountCamera($('#camera'), store);
 mountInfobox($<HTMLDetailsElement>('#infobox'), store);
 mountCosts($<HTMLDetailsElement>('#costs'), store);
 

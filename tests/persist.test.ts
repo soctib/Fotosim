@@ -5,9 +5,9 @@ import { initialState } from '../src/state/store';
 
 const changed = {
   ...initialState,
-  camera: { ...initialState.camera, sensorId: 'fullFrame' as const, aperture: 2.8, mode: 'M' as const, afTarget: 'person2' as const },
+  camera: { ...initialState.camera, sensorId: 'fullFrame' as const, aperture: 2.8, mode: 'P' as const, afTarget: 'person2' as const, programShift: -2 },
   scene: { ...initialState.scene, lightPresetId: 'dusk', backlight: true },
-  ui: { ...initialState.ui, simple: false, showDetails: true, infoKey: 'graph' as const },
+  ui: { ...initialState.ui, simple: false, showDetails: true, infoKey: 'graph' as const, controlView: 'sliders' as const },
 };
 
 describe('parseState', () => {
@@ -81,5 +81,23 @@ describe('parseState with older saves', () => {
     expect(parseState(JSON.stringify(old), initialState)!.scene).toEqual({ ...changed.scene, backlight: false });
     const bad = { ...changed, scene: { ...changed.scene, backlight: 'yes' } };
     expect(parseState(JSON.stringify(bad), initialState)!.scene).toEqual(initialState.scene);
+  });
+});
+
+describe('parseState: camera panel', () => {
+  it('fills in the control view and program shift missing from older states', () => {
+    const old = JSON.parse(JSON.stringify(changed));
+    delete old.ui.controlView;
+    delete old.camera.programShift;
+    const s = parseState(JSON.stringify(old), initialState)!;
+    expect(s.ui.controlView).toBe(initialState.ui.controlView);
+    expect(s.camera.programShift).toBe(0);
+  });
+
+  it('rejects an unknown control view or a broken program shift', () => {
+    const badView = { ...changed, ui: { ...changed.ui, controlView: 'knobs' } };
+    expect(parseState(JSON.stringify(badView), initialState)!.ui).toEqual(initialState.ui);
+    const badShift = { ...changed, camera: { ...changed.camera, programShift: 1.5 } };
+    expect(parseState(JSON.stringify(badShift), initialState)!.camera).toEqual(initialState.camera);
   });
 });

@@ -5,7 +5,7 @@ import { CAMERA_LENSES } from '../data/cameraLenses';
 import { activeSensor, snapFocal } from '../model/focal';
 import { cropFactor, MAX_DISTANCE_M, minDistanceM } from '../model/optics';
 import type { CameraSettings, ElementId, Mode, Motion } from '../model/types';
-import type { AppState, InfoKey, Store } from './store';
+import type { AppState, ControlView, InfoKey, Store } from './store';
 
 export { MAX_DISTANCE_M, MIN_DISTANCE_M } from '../model/optics';
 
@@ -107,10 +107,17 @@ export function setAutofocus(store: Store, target: ElementId | null): void {
 /**
  * Switch the exposure mode, carrying over what the camera currently uses – so e.g.
  * going from Av to M starts from a correct exposure instead of stale manual values.
+ * `patch` sets more at once (a film body's speed dial leaving "A" sets the mode and the time).
  */
-export function setMode(store: Store, mode: Mode): void {
+export function setMode(store: Store, mode: Mode, patch: Partial<CameraSettings> = {}): void {
   const { aperture, shutterS, iso, flashOn } = store.derived().settings;
-  setCamera(store, { mode, aperture, shutterS, iso, flashOn });
+  // A program shift ends with the mode, as on real cameras.
+  setCamera(store, { mode, aperture, shutterS, iso, flashOn, programShift: 0, ...patch });
+}
+
+/** Show the camera seen from above or the sliders in the controls column. */
+export function setControlView(store: Store, controlView: ControlView): void {
+  store.update((s) => ({ ...s, ui: { ...s.ui, controlView } }));
 }
 
 /**
@@ -144,6 +151,7 @@ export function applySimple(s: AppState): AppState {
       afTarget: null,
       focusDistanceM: person1.distanceM,
       digitalZoom: 1,
+      programShift: 0,
     },
     scene,
     ui: { ...s.ui, simple: true },
